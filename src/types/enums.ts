@@ -1,0 +1,311 @@
+// Mirrors NextJS-choloBD-frontend/src/types/enums.ts — keep in sync.
+
+// User and Admin Enums
+export enum Role {
+  MASTER_ADMIN = 'MASTER_ADMIN',
+  SERVICE_ADMIN = 'SERVICE_ADMIN',
+  EMPLOYEE = 'EMPLOYEE',
+  USER = 'USER',
+}
+
+export enum UserStatus {
+  ACTIVE = 'ACTIVE',
+  BANNED = 'BANNED',
+  RESTRICTED = 'RESTRICTED',
+}
+
+export enum UserTripStatus {
+  PLANNING = 'PLANNING',
+  SAVED = 'SAVED',
+  BOOKED = 'BOOKED',
+  IN_PROGRESS = 'IN_PROGRESS',
+  COMPLETED = 'COMPLETED',
+  CANCELLED = 'CANCELLED',
+}
+
+export enum BookingStatus {
+  PENDING = 'PENDING',
+  ACCEPTED = 'ACCEPTED',
+  DECLINED = 'DECLINED',
+  CONFIRMED = 'CONFIRMED',
+  CANCELLED = 'CANCELLED',
+  COMPLETED = 'COMPLETED',
+  REFUNDED = 'REFUNDED',
+  NO_SHOW = 'NO_SHOW',
+}
+
+// Location and Tourism Enums
+export enum LocationType {
+  DIVISION = 'DIVISION',
+  DISTRICT = 'DISTRICT',
+  CITY = 'CITY',
+  ISLAND = 'ISLAND',
+  COUNTRYSIDE = 'COUNTRYSIDE',
+}
+
+export enum CategoryType {
+  AMENITY = 'AMENITY',
+  POLICY = 'POLICY',
+  HOTEL_TYPE = 'HOTEL_TYPE',
+  RULE = 'RULE',
+}
+
+export enum TourType {
+  ADVENTURE = 'ADVENTURE',
+  CULTURAL = 'CULTURAL',
+  BEACH = 'BEACH',
+  CITY_TOUR = 'CITY_TOUR',
+  NATURE = 'NATURE',
+  RELIGIOUS = 'RELIGIOUS',
+  HISTORICAL = 'HISTORICAL',
+  MIXED = 'MIXED',
+}
+
+/** Controlled vocabulary for Guide.languages (stored as string[]). */
+export enum Language {
+  ENGLISH = 'ENGLISH',
+  MANDARIN_CHINESE = 'MANDARIN_CHINESE',
+  HINDI = 'HINDI',
+  SPANISH = 'SPANISH',
+  FRENCH = 'FRENCH',
+  ARABIC = 'ARABIC',
+  BENGALI = 'BENGALI',
+  PORTUGUESE = 'PORTUGUESE',
+  RUSSIAN = 'RUSSIAN',
+  URDU = 'URDU',
+  GERMAN = 'GERMAN',
+  JAPANESE = 'JAPANESE',
+  KOREAN = 'KOREAN',
+  ITALIAN = 'ITALIAN',
+  DUTCH = 'DUTCH',
+  SWEDISH = 'SWEDISH',
+  NORWEGIAN = 'NORWEGIAN',
+  DANISH = 'DANISH',
+  THAI = 'THAI',
+  MALAY = 'MALAY',
+}
+
+export enum ActivityType {
+  SIGHTSEEING = 'SIGHTSEEING',
+  ADVENTURE_SPORTS = 'ADVENTURE_SPORTS',
+  WATER_ACTIVITIES = 'WATER_ACTIVITIES',
+  CULTURAL_EXPERIENCE = 'CULTURAL_EXPERIENCE',
+  FOOD_TASTING = 'FOOD_TASTING',
+  SHOPPING = 'SHOPPING',
+  WILDLIFE = 'WILDLIFE',
+}
+
+// Hotel and Accommodation Enums
+export enum HotelType {
+  LUXURY = 'LUXURY',
+  BUDGET = 'BUDGET',
+  BOUTIQUE = 'BOUTIQUE',
+  RESORT = 'RESORT',
+  HOSTEL = 'HOSTEL',
+  GUESTHOUSE = 'GUESTHOUSE',
+  APARTMENT = 'APARTMENT',
+}
+
+export enum HotelRoomCategory {
+  SINGLE = 'SINGLE',
+  DOUBLE = 'DOUBLE',
+  SUITE = 'SUITE',
+  DELUXE = 'DELUXE',
+}
+
+export enum HotelRoomStatus {
+  AVAILABLE = 'AVAILABLE',
+  BOOKED = 'BOOKED',
+  MAINTENANCE = 'MAINTENANCE',
+  OUT_OF_SERVICE = 'OUT_OF_SERVICE',
+}
+
+export enum RoomShift {
+  ALL_DAY,
+  NIGHT, // 10:00 PM - 8:00 AM (next day)
+  MORNING, // 8:00 AM - 3:00 PM
+  AFTERNOON, // 3:00 PM - 10:00 PM
+}
+
+// Review and Rating Enums
+export enum ReviewType {
+  HOTEL = 'HOTEL',
+  TOUR_SPOT = 'TOUR_SPOT',
+  ACTIVITY_SPOT = 'ACTIVITY_SPOT',
+  TRANSPORT = 'TRANSPORT',
+  GUIDE = 'GUIDE',
+}
+
+export enum BookmarkType {
+  TOUR_SPOT = 'TOUR_SPOT',
+  ACTIVITY_SPOT = 'ACTIVITY_SPOT',
+  HOTEL = 'HOTEL',
+  GUIDE = 'GUIDE',
+}
+
+// Service and Booking Enums
+export enum ServiceType {
+  HOTEL_BOOKING = 'HOTEL_BOOKING',
+  TRIP_PACKAGE = 'TRIP_PACKAGE',
+  TRANSPORT_SERVICE = 'TRANSPORT_SERVICE',
+  ACTIVITY_BOOKING = 'ACTIVITY_BOOKING',
+  GUIDE_SERVICE = 'GUIDE_SERVICE',
+  WALLET_TOP_UP = 'WALLET_TOP_UP',
+}
+
+// Transport Enums
+export enum TransportServiceType {
+  BUS = 'BUS',
+  FLIGHT = 'FLIGHT',
+  TRAIN = 'TRAIN',
+  CAR_RENTAL = 'CAR_RENTAL',
+  FERRY = 'FERRY',
+  SELF_MANAGED = 'SELF_MANAGED',
+}
+
+export enum BusServiceType {
+  AC_SLEEPER = 'AC_SLEEPER',
+  NON_AC_SLEEPER = 'NON_AC_SLEEPER',
+  AC_SEATER = 'AC_SEATER',
+  NON_AC_SEATER = 'NON_AC_SEATER',
+  DELUXE = 'DELUXE',
+  SEMI_DELUXE = 'SEMI_DELUXE',
+  LUXURY = 'LUXURY',
+}
+
+export enum FlightServiceType {
+  ECONOMY = 'ECONOMY',
+  BUSINESS = 'BUSINESS',
+  FIRST_CLASS = 'FIRST_CLASS',
+  PREMIUM_ECONOMY = 'PREMIUM_ECONOMY',
+}
+
+export enum TrainServiceType {
+  AC_1_TIER = 'AC_1_TIER',
+  AC_2_TIER = 'AC_2_TIER',
+  AC_3_TIER = 'AC_3_TIER',
+  SLEEPER = 'SLEEPER',
+  GENERAL = 'GENERAL',
+  CHAIR_CAR = 'CHAIR_CAR',
+}
+
+export enum VehicleRentalCategory {
+  SEDAN = 'SEDAN',
+  SUV = 'SUV',
+  HATCHBACK = 'HATCHBACK',
+  VAN = 'VAN',
+  MICROBUS = 'MICROBUS',
+  OTHER = 'OTHER',
+}
+
+// Payment and Transaction Enums
+export enum PaymentStatus {
+  UNPAID = 'UNPAID',
+  PAID = 'PAID',
+}
+
+export enum RefundStatus {
+  PENDING = 'PENDING',
+  COMPLETED = 'COMPLETED',
+  FAILED = 'FAILED',
+}
+
+export enum WalletStatus {
+  ACTIVE = 'ACTIVE',
+  LOCKED = 'LOCKED',
+  SUSPENDED = 'SUSPENDED',
+  CLOSED = 'CLOSED',
+}
+
+export enum WalletTransactionType {
+  CREDIT = 'CREDIT',
+  DEBIT = 'DEBIT',
+  TRANSFER_IN = 'TRANSFER_IN',
+  TRANSFER_OUT = 'TRANSFER_OUT',
+  CASHBACK = 'CASHBACK',
+  REFUND = 'REFUND',
+  PENALTY = 'PENALTY',
+  BONUS = 'BONUS',
+}
+
+export enum TransactionStatus {
+  PENDING = 'PENDING',
+  PROCESSING = 'PROCESSING',
+  COMPLETED = 'COMPLETED',
+  FAILED = 'FAILED',
+  CANCELLED = 'CANCELLED',
+  REVERSED = 'REVERSED',
+}
+
+// System and Admin Enums
+export enum Priority {
+  NORMAL = 'NORMAL',
+  URGENT = 'URGENT',
+}
+
+export enum NotificationAudience {
+  USER = 'USER',
+  SERVICE_ADMIN = 'SERVICE_ADMIN',
+  EMPLOYEE = 'EMPLOYEE',
+  MASTER_ADMIN = 'MASTER_ADMIN',
+}
+
+export enum SiteStatus {
+  ACTIVE = 'ACTIVE',
+  DOWN = 'DOWN',
+}
+
+export enum HeroSection {
+  TOP = 'TOP',
+  MIDDLE = 'MIDDLE',
+  BOTTOM = 'BOTTOM',
+}
+
+export enum AdminAction {
+  CREATED_HOTEL = 'CREATED_HOTEL',
+  UPDATED_HOTEL = 'UPDATED_HOTEL',
+  DELETED_HOTEL = 'DELETED_HOTEL',
+  CREATED_TOURSPOT = 'CREATED_TOURSPOT',
+  UPDATED_TOURSPOT = 'UPDATED_TOURSPOT',
+  DELETED_TOURSPOT = 'DELETED_TOURSPOT',
+  CREATED_ACTIVITYSPOT = 'CREATED_ACTIVITYSPOT',
+  UPDATED_ACTIVITYSPOT = 'UPDATED_ACTIVITYSPOT',
+  DELETED_ACTIVITYSPOT = 'DELETED_ACTIVITYSPOT',
+  CREATED_LOCATION = 'CREATED_LOCATION',
+  UPDATED_LOCATION = 'UPDATED_LOCATION',
+  DELETED_LOCATION = 'DELETED_LOCATION',
+  CREATED_TOURPACKAGE = 'CREATED_TOURPACKAGE',
+  UPDATED_TOURPACKAGE = 'UPDATED_TOURPACKAGE',
+  DELETED_TOURPACKAGE = 'DELETED_TOURPACKAGE',
+  USER_MANAGEMENT = 'USER_MANAGEMENT',
+  PAYMENT_REFUND = 'PAYMENT_REFUND',
+  SITE_CONFIG = 'SITE_CONFIG',
+}
+
+export enum EntityType {
+  HOTEL = 'HOTEL',
+  TOUR_SPOT = 'TOUR_SPOT',
+  ACTIVITY_SPOT = 'ACTIVITY_SPOT',
+  LOCATION = 'LOCATION',
+  TOUR_PACKAGE = 'TOUR_PACKAGE',
+  USER = 'USER',
+  PAYMENT = 'PAYMENT',
+  SITE_CONFIG = 'SITE_CONFIG',
+}
+
+export enum ComplaintStatus {
+  OPEN = 'OPEN',
+  UNSOLVED = 'UNSOLVED',
+  CLOSED = 'CLOSED',
+}
+
+export enum ComplaintTargetType {
+  HOTEL = 'HOTEL',
+  ACTIVITY_SPOT = 'ACTIVITY_SPOT',
+  GUIDE = 'GUIDE',
+}
+
+export enum ComplaintAddressedTo {
+  SERVICE_ADMIN = 'SERVICE_ADMIN',
+  MASTER_ADMIN = 'MASTER_ADMIN',
+}

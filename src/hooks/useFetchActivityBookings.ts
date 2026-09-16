@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { getActivityBookings } from '@/services/api/activityBookings';
 import { ActivityBooking, GetActivityBookingsParams } from '@/types/activityBookings';
 import { PaginatedList } from '@/utils/paginatedList';
@@ -16,27 +16,22 @@ export function useFetchActivityBookings(params?: GetActivityBookingsParams) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    // Only fetch if we have at least one filter parameter
+  const fetchData = useCallback(async () => {
     if (!params?.userId && !params?.activitySpotId && !params?.confirmationCode) {
       return;
     }
 
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const data = await getActivityBookings(params);
-        setBookings(data);
-      } catch (err: any) {
-        console.error('[useFetchActivityBookings] Error:', err);
-        setError(err?.message || 'Failed to fetch activity bookings');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await getActivityBookings(params);
+      setBookings(data);
+    } catch (err: any) {
+      console.error('[useFetchActivityBookings] Error:', err);
+      setError(err?.message || 'Failed to fetch activity bookings');
+    } finally {
+      setLoading(false);
+    }
   }, [
     params?.userId,
     params?.activitySpotId,
@@ -49,5 +44,9 @@ export function useFetchActivityBookings(params?: GetActivityBookingsParams) {
     params?.limit,
   ]);
 
-  return { bookings, loading, error };
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  return { bookings, loading, error, refetch: fetchData };
 }

@@ -7,16 +7,17 @@ import {
   Pressable,
   ActivityIndicator,
   Alert,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { useTranslation } from 'react-i18next';
+import * as ImagePicker from 'expo-image-picker';
 import { useTheme } from '@/hooks/useTheme';
 import theme from '@/constants/theme';
-import { TRANSLATION_KEYS } from '@/constants/translationKeys';
 import { useHotelRoomManagement } from '@/hooks/useHotelRoomManagement';
 import { getMyHotel } from '@/services/api/users';
+import { cloudinaryUpload } from '@/services/api/cloudinaryUpload';
 
 const ROOM_TYPES = ['STANDARD', 'DELUXE', 'SUITE', 'PREMIUM', 'EXECUTIVE'];
 
@@ -24,7 +25,6 @@ export default function RoomTypeFormScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const { isDark } = useTheme();
-  const { t } = useTranslation();
   const { loading, handleCreateRoomType, handleUpdateRoomType } = useHotelRoomManagement();
 
   const mode = params.mode as 'create' | 'edit';
@@ -39,7 +39,8 @@ export default function RoomTypeFormScreen() {
     totalCount: '',
     availableCount: '',
   });
-
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [loadingData, setLoadingData] = useState(mode === 'edit');
 
   useEffect(() => {
@@ -53,7 +54,7 @@ export default function RoomTypeFormScreen() {
       setLoadingData(true);
       const hotel = await getMyHotel(hotelId);
       const roomType = hotel?.roomTypes?.find((rt: any) => rt.id === roomTypeId);
-      
+
       if (roomType) {
         setFormData({
           roomType: roomType.roomType || 'STANDARD',
@@ -63,8 +64,13 @@ export default function RoomTypeFormScreen() {
           totalCount: String(roomType.totalCount || ''),
           availableCount: String(roomType.availableCount || ''),
         });
+        const existing =
+          roomType.images?.map((img: any) => img.url).filter(Boolean) ||
+          roomType.imageURLs ||
+          [];
+        setImageUrls(Array.isArray(existing) ? existing : []);
       }
-    } catch (error) {
+    } catch {
       Alert.alert('Error', 'Failed to load room type details');
       router.back();
     } finally {
@@ -72,20 +78,49 @@ export default function RoomTypeFormScreen() {
     }
   };
 
+  const pickAndUploadImage = async () => {
+    try {
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permission.granted) {
+        Alert.alert('Permission needed', 'Allow photo library access to upload images.');
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        quality: 0.8,
+        allowsMultipleSelection: false,
+      });
+
+      if (result.canceled || !result.assets?.[0]?.uri) return;
+
+      setUploadingImage(true);
+      const uploaded = await cloudinaryUpload(result.assets[0].uri, 'hotel-rooms');
+      setImageUrls((prev) => [...prev, uploaded.secure_url]);
+    } catch (err: any) {
+      Alert.alert('Error', err?.message || 'Failed to upload image');
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const removeImage = (url: string) => {
+    setImageUrls((prev) => prev.filter((u) => u !== url));
+  };
+
   const handleSubmit = async () => {
-    // Validation
     if (!formData.pricePerNight || parseFloat(formData.pricePerNight) <= 0) {
       Alert.alert('Validation Error', 'Please enter a valid price per night');
       return;
     }
 
-    if (!formData.totalCount || parseInt(formData.totalCount) <= 0) {
+    if (!formData.totalCount || parseInt(formData.totalCount, 10) <= 0) {
       Alert.alert('Validation Error', 'Please enter a valid total count');
       return;
     }
 
-    const singleBed = parseInt(formData.singleBedCount) || 0;
-    const doubleBed = parseInt(formData.doubleBedCount) || 0;
+    const singleBed = parseInt(formData.singleBedCount, 10) || 0;
+    const doubleBed = parseInt(formData.doubleBedCount, 10) || 0;
 
     if (singleBed === 0 && doubleBed === 0) {
       Alert.alert('Validation Error', 'Please add at least one bed');
@@ -98,24 +133,28 @@ export default function RoomTypeFormScreen() {
         singleBedCount: singleBed,
         doubleBedCount: doubleBed,
         pricePerNight: parseFloat(formData.pricePerNight),
-        totalCount: parseInt(formData.totalCount),
-        availableCount: formData.availableCount ? parseInt(formData.availableCount) : parseInt(formData.totalCount),
+        totalCount: parseInt(formData.totalCount, 10),
+        availableCount: formData.availableCount
+          ? parseInt(formData.availableCount, 10)
+          : parseInt(formData.totalCount, 10),
+        imageURLs: imageUrls,
       };
 
       if (mode === 'create') {
-        await handleCreateRoomType({
-          ...data,
-          hotelId,
-        });
+        await handleCreateRoomType({ ...data, hotelId });
       } else {
         await handleUpdateRoomType(roomTypeId, data);
       }
 
       router.back();
-    } catch (error) {
-      // Error already handled in hook
+    } catch {
+      // handled in hook
     }
   };
+
+  const primary = isDark ? theme.colors['primary-dark'] : theme.colors.primary;
+  const text = isDark ? theme.colors['text-dark'] : theme.colors.text;
+  const border = isDark ? theme.colors['border-dark'] : theme.colors.border;
 
   if (loadingData) {
     return (
@@ -123,10 +162,7 @@ export default function RoomTypeFormScreen() {
         edges={['top', 'bottom']}
         className="items-center justify-center flex-1 bg-background dark:bg-background-dark"
       >
-        <ActivityIndicator
-          size="large"
-          color={isDark ? theme.colors['primary-dark'] : theme.colors.primary}
-        />
+        <ActivityIndicator size="large" color={primary} />
       </SafeAreaView>
     );
   }
@@ -136,190 +172,109 @@ export default function RoomTypeFormScreen() {
       edges={['top', 'bottom']}
       className="flex-1 bg-background dark:bg-background-dark"
     >
-      <ScrollView
-        className="flex-1"
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Header */}
+      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         <View className="px-6 pt-4 pb-4">
-          <Pressable
-            onPress={() => router.back()}
-            style={{ padding: 6, marginBottom: 12 }}
-            accessibilityRole="button"
-          >
-            <Ionicons
-              name="chevron-back"
-              size={24}
-              color={isDark ? theme.colors['text-dark'] : theme.colors.text}
-            />
+          <Pressable onPress={() => router.back()} style={{ padding: 6, marginBottom: 12 }}>
+            <Ionicons name="chevron-back" size={24} color={text} />
           </Pressable>
-
           <Text className="text-2xl font-bold font-heading text-text dark:text-text-dark">
             {mode === 'create' ? 'Add Room Type' : 'Edit Room Type'}
           </Text>
-          <Text className="mt-1 text-sm text-muted dark:text-muted-dark">
-            {mode === 'create' ? 'Create a new room type' : 'Update room type details'}
-          </Text>
         </View>
 
-        <View className="px-6 pb-6">
-          {/* Room Type Selection */}
-          <View className="mb-4">
-            <Text className="mb-2 text-sm font-semibold text-text dark:text-text-dark">
-              Room Type *
-            </Text>
-            <View className="flex-row flex-wrap gap-2">
-              {ROOM_TYPES.map((type) => (
+        <View className="px-6 pb-8">
+          <Text className="mb-2 text-sm font-semibold text-text dark:text-text-dark">Room Type *</Text>
+          <View className="flex-row flex-wrap gap-2 mb-4">
+            {ROOM_TYPES.map((type) => (
+              <Pressable
+                key={type}
+                onPress={() => setFormData({ ...formData, roomType: type })}
+                className="px-4 py-2 border rounded-lg"
+                style={{
+                  backgroundColor: formData.roomType === type ? primary : 'transparent',
+                  borderColor: formData.roomType === type ? primary : border,
+                }}
+              >
+                <Text
+                  className="text-sm font-semibold"
+                  style={{ color: formData.roomType === type ? '#fff' : text }}
+                >
+                  {type}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+
+          {(
+            [
+              ['singleBedCount', 'Single beds'],
+              ['doubleBedCount', 'Double beds'],
+              ['pricePerNight', 'Price per night (৳) *'],
+              ['totalCount', 'Total rooms *'],
+              ['availableCount', 'Available rooms'],
+            ] as const
+          ).map(([key, label]) => (
+            <View key={key} className="mb-4">
+              <Text className="mb-2 text-sm font-semibold text-text dark:text-text-dark">{label}</Text>
+              <TextInput
+                value={formData[key]}
+                onChangeText={(v) => setFormData({ ...formData, [key]: v })}
+                keyboardType="decimal-pad"
+                className="px-4 py-3 border rounded-xl text-text dark:text-text-dark border-border dark:border-border-dark bg-surface dark:bg-surface-dark"
+              />
+            </View>
+          ))}
+
+          <Text className="mb-2 text-sm font-semibold text-text dark:text-text-dark">Images</Text>
+          <View className="flex-row flex-wrap gap-3 mb-3">
+            {imageUrls.map((url) => (
+              <View key={url}>
+                <Image source={{ uri: url }} style={{ width: 88, height: 88, borderRadius: 12 }} />
                 <Pressable
-                  key={type}
-                  onPress={() => setFormData({ ...formData, roomType: type })}
-                  className="px-4 py-2 border rounded-lg"
+                  onPress={() => removeImage(url)}
                   style={{
-                    backgroundColor:
-                      formData.roomType === type
-                        ? isDark
-                          ? theme.colors['primary-dark']
-                          : theme.colors.primary
-                        : 'transparent',
-                    borderColor:
-                      formData.roomType === type
-                        ? isDark
-                          ? theme.colors['primary-dark']
-                          : theme.colors.primary
-                        : isDark
-                        ? theme.colors['border-dark']
-                        : theme.colors.border,
+                    position: 'absolute',
+                    top: -6,
+                    right: -6,
+                    backgroundColor: theme.colors.error,
+                    borderRadius: 999,
+                    padding: 2,
                   }}
                 >
-                  <Text
-                    className="text-sm font-semibold"
-                    style={{
-                      color:
-                        formData.roomType === type
-                          ? '#ffffff'
-                          : isDark
-                          ? theme.colors['text-dark']
-                          : theme.colors.text,
-                    }}
-                  >
-                    {type}
-                  </Text>
+                  <Ionicons name="close" size={14} color="#fff" />
                 </Pressable>
-              ))}
-            </View>
+              </View>
+            ))}
           </View>
 
-          {/* Bed Configuration */}
-          <View className="mb-4">
-            <Text className="mb-2 text-sm font-semibold text-text dark:text-text-dark">
-              Bed Configuration *
-            </Text>
-            <View className="flex-row gap-3">
-              <View className="flex-1">
-                <Text className="mb-2 text-xs text-muted dark:text-muted-dark">
-                  Single Beds
+          <Pressable
+            onPress={pickAndUploadImage}
+            disabled={uploadingImage}
+            className="flex-row items-center justify-center py-3 mb-6 border rounded-xl border-border dark:border-border-dark"
+          >
+            {uploadingImage ? (
+              <ActivityIndicator color={primary} />
+            ) : (
+              <>
+                <Ionicons name="image-outline" size={18} color={primary} />
+                <Text className="ml-2 font-semibold" style={{ color: primary }}>
+                  Add image
                 </Text>
-                <TextInput
-                  value={formData.singleBedCount}
-                  onChangeText={(text) => setFormData({ ...formData, singleBedCount: text })}
-                  placeholder="0"
-                  keyboardType="number-pad"
-                  placeholderTextColor={isDark ? theme.colors['muted-dark'] : theme.colors.muted}
-                  className="p-3 border rounded-xl text-text dark:text-text-dark bg-white dark:bg-surface-dark border-border dark:border-border-dark"
-                  style={{ fontSize: 16 }}
-                />
-              </View>
-              <View className="flex-1">
-                <Text className="mb-2 text-xs text-muted dark:text-muted-dark">
-                  Double Beds
-                </Text>
-                <TextInput
-                  value={formData.doubleBedCount}
-                  onChangeText={(text) => setFormData({ ...formData, doubleBedCount: text })}
-                  placeholder="0"
-                  keyboardType="number-pad"
-                  placeholderTextColor={isDark ? theme.colors['muted-dark'] : theme.colors.muted}
-                  className="p-3 border rounded-xl text-text dark:text-text-dark bg-white dark:bg-surface-dark border-border dark:border-border-dark"
-                  style={{ fontSize: 16 }}
-                />
-              </View>
-            </View>
-          </View>
+              </>
+            )}
+          </Pressable>
 
-          {/* Price Per Night */}
-          <View className="mb-4">
-            <Text className="mb-2 text-sm font-semibold text-text dark:text-text-dark">
-              Price Per Night (৳) *
-            </Text>
-            <TextInput
-              value={formData.pricePerNight}
-              onChangeText={(text) => setFormData({ ...formData, pricePerNight: text })}
-              placeholder="0.00"
-              keyboardType="decimal-pad"
-              placeholderTextColor={isDark ? theme.colors['muted-dark'] : theme.colors.muted}
-              className="p-3 border rounded-xl text-text dark:text-text-dark bg-white dark:bg-surface-dark border-border dark:border-border-dark"
-              style={{ fontSize: 16 }}
-            />
-          </View>
-
-          {/* Room Inventory */}
-          <View className="mb-4">
-            <Text className="mb-2 text-sm font-semibold text-text dark:text-text-dark">
-              Room Inventory *
-            </Text>
-            <View className="flex-row gap-3">
-              <View className="flex-1">
-                <Text className="mb-2 text-xs text-muted dark:text-muted-dark">
-                  Total Rooms
-                </Text>
-                <TextInput
-                  value={formData.totalCount}
-                  onChangeText={(text) => setFormData({ ...formData, totalCount: text })}
-                  placeholder="0"
-                  keyboardType="number-pad"
-                  placeholderTextColor={isDark ? theme.colors['muted-dark'] : theme.colors.muted}
-                  className="p-3 border rounded-xl text-text dark:text-text-dark bg-white dark:bg-surface-dark border-border dark:border-border-dark"
-                  style={{ fontSize: 16 }}
-                />
-              </View>
-              <View className="flex-1">
-                <Text className="mb-2 text-xs text-muted dark:text-muted-dark">
-                  Available (Optional)
-                </Text>
-                <TextInput
-                  value={formData.availableCount}
-                  onChangeText={(text) => setFormData({ ...formData, availableCount: text })}
-                  placeholder="Same as total"
-                  keyboardType="number-pad"
-                  placeholderTextColor={isDark ? theme.colors['muted-dark'] : theme.colors.muted}
-                  className="p-3 border rounded-xl text-text dark:text-text-dark bg-white dark:bg-surface-dark border-border dark:border-border-dark"
-                  style={{ fontSize: 16 }}
-                />
-              </View>
-            </View>
-          </View>
-
-          {/* Submit Button */}
           <Pressable
             onPress={handleSubmit}
-            disabled={loading}
-            className="p-4 mt-4 rounded-xl"
-            style={{
-              backgroundColor:
-                loading
-                  ? isDark
-                    ? theme.colors['muted-dark']
-                    : theme.colors.muted
-                  : isDark
-                  ? theme.colors['primary-dark']
-                  : theme.colors.primary,
-            }}
+            disabled={loading || uploadingImage}
+            className="items-center py-3 rounded-xl"
+            style={{ backgroundColor: primary, opacity: loading || uploadingImage ? 0.6 : 1 }}
           >
             {loading ? (
-              <ActivityIndicator color="#ffffff" />
+              <ActivityIndicator color="#fff" />
             ) : (
-              <Text className="text-base font-semibold text-center text-white">
-                {mode === 'create' ? 'Create Room Type' : 'Update Room Type'}
+              <Text style={{ color: '#fff', fontWeight: '700' }}>
+                {mode === 'create' ? 'Create room type' : 'Save changes'}
               </Text>
             )}
           </Pressable>

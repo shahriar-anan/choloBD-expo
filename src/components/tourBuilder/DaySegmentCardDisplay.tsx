@@ -83,7 +83,7 @@ export function DaySegmentCardDisplay({
         <DetailRow
           icon="car"
           label={t(TRANSLATION_KEYS.TOUR_BUILDER.TRANSPORT)}
-          value={segment.transportOption.replace(/_/g, ' ')}
+          value={(segment.transportOption || 'N/A').replace(/_/g, ' ')}
           color={primaryColor}
         />
 
@@ -96,7 +96,12 @@ export function DaySegmentCardDisplay({
           />
         )}
 
-        <DetailRow icon="bed" label={t(TRANSLATION_KEYS.TOUR_BUILDER.HOTEL)} value={segment.hotelOption} color={warningColor} />
+        <DetailRow
+          icon="bed"
+          label={t(TRANSLATION_KEYS.TOUR_BUILDER.HOTEL)}
+          value={segment.hotelOption || 'N/A'}
+          color={warningColor}
+        />
       </View>
     </View>
   );

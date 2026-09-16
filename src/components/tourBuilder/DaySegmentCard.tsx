@@ -55,11 +55,11 @@ export function DaySegmentCard({
   const errorColor = isDark ? theme.colors['error-dark'] : theme.colors.error;
 
   const [editData, setEditData] = useState<{
-    tourSpotId: string;
+    tourSpotId?: string;
     activitySpotId?: string;
-    transportOption: TransportServiceType;
+    transportOption?: TransportServiceType;
     transportQuality?: TransportQualityType;
-    hotelOption: HotelOptionType;
+    hotelOption?: HotelOptionType;
   }>({
     tourSpotId: segment.tourSpotId,
     activitySpotId: segment.activitySpotId,
@@ -121,7 +121,7 @@ export function DaySegmentCard({
   const enrichedSeg = segment as TourDaySegment;
   const tourSpotName = isEnriched
     ? enrichedSeg.tourSpotName
-    : getTourSpotName(segment.tourSpotId) || 'Tour Spot';
+    : (segment.tourSpotId ? getTourSpotName(segment.tourSpotId) : undefined) || 'Tour Spot';
   const activityName = isEnriched
     ? enrichedSeg.activitySpotName || 'N/A'
     : segment.activitySpotId

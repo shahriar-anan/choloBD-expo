@@ -15,13 +15,14 @@ import { usePersonalTourPlanLogic } from '../../../hooks/usePersonalTourPlanLogi
 import { useTheme } from '../../../hooks/useTheme';
 import { theme } from '../../../constants/theme';
 import { TRANSLATION_KEYS } from '../../../constants/translationKeys';
+import type { TourPackage } from '../../../types/tours';
 
 export default function MyToursPage() {
   const router = useRouter();
   const { isDark } = useTheme();
   const { t } = useTranslation();
-  const { tourPlans, loading: listLoading, error: listError, refetch } = useFetchPersonalTourPlans();
-  const { deletePersonalTourPlan } = usePersonalTourPlanLogic();
+  const { plans: tourPlans, isLoading: listLoading, error: listError, refetch } = useFetchPersonalTourPlans();
+  const { deletePlan } = usePersonalTourPlanLogic();
 
   const primaryColor = isDark ? theme.colors['primary-dark'] : theme.colors.primary;
   const mutedColor = isDark ? theme.colors['muted-dark'] : theme.colors.muted;
@@ -54,7 +55,7 @@ export default function MyToursPage() {
           style: 'destructive',
           onPress: async () => {
             try {
-              await deletePersonalTourPlan(tourId);
+              await deletePlan(tourId);
               Alert.alert('Deleted', 'Tour package deleted successfully.');
               refetch(); // Refresh the list
             } catch {
@@ -111,7 +112,7 @@ export default function MyToursPage() {
             <View className="flex-row items-center gap-2">
               <Ionicons name="alert-circle" size={18} color="#ef4444" />
               <Text className="flex-1 text-sm text-red-600 dark:text-red-200 font-semibold">
-                {listError.message}
+                {listError}
               </Text>
             </View>
           </View>
@@ -148,7 +149,7 @@ export default function MyToursPage() {
         {/* Tours List */}
         {!listLoading && tourPlans && tourPlans.length > 0 && (
           <View className="px-2 pb-6">
-            {tourPlans.map((tour) => (
+            {tourPlans.map((tour: TourPackage) => (
               <TourListCard
                 key={tour.id}
                 tour={tour}

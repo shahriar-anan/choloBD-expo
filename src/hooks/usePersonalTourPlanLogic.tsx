@@ -6,7 +6,7 @@ import {
   getPersonalTourPlan,
   updatePersonalTourPlan,
 } from '../services/api/tourBuilder';
-import { cloudinaryUpload } from '../services/uploads/cloudinaryUpload';
+import { cloudinaryUpload } from '../services/api/cloudinaryUpload';
 import {
   CreatePersonalTourPlanData,
   TourPackage,
@@ -109,7 +109,7 @@ export function usePersonalTourPlanLogic() {
       );
 
       const results = await Promise.all(uploadPromises);
-      const urls = results.map((result) => result.secure_url);
+      const urls = results.map((result: { secure_url: string }) => result.secure_url);
 
       return urls;
     } catch (err: any) {

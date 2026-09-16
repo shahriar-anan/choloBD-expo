@@ -12,6 +12,8 @@ export interface ActivityBooking {
   specialRequirements: string | null;
   price: number;
   totalPrice: number;
+  /** Prefer totalPrice (FE); kept for existing mobile screens */
+  totalCost?: number;
   confirmationCode: string;
   bookingConfirmInstruction: string | null;
   status: BookingStatus;
@@ -36,8 +38,11 @@ export interface ActivityBooking {
   user?: {
     id: string;
     userName: string;
-    email: string;
+    firstName?: string;
+    lastName?: string;
+    email?: string;
   };
+  userTripSegments?: unknown[];
 }
 
 /**

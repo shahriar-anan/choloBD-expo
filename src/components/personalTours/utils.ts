@@ -63,7 +63,7 @@ export const mapSpotOptions = (
   spots: Array<{
     name: string;
     id: string;
-    locationId: string;
+    locationId?: string;
     rating?: number;
     entryCost?: number;
   }>
@@ -72,7 +72,7 @@ export const mapSpotOptions = (
   ...spots.map((spot) => ({
     label: spot.name,
     value: spot.id,
-    locationId: spot.locationId,
+    locationId: spot.locationId ?? '',
     rating: spot.rating,
     cost: typeof spot.entryCost === 'number' ? spot.entryCost : undefined,
   })),

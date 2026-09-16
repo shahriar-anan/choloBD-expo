@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, ActivityIndicator, Alert, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSelector } from 'react-redux';
 import { useTheme } from '@/hooks/useTheme';
@@ -32,6 +32,8 @@ export function HotelMetricsTab() {
   }, [hotelId]);
 
   const fetchMetrics = async () => {
+    if (!hotelId) return;
+
     try {
       setLoading(true);
 
@@ -108,7 +110,7 @@ export function HotelMetricsTab() {
   );
 
   return (
-    <View className="p-6">
+    <ScrollView className="flex-1" showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 24 }}>
       <Text className="mb-4 text-lg font-semibold text-text dark:text-text-dark">
         Hotel Metrics
       </Text>
@@ -199,6 +201,6 @@ export function HotelMetricsTab() {
           </View>
         </View>
       </View>
-    </View>
+    </ScrollView>
   );
 }

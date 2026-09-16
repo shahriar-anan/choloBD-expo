@@ -4,9 +4,10 @@ alwaysApply: true
 
 # CholoBD Expo — App Integration Progress
 
-> Last audited: 2026-08-30  
+> Last audited: 2026-08-31  
 > Method: Frontend git + API connectors (2026-07-31 → 2026-08-30) → mobile hooks/API usage + dashboard UI parity.  
-> Prior audit: 2026-07-24.
+> Hotel admin/employee parity re-check: 2026-08-31 (screens vs `HotelServiceAdminModule` / `HotelServiceEmployeeModule`).  
+> Prior audit: 2026-08-30 / 2026-07-24.
 
 Make sure to scan target file:  
 1. NextJS-choloBD-frontend\.cursor\rules\app-module-integration-progress.mdc 
@@ -50,7 +51,7 @@ Still not in the web barrel: trip planner, package bookings (mobile remains ahea
 
 Mobile still covers the **core traveler loop**: auth, locations, hotels + hotel booking, tour spots, **catalog** tour builder + package booking, trip planner, community, payments (SSL init), hotel service-admin (profile, current bookings, QR), and **guides / guide booking** (browse, request, pay, operator actions).
 
-Largest remaining gaps vs current frontend: **personal tour packages** — full infrastructure (types/API/hooks/screens/forms) added 2026-08-30; **activity-spot booking** — API/types/hooks added 2026-08-30, **no booking UI/screens yet**; **transport** stack — types/API/hooks + dashboard shells added 2026-08-30, **detailed inventory/booking/operations UI not yet ported from frontend**; **reviews CRUD**, **bookmarks**, **notifications**, **complaints**, **wallet**, **addresses**, **search**, **categories/config**; **activity/hotel employee modules**; **master-admin modules**.
+Largest remaining gaps vs current frontend: **transport** stack still mostly shells; **reviews CRUD**, **bookmarks**, **notifications**, **wallet**, **addresses**, **search**, **categories/config**; **master-admin modules**. Hotel / guide / activity service-admin core tabs are integrated (guide+activity hub gated by `serviceType`).
 
 ---
 
@@ -67,7 +68,7 @@ Largest remaining gaps vs current frontend: **personal tour packages** — full 
 | `/activity-spots` | ActivitySpotApi | `activitySpots.ts`, `useFetchActivitySpots` | Partial (read for planner/builder; unwrap + filters; no standalone browse/book) |
 | `/guides` | GuideApi | `guides.ts`, `useFetchGuides`, `useFetchGuideDetail`, `useGuideAdminLogic` | Done (browse, detail, availability, my-profile, availability update; `divisionId` filter) |
 | `/hotels` | HotelApi | `hotels.ts`, `hotelDetail.ts`, fetch hooks | Done (list unwrap + division/name/page filters) |
-| `/hotel-rooms` | HotelRoomApi | via `users.getHotelRooms` / hotel detail | Partial (read; no room-type admin CRUD) |
+| `/hotel-rooms` | HotelRoomApi | `hotelRooms.ts` + `useHotelRoomManagement`; `users.getHotelRooms` | Done for room-type CRUD + room status updates (admin + employee) |
 | `/bookings/hotel-rooms` | HotelBookingApi | `bookings.ts`, `hotelBookings.ts`, booking hooks | Done |
 | `/bookings/activity-spots` | ActivitySpotBookingApi | `activityBookings.ts`, `useFetchActivityBookings`, `useActivityBookingLogic`, booking/list/detail screens | Done |
 | `/bookings/guides` | GuideBookingApi | `guideBookings.ts`, `useGuideBookingLogic` | Done (request, list, detail, cancel, status actions, SSLCommerz pay) |
@@ -81,7 +82,7 @@ Largest remaining gaps vs current frontend: **personal tour packages** — full 
 | `/community` | CommunityApi | `community.ts` + community hooks | Done |
 | `/bookmarks` | BookmarkApi | — | Missing |
 | `/notifications` | NotificationApi | — | Missing |
-| `/complaints` | ComplaintApi | — | Missing |
+| `/complaints` | ComplaintApi | `complaints.ts` + `useComplaintInboxLogic` + admin/employee UI | Done (hotel inbox/detail/status/comments) |
 | `/search` | SearchApi | homepage search UI not wired | Missing |
 | `/addresses` | AddressApi | — | Missing |
 | `/payments` | PaymentApi | `payments.ts`, `usePaymentLogic` | Done |
@@ -94,10 +95,7 @@ Largest remaining gaps vs current frontend: **personal tour packages** — full 
 All listed hooks under `src/hooks/` are imported by screens/components unless marked new/unused.
 
 **Integrated domain hooks:** 
-`useAuthInitializer`, `useGoogleSignIn`, `useFacebookSignIn`, `useAuthWithAdminCheck`, `useFetchLocations`, `useFetchHotels`, `useFetchHotelDetail`, `useFetchLocationHotels`, `useFetchUserHotelBookings`, `useBookingLogic`, `useFetchTourSpots`, `useFetchActivitySpots`, `useFetchTourPackages`, `useTourBuilderLogic`, `useDaySegmentSpots`, `usePackageBookingLogic`, `useTripPlannerLogic`, `useFetchCommunityPosts`, `useFetchCommunityPost`, `useCommunityPostLogic`, `useAdminCommunityLogic`, `useFetchGuides`, `useFetchGuideDetail`, `useGuideBookingLogic`, `useGuideAdminLogic`, `useDashboardLogic`, `useCurrentBookingsFetch`, `useServiceAdminLogic`, `usePaymentLogic`, `useQRGeneration`, `useQRScanner`, `useCameraPermission`, `useTheme`, `useLanguageSwitcher`, `usePreloadAssets`, `useFetchPersonalTourPlans`, `usePersonalTourPlanLogic`
-
-**Added 2026-08-30 (API-ready, some UI screens added):** 
-`useFetchActivityBookings`, `useActivityBookingLogic`, `useFetchTransports`, `useFetchTransportDetail`, `useTransportLogic`
+`useAuthInitializer`, `useGoogleSignIn`, `useFacebookSignIn`, `useAuthWithAdminCheck`, `useFetchLocations`, `useFetchHotels`, `useFetchHotelDetail`, `useFetchLocationHotels`, `useFetchUserHotelBookings`, `useBookingLogic`, `useFetchTourSpots`, `useFetchActivitySpots`, `useFetchTourPackages`, `useTourBuilderLogic`, `useDaySegmentSpots`, `usePackageBookingLogic`, `useTripPlannerLogic`, `useFetchCommunityPosts`, `useFetchCommunityPost`, `useCommunityPostLogic`, `useAdminCommunityLogic`, `useFetchGuides`, `useFetchGuideDetail`, `useGuideBookingLogic`, `useGuideAdminLogic`, `useDashboardLogic`, `useCurrentBookingsFetch`, `useServiceAdminLogic`, `usePaymentLogic`, `useQRGeneration`, `useQRScanner`, `useCameraPermission`, `useTheme`, `useLanguageSwitcher`, `usePreloadAssets`, `useFetchPersonalTourPlans`, `usePersonalTourPlanLogic`, `useComplaintInboxLogic`, `useHotelRoomManagement`, `useFetchActivityBookings`, `useActivityBookingLogic`, `useFetchTransports`, `useFetchTransportDetail`, `useTransportLogic`
 
 **Transport dashboard screens added 2026-08-30:**
 - Service admin: `transport-admin`, `transport-inventory`, `transport-rides`, `transport-tickets`, `transport-sales` (placeholder features)
@@ -107,11 +105,12 @@ All listed hooks under `src/hooks/` are imported by screens/components unless ma
 
 ## 4. Mobile API connectors present
 
-`oauth`, `users`, `locations`, `hotels`, `hotelDetail`, `bookings`, `hotelBookings`, `activityBookings` (added 2026-08-30), `tourSpots`, `activitySpots`, `tourBuilder` (catalog + **personal `/my`**), `packageBookings`, `tripPlanner`, `community`, `communityMedia`, `payments`, `guides`, `guideBookings`, `transports` (added 2026-08-30), `qr`, `translation`, uploads (`cloudinaryUpload`, `firebaseUpload`), `axiosClient`
+`oauth`, `users`, `locations`, `hotels`, `hotelDetail`, `bookings`, `hotelBookings`, `activityBookings`, `tourSpots`, `activitySpots`, `tourBuilder` (catalog + **personal `/my`**), `packageBookings`, `tripPlanner`, `community`, `communityMedia`, `payments`, `guides`, `guideBookings`, `transports`, `complaints`, `hotelRooms`, `qr`, `translation`, uploads (`cloudinaryUpload`, `firebaseUpload`), `axiosClient`
 
 Shared list unwrap: `src/utils/paginatedList.ts` (`unwrapListData`) — use on any endpoint that may return `T[]` or `{ results, total, page, limit }`.
 
-**Not present (frontend already has):** category, review, search, wallet, address, config, bookmark, notification, complaint, dedicated hotelRoom admin API, **transportInventory**, **transportBooking**
+**Not present (frontend already has):** category, review, search, wallet, address, config, bookmark, notification, **transportInventory**, **transportBooking**  
+**Present since hotel admin sweep:** `hotelRooms.ts`, `complaints.ts`
 
 ---
 
@@ -139,25 +138,48 @@ Shared list unwrap: `src/utils/paginatedList.ts` (`unwrapListData`) — use on a
 Mobile user hub: `UserDashboard` → cards for my bookings, package bookings, explore, trip planner.  
 `bookings` prop is passed into `UserDashboard` but **not rendered** (see §6).
 
-#### Service-admin (hotel) — partial
+#### Service-admin (hotel) — ~95% (re-checked 2026-08-31)
+
+Web `HotelServiceAdminModule` tabs: **profile | rooms | earnings | complaints** (+ top `AdminStatsDashboard`, which is still fake/`isReady={false}` on web).
+
 | Frontend module | Mobile equivalent | Status |
 |---|---|---|
-| Hotel profile / HotelServiceAdminModule | `service-admin/index`, `hotel-info` | Partial (view) |
-| Current / room bookings mgmt | `current-bookings` | Partial |
-| QR check-in | `qr-scanner` + QR UI | Done |
-| Room type management / stats | rooms listed read-only on hotel-info | Missing CRUD |
-| AdminStatsDashboard / Earnings | — | Missing |
-| CustomerComplaintsSection | — | Missing |
-| Staff / employees | `staff.tsx` **dummy data** | Broken stub |
-| Owner “your bookings” | `your-bookings.tsx` **placeholder text** | Broken stub |
+| Hotel profile (`HotelProfileSection`) | `hotel-info` + **`hotel-edit`** (`updateHotelInfo` / `updateHotelCoreInfo`) | Done (view + edit contact/hours/description) |
+| Room type management (`HotelRoomTypeManagementModule`) | `room-types` + `room-type-form` (+ Cloudinary images) | Done |
+| Room type stats (`RoomTypeStatsSection`) / AdminStats | `hotel-stats` (real booking aggregation) | Done equivalent |
+| Earnings (`EarningsSummarySection`) | `hotel-earnings` | Done |
+| Customer complaints (`ComplaintManagerModule`) | `complaints` + detail + `complaints.ts` | Done |
+| Current bookings *(ops)* | `current-bookings` → booking detail | Done |
+| QR check-in | `qr-scanner` | Done |
+| Staff / employees *(mobile-only)* | `staff.tsx` unavailable UX (no roster API) | Blocked on backend |
+| Owner “your bookings” | `your-bookings.tsx` personal bookings | Done |
 
-#### Guide service-admin — done
+Hub wiring: `ServiceAdminDashboard` cards link to hotel-info hub, current-bookings, hotel-stats, hotel-earnings, room-types, **complaints**, QR, staff, your-bookings (plus guide/transport cards).
+
+#### Guide service-admin — ~90% (re-checked 2026-08-31)
+
+Web `GuideServiceAdminModule` tabs: **profile | bookings | earnings**.
+
 | Frontend module | Mobile equivalent | Status |
 |---|---|---|
 | GuideProfileSection | `service-admin/guide-profile` (view + working-day editing) | Done |
 | BookingRequestManagement | `service-admin/guide-requests` (accept / decline / complete) | Done |
-| GuideStatsDashboard + EarningsSummarySection | Stat header on `guide-requests` (`summarizeGuideBookings`) | Done |
-| GuideForm (full profile CRUD) | — | Missing (master-admin provisioning stays on web) |
+| GuideStatsDashboard + EarningsSummarySection | `guide-requests` stats header + dedicated `guide-earnings` | Done |
+| GuideForm (full profile CRUD) | — | Missing (web Edit → `/guides/:id/edit`; master-admin provisioning stays on web) |
+
+Hub: `ServiceAdminDashboard` shows guide cards when `serviceType` is `GUIDE_SERVICE`.
+
+#### Activity service-admin — ~85% (added 2026-08-31)
+
+Web `ActivityServiceAdminModule` tabs: **profile | bookings | earnings**.
+
+| Frontend module | Mobile equivalent | Status |
+|---|---|---|
+| ActivityProfileSection | `activity-profile` (view + inline edit via `updateActivitySpot`) | Done |
+| ActivityStatsDashboard / BookingRequestManagement | `activity-bookings-admin` (pending/confirmed/history + cancel) | Done |
+| EarningsSummarySection | `activity-earnings` | Done |
+
+Hub: activity cards when `serviceType` is `ACTIVITY_BOOKING`. APIs: `getActivitySpotDetail` / `updateActivitySpot` + existing `activityBookings.ts`.
 
 #### Bus / transport service-admin — partial (2026-08-30)
 - **Added:** `transport-admin.tsx` main dashboard with stats
@@ -165,15 +187,19 @@ Mobile user hub: `UserDashboard` → cards for my bookings, package bookings, ex
 - **Status:** Infrastructure in place; full CRUD features pending
 - Frontend `BusServiceAdminModule` has detailed bus classes, routes, layouts, trips management — not yet ported to mobile
 
-#### Hotel employee — ~70% (2026-08-30)
-- **Added:** `employee/hotel-operations.tsx` main dashboard with tab navigation
-- **Added:** `HotelMetricsTab` - room metrics, occupancy, today's activity
-- **Added:** `RoomStatusTab` - update room statuses (Available, Occupied, Cleaning, Maintenance)
-- **Added:** `BookingsTab` - view and filter hotel bookings (today/upcoming/all)
-- **Added:** `MaintenanceTab` - placeholder for maintenance tasks
-- **Status:** Core operations functional; maintenance tracking needs API
-- **API:** Full room CRUD via `hotelRooms.ts` + `useHotelRoomManagement` hook
-- Frontend `HotelServiceEmployeeModule` has ComplaintsManagement — mobile missing (needs ComplaintApi)
+#### Hotel employee — ~90% (re-checked 2026-08-31)
+
+Web `HotelServiceEmployeeModule` tabs: **rooms | bookings | complaints | maintenance** (+ metrics dashboard).
+
+| Frontend module | Mobile equivalent | Status |
+|---|---|---|
+| Metrics (`HotelMetricsDashboard`) | `HotelMetricsTab` | Done |
+| Room status (`HotelRoomStatusManagement`) | `RoomStatusTab` + `useHotelRoomManagement` | Done |
+| Bookings (`HotelRoomBookingsManagement`) | `BookingsTab` (expand detail, search, open detail) | Done |
+| Maintenance (`HotelMaintenanceTasksManagement`) | `MaintenanceTab` | Done equivalent — local demo tasks + banner (web also fake; **no maintenance API**) |
+| Complaints (`ComplaintManagerModule`) | `ComplaintsTab` → shared detail route | Done |
+
+Hub: `EmployeeDashboard` → `employee/hotel-operations` (tabbed).
 
 #### Transport employee — partial (2026-08-30)
 - **Added:** `employee/transport-operations.tsx` with tab navigation (seat plan, operations, checkin, maintenance)
@@ -181,7 +207,6 @@ Mobile user hub: `UserDashboard` → cards for my bookings, package bookings, ex
 - Frontend `BusServiceEmployeeModule` has detailed seat maps, ride operations, check-in, maintenance — not yet ported to mobile
 
 #### Not started on mobile (frontend has UI)
-- **Activity** service-admin module (+ booking requests, stats, earnings, profile)
 - **Master-admin** modules (users, locations, categories, wallet, site config, complaints)
 
 ---
@@ -189,11 +214,11 @@ Mobile user hub: `UserDashboard` → cards for my bookings, package bookings, ex
 ## 6. Incomplete / broken / improperly interfaced UI
 
 ### Broken or stub screens
-- `dashboard/service-admin/staff.tsx` — hard-coded `DUMMY_STAFF`, no API
-- `dashboard/service-admin/your-bookings.tsx` — explicit placeholder, no logic
 - Side menu `wallet` / `payment` — Alert “Coming Soon” (`app/(tabs)/index.tsx`)
 - Home `QuickActionGrid` transport action — disabled “Soon”
 - `cloudinaryUpload` delete — explicitly not implemented
+- Hotel `staff.tsx` — honest “unavailable” (no SERVICE_ADMIN staff-list API; Master Admin assigns employees)
+- Hotel `MaintenanceTab` — local demo data only (parity with web fake tasks; no backend)
 
 ### Improper / dead interfacing
 - `BookingHistoryUI` exists but is **never imported** (consider removing)
@@ -206,8 +231,8 @@ Mobile user hub: `UserDashboard` → cards for my bookings, package bookings, ex
 - Reviews: display on tour spot detail only; no create/update
 - Activity spots: selectable in planner/builder; no standalone browse/book flow
 - Catalog tour list: API unwraps pagination; explore UI still has no division / page-size chrome like web
-- Personal tour packages: API + hooks only
-- Service-admin hotel: view hotel + rooms + scan QR; no earnings/stats/complaints/room CRUD
+- Personal tour packages: screens + forms exist (see explore personal-tour-*)
+- Service-admin hotel: profile + room-type CRUD + stats + earnings + QR + current bookings + **complaints** Done; staff = unavailable UX (no API); your-bookings wired to personal bookings
 - Homepage search field present in leftover `SearchSection` but not on live home; no `/search` connector
 
 ---
@@ -247,12 +272,11 @@ Already built but not integrated into homepage: `HeroSection`, `FeaturesGrid`, `
 1. **Transport (large, do as its own sweep):** `transportInventory.ts` / `transportBookings.ts` + browse/book + bus service-admin detailed UI 
 2. **Homepage sections:** HotelDealsSection, ActivitySuggestionsSection (see §7)
 4. **Engagement:** reviews CRUD, bookmarks, notifications  
-5. **Account extras:** wallet, addresses, complaints, real search  
-6. **Dashboard polish:** wire `BookingHistoryUI` or drop dead props; implement staff + your-bookings stubs  
-7. **Service-admin depth:** hotel stats/earnings/room-type mgmt/complaints  
-8. **Other roles (if in scope):** activity service-admin, employee, master-admin  
-9. **Cleanup:** remove or reconnect orphan homepage/explore components
-
+5. **Account extras:** wallet, addresses, user-submitted complaints UI, real search  
+6. **Dashboard polish:** wire `BookingHistoryUI` or drop dead props  
+7. **Other roles (if in scope):** master-admin modules 
+8. **Cleanup:** remove or reconnect orphan homepage/explore components  
+9. **Backend-gated:** hotel staff roster API (if SERVICE_ADMIN should list employees); real maintenance API 
 ---
 
 ## 8. Rough coverage estimate
@@ -263,9 +287,11 @@ Already built but not integrated into homepage: `HeroSection`, `FeaturesGrid`, `
 | Frontend API connectors mirrored on mobile | ~14 / 26 exported APIs (+ trip/package ahead of web barrel) |
 | User traveler features (core) | ~78% |
 | User dashboard parity vs web modular dashboard | ~50% |
-| Hotel service-admin parity | ~55% |
-| Guide service-admin parity | ~70% |
+| Hotel service-admin parity | ~95% (staff list blocked on backend; else Done) |
+| Hotel employee parity | ~90% (maintenance demo-only like web; complaints Done) |
+| Guide service-admin parity | ~90% |
+| Activity service-admin parity | ~85% |
 | Catalog tour builder | ~75% (list contract aligned; form still older than web 2026-08-27) |
-| Personal tour builder | ~15% (API/hooks only) |
-| Transport / bus | ~0% (web now has full APIs + admin UI) |
-| Other service-admin / employee / master-admin | ~0% |
+| Personal tour builder | ~60% (screens/forms present; polish TBD) |
+| Transport / bus | ~15% (shells + types/hooks; inventory/booking UI thin) |
+| Other service-admin / employee / master-admin | master-admin ~0% |

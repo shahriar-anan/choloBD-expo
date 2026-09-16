@@ -118,7 +118,7 @@ export default function HotelEarningsScreen() {
           amount: b.totalCost || 0,
           status: b.status,
           date: b.checkInDate,
-          guestName: b.user?.name || 'Guest',
+          guestName: b.guestName || b.user?.userName || b.user?.name || 'Guest',
         }));
 
       setEarnings({

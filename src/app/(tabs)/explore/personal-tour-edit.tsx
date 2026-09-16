@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { View, ScrollView, Text, ActivityIndicator, Alert } from 'react-native';
+import { View, ScrollView, Text, ActivityIndicator, Alert, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -18,7 +18,6 @@ import { usePersonalTourPlanLogic } from '../../../hooks/usePersonalTourPlanLogi
 import { getPersonalTourPlan } from '../../../services/api/tourBuilder';
 import { useTranslation } from 'react-i18next';
 import { TRANSLATION_KEYS } from '../../../constants/translationKeys';
-import { TouchableOpacity } from 'react-native-gesture-handler';
 
 export default function PersonalTourEditScreen() {
   const router = useRouter();
@@ -26,13 +25,13 @@ export default function PersonalTourEditScreen() {
   const tourId = params.tourId as string;
   const { isDark } = useTheme();
   const { t } = useTranslation();
-  const { updatePersonalTourPlan } = usePersonalTourPlanLogic();
+  const { updatePlan } = usePersonalTourPlanLogic();
 
   const primaryColor = isDark ? theme.colors['primary-dark'] : theme.colors.primary;
 
   const { locations, loading: locationsLoading } = useFetchLocations();
-  const { tourSpots, loading: tourSpotsLoading } = useFetchTourSpots();
-  const { activitySpots, loading: activitySpotsLoading } = useFetchActivitySpots();
+  const { spots: tourSpots, isLoading: tourSpotsLoading } = useFetchTourSpots();
+  const { spots: activitySpots, isLoading: activitySpotsLoading } = useFetchActivitySpots();
 
   const [tourData, setTourData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -70,7 +69,7 @@ export default function PersonalTourEditScreen() {
 
     setIsSubmitting(true);
     try {
-      await updatePersonalTourPlan(tourId, data);
+      await updatePlan(tourId, data);
       Alert.alert('Success', 'Your custom tour package has been updated successfully!', [
         { text: 'OK', onPress: () => router.back() },
       ]);

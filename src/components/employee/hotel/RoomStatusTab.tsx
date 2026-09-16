@@ -33,6 +33,8 @@ export function RoomStatusTab() {
   }, [hotelId]);
 
   const fetchRooms = async () => {
+    if (!hotelId) return;
+
     try {
       setLoading(true);
       const data = await getHotelRooms(hotelId);

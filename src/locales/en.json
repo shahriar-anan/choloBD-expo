@@ -367,6 +367,14 @@
       "guideProfileDesc": "View your profile and availability",
       "guideRequests": "Booking Requests",
       "guideRequestsDesc": "Accept, decline and complete tours",
+      "guideEarnings": "Guide Earnings",
+      "guideEarningsDesc": "Paid and pending tour earnings",
+      "activityProfile": "Activity Profile",
+      "activityProfileDesc": "View and edit your activity spot",
+      "activityBookings": "Activity Bookings",
+      "activityBookingsDesc": "Manage guest activity bookings",
+      "activityEarnings": "Activity Earnings",
+      "activityEarningsDesc": "Revenue from activity bookings",
       "transportManagement": "Transport Management",
       "transportManagementDesc": "Manage vehicles and inventory",
       "transportRides": "Routes & Trips",
@@ -376,9 +384,29 @@
       "transportSales": "Sales Reports",
       "transportSalesDesc": "Revenue and analytics",
       "staffInfo": "Staff Information",
-      "staffInfoDesc": "View employee roster",
+      "staffInfoDesc": "Employee assignment (Master Admin)",
       "yourBookingsAdmin": "Your Bookings",
-      "yourBookingsAdminDesc": "View your personal bookings"
+      "yourBookingsAdminDesc": "View your personal bookings",
+      "complaints": "Customer Complaints",
+      "complaintsDesc": "Track and resolve guest complaints"
+    },
+    "staff": {
+      "unavailableTitle": "Staff roster unavailable",
+      "unavailableDesc": "Hotel employees are assigned by Master Admin. A service-admin staff list API is not available yet."
+    },
+    "hotelEdit": {
+      "title": "Edit hotel profile",
+      "subtitle": "Update contact details and operating hours",
+      "name": "Hotel name",
+      "description": "Description",
+      "email": "Email",
+      "phone": "Phone number",
+      "website": "Website",
+      "checkIn": "Check-in time",
+      "checkOut": "Check-out time",
+      "active": "Hotel is active",
+      "nameRequired": "Hotel name is required",
+      "saveSuccess": "Hotel profile updated"
     },
     "employeeTitle": "Employee Dashboard",
     "employeeCards": {
@@ -1142,5 +1170,34 @@
     "incompleteForm": "Please complete all required fields",
     "budgetWarning": "Current cost exceeds your estimated budget",
     "dayLimitReached": "Day {{day}} already has maximum stops"
+  },
+  "complaints": {
+    "allStatuses": "All",
+    "totalCount": "{{count}} complaints",
+    "emptyTitle": "No complaints yet",
+    "emptyDesc": "Guest complaints for your hotel will appear here",
+    "inboxTitle": "Customer Complaints",
+    "inboxDesc": "Review and resolve guest issues",
+    "notFound": "Complaint not found",
+    "from": "From",
+    "adminResponse": "Admin response",
+    "responseOptional": "Response note (optional)",
+    "responsePlaceholder": "Add a short note for the guest...",
+    "markUnsolved": "Mark Unsolved",
+    "markUnsolvedConfirm": "Mark this complaint as unsolved?",
+    "markClosed": "Close Complaint",
+    "markClosedConfirm": "Close this complaint as resolved?",
+    "comments": "Comments",
+    "noComments": "No comments yet",
+    "commentPlaceholder": "Write a comment...",
+    "addComment": "Add Comment"
+  },
+  "maintenance": {
+    "title": "Maintenance Tasks",
+    "demoBanner": "Demo only — maintenance is not backed by a server API yet (same as web).",
+    "pending": "Pending",
+    "inProgress": "In Progress",
+    "completed": "Completed",
+    "empty": "No tasks in this filter"
   }
 }

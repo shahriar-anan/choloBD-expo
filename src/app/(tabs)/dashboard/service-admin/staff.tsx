@@ -1,42 +1,53 @@
 import React from 'react';
-import { View, Text, FlatList } from 'react-native';
+import { View, Text, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import theme from '../../../../constants/theme';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
+import theme from '../../../../constants/theme';
 import { useTheme } from '../../../../hooks/useTheme';
+import { TRANSLATION_KEYS } from '../../../../constants/translationKeys';
 
-const DUMMY_STAFF = [
-  { id: 's1', name: 'Emma Brown', role: 'Manager' },
-  { id: 's2', name: 'Liam Smith', role: 'Reception' },
-];
-
+/**
+ * Hotel staff roster is provisioned by MASTER_ADMIN (PUT /users/:id/role).
+ * There is no SERVICE_ADMIN staff-list API — show an honest empty state instead of dummy data.
+ */
 export default function StaffPage() {
   const router = useRouter();
   const { isDark } = useTheme();
+  const { t } = useTranslation();
+  const text = isDark ? theme.colors['text-dark'] : theme.colors.text;
 
   return (
-    <SafeAreaView edges={["top", "bottom"]} className="flex-1 bg-background dark:bg-background-dark">
+    <SafeAreaView
+      edges={['top', 'bottom']}
+      className="flex-1 bg-background dark:bg-background-dark"
+    >
       <View className="p-6">
-        <Pressable onPress={() => router.replace('/(tabs)/dashboard')} style={{ padding: 6 }}>
-          <Ionicons name="chevron-back" size={24} color={isDark ? theme.colors['text-dark'] : theme.colors.text} />
+        <Pressable onPress={() => router.back()} style={{ padding: 6 }}>
+          <Ionicons name="chevron-back" size={24} color={text} />
         </Pressable>
 
-        <Text className="text-2xl font-bold mt-2 text-text dark:text-text-dark">Employees</Text>
-        <Text className="mt-1 text-sm text-muted dark:text-muted-dark">List of staff and designations</Text>
+        <Text className="mt-2 text-2xl font-bold text-text dark:text-text-dark">
+          {t(TRANSLATION_KEYS.DASHBOARD.ADMIN_CARDS.STAFF_INFO)}
+        </Text>
+        <Text className="mt-1 text-sm text-muted dark:text-muted-dark">
+          {t(TRANSLATION_KEYS.DASHBOARD.ADMIN_CARDS.STAFF_INFO_DESC)}
+        </Text>
 
-        <FlatList
-          className="mt-6"
-          data={DUMMY_STAFF}
-          keyExtractor={(i) => i.id}
-          renderItem={({ item }) => (
-            <View className="p-4 mb-3 bg-white rounded-xl border border-border dark:bg-surface-dark dark:border-border-dark">
-              <Text className="font-semibold text-text dark:text-text-dark">{item.name}</Text>
-              <Text className="text-sm text-muted dark:text-muted-dark">{item.role}</Text>
-            </View>
-          )}
-        />
+        <View className="items-center p-6 py-12 mt-8 border rounded-xl border-border dark:border-border-dark bg-surface dark:bg-surface-dark">
+          <Ionicons
+            name="people-outline"
+            size={48}
+            color={isDark ? theme.colors['muted-dark'] : theme.colors.muted}
+          />
+          <Text className="mt-4 text-base font-semibold text-center text-text dark:text-text-dark">
+            {t(TRANSLATION_KEYS.DASHBOARD.STAFF.UNAVAILABLE_TITLE)}
+          </Text>
+          <Text className="mt-2 text-sm text-center text-muted dark:text-muted-dark px-4">
+            {t(TRANSLATION_KEYS.DASHBOARD.STAFF.UNAVAILABLE_DESC)}
+          </Text>
+        </View>
       </View>
     </SafeAreaView>
   );

@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, Alert, Image } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, Alert, Image, Linking } from 'react-native';
 import { useForm, Controller, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -27,11 +27,7 @@ const communityCreateFormSchema = z.object({
     .max(5, 'Max 5 images allowed'),
 });
 
-type CreatePostFormValues = {
-  userTripPlanId?: string;
-  caption?: string;
-  images: { url: string; order?: number; altText?: string }[];
-};
+type CreatePostFormValues = z.infer<typeof communityCreateFormSchema>;
 
 interface CreatePostFormProps {
   initialValues?: Partial<CreatePostFormValues>;
@@ -114,7 +110,7 @@ export function CreatePostForm({ initialValues, onSubmit, isSubmitting }: Create
         'Please enable camera permissions in settings to take photos.',
         [
           { text: 'Cancel', style: 'cancel' },
-          { text: 'Open Settings', onPress: () => ImagePicker.openSettings() },
+          { text: 'Open Settings', onPress: () => Linking.openSettings() },
         ]
       );
       return;

@@ -266,3 +266,26 @@ export interface TripFilters {
   limit?: number;
 }
 
+/** FE naming aliases — additive */
+export type UserTripPlan = TripPlan;
+export type UserTripSegment = UserSegment;
+
+/** FE TripBooking — additive */
+export interface TripBooking {
+  id: string;
+  userTripPlanId: string;
+  userId: string;
+  status: string;
+  totalAmount: number;
+  advanceAmount?: number;
+  remainingAmount?: number;
+  paymentMethod?: string;
+  confirmationCode?: string;
+  specialRequests?: string;
+  bookedAt: Date | string;
+  confirmeddAt?: Date | string;
+  checkInDate?: Date | string;
+  checkOutDate?: Date | string;
+}
+
+

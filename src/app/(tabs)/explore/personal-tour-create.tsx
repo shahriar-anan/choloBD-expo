@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { View, ScrollView, Text, ActivityIndicator, Alert } from 'react-native';
+import { View, ScrollView, Text, ActivityIndicator, Alert, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -17,19 +17,18 @@ import { useFetchActivitySpots } from '../../../hooks/useFetchActivitySpots';
 import { usePersonalTourPlanLogic } from '../../../hooks/usePersonalTourPlanLogic';
 import { useTranslation } from 'react-i18next';
 import { TRANSLATION_KEYS } from '../../../constants/translationKeys';
-import { TouchableOpacity } from 'react-native-gesture-handler';
 
 export default function PersonalTourCreateScreen() {
   const router = useRouter();
   const { isDark } = useTheme();
   const { t } = useTranslation();
-  const { createPersonalTourPlan } = usePersonalTourPlanLogic();
+  const { createPlan } = usePersonalTourPlanLogic();
 
   const primaryColor = isDark ? theme.colors['primary-dark'] : theme.colors.primary;
 
   const { locations, loading: locationsLoading } = useFetchLocations();
-  const { tourSpots, loading: tourSpotsLoading } = useFetchTourSpots();
-  const { activitySpots, loading: activitySpotsLoading } = useFetchActivitySpots();
+  const { spots: tourSpots, isLoading: tourSpotsLoading } = useFetchTourSpots();
+  const { spots: activitySpots, isLoading: activitySpotsLoading } = useFetchActivitySpots();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -42,7 +41,7 @@ export default function PersonalTourCreateScreen() {
   const handleCreate = async (data: any) => {
     setIsSubmitting(true);
     try {
-      await createPersonalTourPlan(data);
+      await createPlan(data);
       Alert.alert('Success', 'Your custom tour package has been created successfully!', [
         { text: 'OK', onPress: () => router.back() },
       ]);

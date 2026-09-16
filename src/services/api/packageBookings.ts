@@ -106,6 +106,19 @@ export async function purchasePackage(
  * @param filters - Query parameters for filtering and pagination
  * @returns Array of package bookings with pagination info
  */
+/**
+ * Dashboard-friendly wrapper around my-bookings (returns `{ results }`).
+ */
+export async function getPackageBookings(
+  _params?: { userId?: string }
+): Promise<{ results: PackageBooking[]; total?: number }> {
+  const { bookings, pagination } = await getUserPackageBookings();
+  return {
+    results: bookings,
+    total: pagination?.total ?? bookings.length,
+  };
+}
+
 export async function getUserPackageBookings(
   filters?: PackageBookingFilters
 ): Promise<{ bookings: PackageBooking[]; pagination: any }> {

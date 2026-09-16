@@ -1,0 +1,28 @@
+---
+description: When working on choloBD-expo, only modify files inside that app; never edit frontend/backend without explicit approval
+alwaysApply: true
+---
+
+# Expo workspace boundary (hard constraint)
+
+When the active task is for the **CholoBD Expo mobile app** (`choloBD-expo`):
+
+## Do
+
+- Edit only under `CholoBD-Mobile-App/choloBD-expo/**`
+- You may **read** frontend (`NextJS-choloBD-frontend`) and backend (`ExpressJS-choloBD-backend`) for API contracts, parity checks, and diagnosis
+- If a fix requires frontend or backend changes: **explain why**, propose the change, and **ask the user first** — do not edit those repos until they approve
+
+## Do not
+
+- Modify, create, delete, or commit files outside `choloBD-expo` while working on mobile tasks
+- “Just fix” backend routes, frontend APIs, or shared configs without permission
+- Assume multi-root workspace access implies permission to change sibling projects
+
+## Example
+
+```text
+❌ BAD: Patch Express guideBookingRoutes.ts while debugging mobile 401s
+✅ GOOD: Diagnose that GET /api/bookings/guides lacks JWT middleware; propose backend patch; wait for approval
+✅ GOOD: Soft-guard mobile hooks so they only call booking APIs when authenticated
+```

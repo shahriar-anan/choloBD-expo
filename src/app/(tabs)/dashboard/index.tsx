@@ -59,10 +59,7 @@ export default function DashboardPage() {
       imageUrl={auth.user?.imageUrl}
       role={auth.user?.role}
       userStatus={auth.user?.userStatus}
-      bookings={bookings}
       onLogout={handleLogout}
-      onRefresh={onRefresh}
-      onPressBooking={onPressBooking}
     />
   );
 }

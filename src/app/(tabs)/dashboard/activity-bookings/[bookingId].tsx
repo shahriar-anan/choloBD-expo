@@ -87,8 +87,8 @@ export default function ActivityBookingDetailScreen() {
 
     try {
       const result = await handleGenerateQr(booking.id);
-      if (result?.qrCode) {
-        Alert.alert('QR Code', `Your QR code: ${result.qrCode}`);
+      if (result?.qrToken) {
+        Alert.alert('QR Code', `Your QR token: ${result.qrToken}`);
       }
     } catch {
       // Error handled in hook

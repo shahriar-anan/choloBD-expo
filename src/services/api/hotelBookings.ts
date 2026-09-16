@@ -4,6 +4,7 @@
  */
 
 import { getApiInstance } from './axiosClient';
+import { getHotelBookings, getUserBookings } from './bookings';
 
 export interface HotelBookingInfo {
   id: string;
@@ -35,6 +36,38 @@ export async function fetchUserHotelBookings(locationId?: string): Promise<Hotel
   } catch {
     return [];
   }
+}
+
+/**
+ * Paginated hotel bookings for dashboards/stats.
+ * Prefer hotel-room booking routes when userId/hotelId is provided.
+ */
+export async function getUserHotelBookings(params?: {
+  userId?: string;
+  hotelId?: string;
+  page?: number;
+  limit?: number;
+}): Promise<{ results: any[]; total?: number }> {
+  const page = params?.page ?? 1;
+  const limit = params?.limit ?? 100;
+
+  if (params?.hotelId) {
+    const { data, pagination } = await getHotelBookings(params.hotelId, page, limit);
+    return { results: data ?? [], total: pagination?.total };
+  }
+
+  if (params?.userId) {
+    const response = await getUserBookings(params.userId, page, limit);
+    const list = Array.isArray(response.data)
+      ? response.data
+      : Array.isArray((response.data as any)?.data)
+        ? (response.data as any).data
+        : [];
+    return { results: list, total: response.pagination?.total ?? list.length };
+  }
+
+  const bookings = await fetchUserHotelBookings();
+  return { results: bookings, total: bookings.length };
 }
 
 export function filterBookingsByLocation(

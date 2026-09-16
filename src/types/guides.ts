@@ -316,3 +316,14 @@ export interface GuideError {
   message: string;
   details?: Record<string, any>;
 }
+
+/** FE GuideAvailability schedule shape — additive (does not replace GuideAvailabilityResult) */
+export interface GuideAvailability {
+  workingDays: number[];
+  workingHoursStart: string | null;
+  workingHoursEnd: string | null;
+  unavailableDates?: string[] | null;
+  availabilityStatus: string;
+  requiresStartTime: boolean;
+}
+

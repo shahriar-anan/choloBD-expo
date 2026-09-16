@@ -14,11 +14,11 @@ import { TourSpotModal } from './TourSpotModal';
 import { ActivitySpotModal } from './ActivitySpotModal';
 
 interface EditState {
-  tourSpotId: string;
+  tourSpotId?: string;
   activitySpotId?: string;
-  transportOption: TransportServiceType;
+  transportOption?: TransportServiceType;
   transportQuality?: TransportQualityType;
-  hotelOption: HotelOptionType;
+  hotelOption?: HotelOptionType;
 }
 
 interface DaySegmentCardEditProps {
@@ -73,7 +73,9 @@ export function DaySegmentCardEdit({
   const [tourSpotModalVisible, setTourSpotModalVisible] = useState(false);
   const [activitySpotModalVisible, setActivitySpotModalVisible] = useState(false);
 
-  const currentTransportQualityOptions = TRANSPORT_QUALITY_MAP[editData.transportOption];
+  const currentTransportQualityOptions = editData.transportOption
+    ? TRANSPORT_QUALITY_MAP[editData.transportOption] ?? []
+    : [];
 
   const dynamicStyles = StyleSheet.create({
     input: {

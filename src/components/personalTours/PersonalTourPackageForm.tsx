@@ -49,14 +49,23 @@ import {
   getStopTotal,
   MAX_STOPS_PER_DAY,
 } from './utils';
-import type { Location, TourSpot, ActivitySpot } from '../../types';
+import type { Location } from '../../types/locations';
+
+/** Minimal spot shape accepted from API list projections or full domain types */
+interface SpotListItem {
+  id: string;
+  name: string;
+  locationId?: string;
+  locationName?: string;
+  location?: string | { id?: string; name?: string };
+}
 
 interface PersonalTourPackageFormProps {
   mode: 'create' | 'edit';
   initialData?: any;
   locations: Location[];
-  tourSpots: TourSpot[];
-  activitySpots: ActivitySpot[];
+  tourSpots: SpotListItem[];
+  activitySpots: SpotListItem[];
   onSubmit: (data: any) => void;
   onCancel: () => void;
   isSubmitting?: boolean;
@@ -138,8 +147,8 @@ export function PersonalTourPackageForm({
   }, []);
 
   // Filter spots by division
-  const [filteredTourSpots, setFilteredTourSpots] = useState<TourSpot[]>([]);
-  const [filteredActivitySpots, setFilteredActivitySpots] = useState<ActivitySpot[]>([]);
+  const [filteredTourSpots, setFilteredTourSpots] = useState<SpotListItem[]>([]);
+  const [filteredActivitySpots, setFilteredActivitySpots] = useState<SpotListItem[]>([]);
 
   useEffect(() => {
     if (!divisionLocationId) {
@@ -153,8 +162,15 @@ export function PersonalTourPackageForm({
     );
     const districtIds = new Set(districts.map((d) => d.id));
 
-    setFilteredTourSpots(tourSpots.filter((spot) => districtIds.has(spot.locationId)));
-    setFilteredActivitySpots(activitySpots.filter((spot) => districtIds.has(spot.locationId)));
+    const spotMatchesDistrict = (spot: SpotListItem) => {
+      const locationId =
+        spot.locationId ||
+        (typeof spot.location === 'object' ? spot.location?.id : undefined);
+      return locationId ? districtIds.has(locationId) : false;
+    };
+
+    setFilteredTourSpots(tourSpots.filter(spotMatchesDistrict));
+    setFilteredActivitySpots(activitySpots.filter(spotMatchesDistrict));
   }, [divisionLocationId, locations, tourSpots, activitySpots]);
 
   const tourSpotOptions = useMemo(

@@ -16,8 +16,9 @@ import { HotelMetricsTab } from '@/components/employee/hotel/HotelMetricsTab';
 import { RoomStatusTab } from '@/components/employee/hotel/RoomStatusTab';
 import { BookingsTab } from '@/components/employee/hotel/BookingsTab';
 import { MaintenanceTab } from '@/components/employee/hotel/MaintenanceTab';
+import { ComplaintsTab } from '@/components/employee/hotel/ComplaintsTab';
 
-type TabType = 'metrics' | 'rooms' | 'bookings' | 'maintenance';
+type TabType = 'metrics' | 'rooms' | 'bookings' | 'complaints' | 'maintenance';
 
 export default function HotelOperationsScreen() {
   const router = useRouter();
@@ -30,6 +31,7 @@ export default function HotelOperationsScreen() {
     { id: 'metrics' as TabType, label: 'Metrics', icon: 'stats-chart' },
     { id: 'rooms' as TabType, label: 'Room Status', icon: 'bed' },
     { id: 'bookings' as TabType, label: 'Bookings', icon: 'calendar' },
+    { id: 'complaints' as TabType, label: 'Complaints', icon: 'chatbubbles' },
     { id: 'maintenance' as TabType, label: 'Maintenance', icon: 'construct' },
   ];
 
@@ -41,6 +43,8 @@ export default function HotelOperationsScreen() {
         return <RoomStatusTab />;
       case 'bookings':
         return <BookingsTab />;
+      case 'complaints':
+        return <ComplaintsTab />;
       case 'maintenance':
         return <MaintenanceTab />;
       default:
@@ -69,10 +73,10 @@ export default function HotelOperationsScreen() {
           </Pressable>
 
           <Text className="text-2xl font-bold font-heading text-text dark:text-text-dark">
-            Hotel Operations
+            {t(TRANSLATION_KEYS.DASHBOARD.EMPLOYEE_CARDS.HOTEL_OPERATIONS)}
           </Text>
           <Text className="mt-1 text-sm text-muted dark:text-muted-dark">
-            Manage rooms, bookings and maintenance
+            {t(TRANSLATION_KEYS.DASHBOARD.EMPLOYEE_CARDS.HOTEL_OPERATIONS_DESC)}
           </Text>
         </View>
 
@@ -135,12 +139,9 @@ export default function HotelOperationsScreen() {
         </View>
 
         {/* Content */}
-        <ScrollView
-          className="flex-1"
-          showsVerticalScrollIndicator={false}
-        >
+        <View className="flex-1">
           {renderContent()}
-        </ScrollView>
+        </View>
       </View>
     </SafeAreaView>
   );

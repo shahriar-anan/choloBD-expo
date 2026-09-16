@@ -365,6 +365,14 @@
       "guideProfileDesc": "আপনার প্রোফাইল ও সময়সূচি দেখুন",
       "guideRequests": "বুকিং অনুরোধ",
       "guideRequestsDesc": "ট্যুর গ্রহণ, প্রত্যাখ্যান ও সম্পন্ন করুন",
+      "guideEarnings": "গাইড আয়",
+      "guideEarningsDesc": "পরিশোধিত ও মুলতুবি ট্যুর আয়",
+      "activityProfile": "অ্যাক্টিভিটি প্রোফাইল",
+      "activityProfileDesc": "আপনার অ্যাক্টিভিটি স্পট দেখুন ও সম্পাদনা করুন",
+      "activityBookings": "অ্যাক্টিভিটি বুকিং",
+      "activityBookingsDesc": "অতিথির অ্যাক্টিভিটি বুকিং পরিচালনা করুন",
+      "activityEarnings": "অ্যাক্টিভিটি আয়",
+      "activityEarningsDesc": "অ্যাক্টিভিটি বুকিং থেকে আয়",
       "transportManagement": "পরিবহন ব্যবস্থাপনা",
       "transportManagementDesc": "যানবাহন এবং ইনভেন্টরি পরিচালনা করুন",
       "transportRides": "রুট ও ট্রিপ",
@@ -374,9 +382,29 @@
       "transportSales": "বিক্রয় প্রতিবেদন",
       "transportSalesDesc": "রাজস্ব এবং বিশ্লেষণ",
       "staffInfo": "কর্মচারীর তথ্য",
-      "staffInfoDesc": "কর্মচারী তালিকা দেখুন",
+      "staffInfoDesc": "কর্মী নিয়োগ (মাস্টার অ্যাডমিন)",
       "yourBookingsAdmin": "আপনার বুকিং",
-      "yourBookingsAdminDesc": "আপনার ব্যক্তিগত বুকিং দেখুন"
+      "yourBookingsAdminDesc": "আপনার ব্যক্তিগত বুকিং দেখুন",
+      "complaints": "গ্রাহক অভিযোগ",
+      "complaintsDesc": "অতিথির অভিযোগ ট্র্যাক ও সমাধান করুন"
+    },
+    "staff": {
+      "unavailableTitle": "কর্মী তালিকা নেই",
+      "unavailableDesc": "হোটেল কর্মী মাস্টার অ্যাডমিন দ্বারা নিয়োগ করা হয়। সার্ভিস অ্যাডমিনের জন্য স্টাফ তালিকা API এখনও নেই।"
+    },
+    "hotelEdit": {
+      "title": "হোটেল প্রোফাইল সম্পাদনা",
+      "subtitle": "যোগাযোগের তথ্য ও সময়সূচি আপডেট করুন",
+      "name": "হোটেলের নাম",
+      "description": "বিবরণ",
+      "email": "ইমেইল",
+      "phone": "ফোন নম্বর",
+      "website": "ওয়েবসাইট",
+      "checkIn": "চেক-ইন সময়",
+      "checkOut": "চেক-আউট সময়",
+      "active": "হোটেল সক্রিয়",
+      "nameRequired": "হোটেলের নাম প্রয়োজন",
+      "saveSuccess": "হোটেল প্রোফাইল আপডেট হয়েছে"
     },
     "employeeTitle": "কর্মচারী ড্যাশবোর্ড",
     "employeeCards": {
@@ -1140,5 +1168,34 @@
     "incompleteForm": "সমস্ত প্রয়োজনীয় ফিল্ড পূরণ করুন",
     "budgetWarning": "বর্তমান খরচ আপনার আনুমানিক বাজেট অতিক্রম করেছে",
     "dayLimitReached": "দিন {{day}} ইতিমধ্যে সর্বাধিক স্টপ আছে"
+  },
+  "complaints": {
+    "allStatuses": "সব",
+    "totalCount": "{{count}}টি অভিযোগ",
+    "emptyTitle": "এখনও কোনো অভিযোগ নেই",
+    "emptyDesc": "আপনার হোটেলের অতিথি অভিযোগ এখানে দেখা যাবে",
+    "inboxTitle": "গ্রাহক অভিযোগ",
+    "inboxDesc": "অতিথির সমস্যা পর্যালোচনা ও সমাধান করুন",
+    "notFound": "অভিযোগ পাওয়া যায়নি",
+    "from": "প্রেরক",
+    "adminResponse": "অ্যাডমিন প্রতিক্রিয়া",
+    "responseOptional": "প্রতিক্রিয়া নোট (ঐচ্ছিক)",
+    "responsePlaceholder": "অতিথির জন্য সংক্ষিপ্ত নোট লিখুন...",
+    "markUnsolved": "অমীমাংসিত চিহ্নিত করুন",
+    "markUnsolvedConfirm": "এই অভিযোগটি অমীমাংসিত হিসেবে চিহ্নিত করবেন?",
+    "markClosed": "অভিযোগ বন্ধ করুন",
+    "markClosedConfirm": "এই অভিযোগটি সমাধান হিসেবে বন্ধ করবেন?",
+    "comments": "মন্তব্য",
+    "noComments": "এখনও কোনো মন্তব্য নেই",
+    "commentPlaceholder": "একটি মন্তব্য লিখুন...",
+    "addComment": "মন্তব্য যোগ করুন"
+  },
+  "maintenance": {
+    "title": "রক্ষণাবেক্ষণ কাজ",
+    "demoBanner": "ডেমো মাত্র — রক্ষণাবেক্ষণের জন্য এখনও সার্ভার API নেই (ওয়েবের মতো)।",
+    "pending": "মুলতুবি",
+    "inProgress": "চলমান",
+    "completed": "সম্পন্ন",
+    "empty": "এই ফিল্টারে কোনো কাজ নেই"
   }
 }

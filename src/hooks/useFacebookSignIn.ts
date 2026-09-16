@@ -5,6 +5,7 @@
  */
 
 import { useCallback, useState, useEffect } from 'react';
+import { Platform } from 'react-native';
 import * as Facebook from 'expo-auth-session/providers/facebook';
 import * as WebBrowser from 'expo-web-browser';
 import { useDispatch } from 'react-redux';
@@ -14,8 +15,12 @@ import { OAUTH_CONFIG } from '@/constants/oauth';
 import { exchangeOAuthToken } from '@/services/api/oauth';
 import { handleOAuthError, logOAuthError } from '@/utils/oauthUtils';
 
-// Ensure WebBrowser is warmed up for better performance
-WebBrowser.warmUpAsync();
+WebBrowser.maybeCompleteAuthSession();
+
+// Optional Android Custom Tabs warm-up; ignore when no browser package is available
+if (Platform.OS === 'android') {
+  void WebBrowser.warmUpAsync().catch(() => undefined);
+}
 
 /**
  * Hook for Facebook Sign-In functionality

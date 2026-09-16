@@ -190,6 +190,18 @@ export interface TourPackage {
     daySegments?: number;
     packageBookings?: number;
   };
+  // --- FE TourPackage fields (additive) ---
+  locationId?: string;
+  preferredHotelType?: HotelOptionType;
+  preferredTransport?: TransportServiceType;
+  generalNotes?: string[] | string;
+  isPublic?: boolean;
+  basedOnPackage?: {
+    id: string;
+    packageName: string;
+    duration: number;
+    kind?: string;
+  };
 }
 
 /**

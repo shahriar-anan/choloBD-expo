@@ -31,8 +31,10 @@ export default function ActivityBookingsScreen() {
 
   const { bookings, loading, error, refetch } = useFetchActivityBookings({
     userId: auth.user?.id,
-    status: statusFilter === 'all' ? undefined : statusFilter,
+    status: statusFilter === 'all' ? undefined : (statusFilter as any),
   });
+
+  const bookingList = bookings.results;
 
   const statusColors = {
     PENDING: { bg: '#FEF3C7', text: '#92400E', dark: { bg: '#78350F', text: '#FEF3C7' } },
@@ -108,7 +110,7 @@ export default function ActivityBookingsScreen() {
 
           <View className="flex-row items-center justify-between pt-3 mt-3 border-t border-border dark:border-border-dark">
             <Text className="text-sm font-semibold text-primary dark:text-primary-dark">
-              ৳{item.totalCost?.toLocaleString() || 0}
+              ৳{(item.totalCost ?? item.totalPrice)?.toLocaleString() || 0}
             </Text>
             <View className="flex-row items-center">
               <Text className="mr-2 text-sm text-primary dark:text-primary-dark">
@@ -197,7 +199,7 @@ export default function ActivityBookingsScreen() {
       </View>
 
       {/* Bookings List */}
-      {loading && !bookings.length ? (
+      {loading && !bookingList.length ? (
         <View className="items-center justify-center flex-1">
           <ActivityIndicator
             size="large"
@@ -221,7 +223,7 @@ export default function ActivityBookingsScreen() {
             <Text className="font-semibold text-white">Retry</Text>
           </Pressable>
         </View>
-      ) : bookings.length === 0 ? (
+      ) : bookingList.length === 0 ? (
         <View className="items-center justify-center flex-1 px-6">
           <Ionicons
             name="calendar-outline"
@@ -245,7 +247,7 @@ export default function ActivityBookingsScreen() {
         </View>
       ) : (
         <FlatList
-          data={bookings}
+          data={bookingList}
           keyExtractor={(item) => item.id}
           renderItem={renderBookingCard}
           contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 24 }}

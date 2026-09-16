@@ -167,3 +167,13 @@ export async function deleteCommunityImageFromCloudinary(publicId: string): Prom
   }
   return false;
 }
+/**
+ * Generic Cloudinary upload used by personal tours / builders.
+ */
+export async function cloudinaryUpload(
+  uri: string,
+  _folder?: string
+): Promise<{ secure_url: string; url: string }> {
+  const url = await uploadCommunityImageToCloudinary({ uri });
+  return { secure_url: url, url };
+}

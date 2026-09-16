@@ -1,5 +1,7 @@
 import './globals.css';
+import 'react-native-gesture-handler';
 import { Stack, useRouter } from 'expo-router';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { ThemeProvider } from '../providers/ThemeProvider';
 import { LanguageProvider } from '../providers/LanguageProvider';
 import { Provider } from 'react-redux';
@@ -10,7 +12,6 @@ import { useAuthInitializer } from '../hooks/state/useAuthInitializer';
 import { usePreloadAssets } from '../hooks/usePreloadAssets';
 import { API_BASE_URL } from '../constants/api';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { View } from 'react-native';
 import * as SplashScreen from 'expo-splash-screen';
 import { SplashScreen as CustomSplash } from '../components/splash';
 import { useState, useEffect } from 'react';
@@ -79,8 +80,10 @@ function AppContent() {
 
 export default function RootLayout() {
   return (
-    <Provider store={store}>
-      <AppContent />
-    </Provider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <Provider store={store}>
+        <AppContent />
+      </Provider>
+    </GestureHandlerRootView>
   );
 }

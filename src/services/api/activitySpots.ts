@@ -1,10 +1,11 @@
 /**
  * Activity Spots API Service
- * Handles fetching activity spots from the backend
+ * Handles fetching / updating activity spots from the backend
  */
 
 import { getApiInstance } from './axiosClient';
 import { unwrapListData } from '../../utils/paginatedList';
+import type { ActivitySpot as ActivitySpotDetail } from '../../types/activitySpots';
 
 export interface ActivitySpot {
   id: string;
@@ -25,6 +26,22 @@ export interface ActivitySpotFilters {
   minRating?: number;
   page?: number;
   limit?: number;
+}
+
+export interface UpdateActivitySpotData {
+  name?: string;
+  description?: string;
+  phoneNumber?: string;
+  entryCost?: number;
+  openingHours?: string;
+  closingHours?: string;
+  bestTimeToVisit?: string;
+  duration?: string;
+  ageRestriction?: string;
+  bookingConfirmInstruction?: string | null;
+  maxBookingsPerDay?: number;
+  isActive?: boolean;
+  isPopular?: boolean;
 }
 
 export async function getActivitySpots(
@@ -52,12 +69,30 @@ export async function getActivitySpots(
     id: spot.id,
     name: spot.name,
     description: spot.description,
-    location: spot.location?.name
-      || [spot.city, spot.state, spot.country].filter(Boolean).join(', ')
-      || 'Unknown Location',
+    location:
+      spot.location?.name ||
+      [spot.city, spot.state, spot.country].filter(Boolean).join(', ') ||
+      'Unknown Location',
     imageUrl: spot.images?.[0]?.url || spot.imageUrl,
     rating: spot.rating,
   }));
 }
 
+/** GET /api/activity-spots/:id */
+export async function getActivitySpotDetail(
+  activitySpotId: string
+): Promise<ActivitySpotDetail> {
+  const api = getApiInstance();
+  const res = await api.get(`/api/activity-spots/${activitySpotId}`);
+  return res.data.data;
+}
 
+/** PUT /api/activity-spots/:id — service-admin profile updates */
+export async function updateActivitySpot(
+  activitySpotId: string,
+  data: UpdateActivitySpotData
+): Promise<ActivitySpotDetail> {
+  const api = getApiInstance();
+  const res = await api.put(`/api/activity-spots/${activitySpotId}`, data);
+  return res.data.data;
+}

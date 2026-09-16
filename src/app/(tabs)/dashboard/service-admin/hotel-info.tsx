@@ -149,13 +149,46 @@ export default function HotelInfoPage() {
             
             {/* Hotel Name & Location */}
             <View className="mb-6">
-              <Text className="text-3xl font-bold text-text dark:text-text-dark">{hotel.name}</Text>
-              <View className="flex-row items-center mt-3">
-                <Ionicons name="location" size={16} color={isDark ? theme.colors['muted-dark'] : theme.colors.muted} />
-                <Text className="ml-2 text-sm text-muted dark:text-muted-dark">
-                  {hotel.location?.city ?? hotel.location?.name ?? '—'}
-                </Text>
+              <View className="flex-row items-start justify-between">
+                <View className="flex-1 mr-3">
+                  <Text className="text-3xl font-bold text-text dark:text-text-dark">{hotel.name}</Text>
+                  <View className="flex-row items-center mt-3">
+                    <Ionicons name="location" size={16} color={isDark ? theme.colors['muted-dark'] : theme.colors.muted} />
+                    <Text className="ml-2 text-sm text-muted dark:text-muted-dark">
+                      {hotel.location?.city ?? hotel.location?.name ?? '—'}
+                    </Text>
+                  </View>
+                </View>
+                <TouchableOpacity
+                  onPress={() =>
+                    router.push(`/(tabs)/dashboard/service-admin/hotel-edit?hotelId=${hotel.id}`)
+                  }
+                  className="px-3 py-2 rounded-lg"
+                  style={{ backgroundColor: primaryColor }}
+                >
+                  <Text style={{ color: '#fff', fontWeight: '700', fontSize: 13 }}>Edit</Text>
+                </TouchableOpacity>
               </View>
+            </View>
+
+            {/* Contact & ops info */}
+            <View className="p-4 mb-6 bg-white border dark:bg-surface-dark rounded-xl border-border dark:border-border-dark">
+              <View className="flex-row items-center mb-3">
+                <Ionicons name="call-outline" size={20} color={primaryColor} />
+                <Text className="ml-2 font-semibold text-text dark:text-text-dark">Contact</Text>
+              </View>
+              <Text className="mb-1 text-sm text-muted dark:text-muted-dark">
+                Email: {hotel.email || 'Not set'}
+              </Text>
+              <Text className="mb-1 text-sm text-muted dark:text-muted-dark">
+                Phone: {hotel.phoneNumber || 'Not set'}
+              </Text>
+              <Text className="mb-1 text-sm text-muted dark:text-muted-dark">
+                Website: {hotel.website || 'Not set'}
+              </Text>
+              <Text className="mb-1 text-sm text-muted dark:text-muted-dark">
+                Check-in: {hotel.checkInTime || '—'} · Check-out: {hotel.checkOutTime || '—'}
+              </Text>
             </View>
 
             {/* Rating & Type Cards */}
@@ -287,7 +320,7 @@ export default function HotelInfoPage() {
                               <Ionicons name="cash" size={16} color={successColor} />
                               <Text className="ml-2 text-sm text-muted dark:text-muted-dark">Price per Night</Text>
                             </View>
-                            <Text className="font-semibold text-text dark:text-text-dark">₹{room.pricePerNight}</Text>
+                            <Text className="font-semibold text-text dark:text-text-dark">৳{room.pricePerNight}</Text>
                           </View>
                         )}
 

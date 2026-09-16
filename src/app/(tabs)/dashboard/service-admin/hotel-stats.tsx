@@ -110,7 +110,11 @@ export default function HotelStatsScreen() {
           ? totalRevenue / bookings.length
           : 0;
 
-      const totalRooms = hotel.rooms?.length || 0;
+      const totalRooms =
+        hotel.rooms?.length ||
+        hotel.roomTypes?.reduce((sum: number, rt: any) => sum + (rt.totalCount || 0), 0) ||
+        hotel.totalRooms ||
+        0;
       const bookedRooms = activeBookings.length;
       const occupancyRate = totalRooms > 0 ? (bookedRooms / totalRooms) * 100 : 0;
 

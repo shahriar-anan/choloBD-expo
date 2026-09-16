@@ -23,6 +23,7 @@ export interface PostCreator {
 }
 
 export interface CommunityPostTag {
+  id?: string;
   postId: string;
   taggedUserId: string;
   status: TagStatus;
