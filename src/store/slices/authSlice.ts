@@ -4,7 +4,6 @@ import axios from 'axios';
 import { createApi, getApiInstance, setLogoutCallback } from '../../services/api/axiosClient';
 import { saveTokens, clearTokens, saveUserIdAndRole, clearUserIdAndRole, getUserIdAndRole, saveUser, getUser, clearUser } from '../../lib/secureStore';
 import { API_BASE_URL } from '../../constants/api';
-import { exchangeOAuthToken } from '../../services/api/oauth';
 import { OAuthProvider } from '../../constants/oauth';
 
 // We'll export a function to initialize the API base URL from the app bootstrap
@@ -98,48 +97,14 @@ export const logoutUser = createAsyncThunk('auth/logout', async (_, { rejectWith
   }
 });
 
-export const loginWithOAuth = createAsyncThunk(
+export const loginWithOAuth = createAsyncThunk<
+  { tokens: AuthTokens; user: AuthUser },
+  { provider: OAuthProvider; token: string },
+  { rejectValue: string }
+>(
   'auth/loginWithOAuth',
-  async (payload: { provider: OAuthProvider; token: string }, { rejectWithValue }) => {
-    try {
-      if (__DEV__) {
-        console.log('[loginWithOAuth] Starting OAuth login...', { provider: payload.provider });
-      }
-
-      // Exchange OAuth token with backend for JWT tokens
-      const exchangedTokens = await exchangeOAuthToken(payload.provider, payload.token);
-
-      if (__DEV__) {
-        console.log('[loginWithOAuth] Token exchange successful');
-      }
-
-      // Save tokens to secure storage
-      await saveTokens({
-        accessToken: exchangedTokens.accessToken,
-        refreshToken: exchangedTokens.refreshToken,
-      });
-
-      // Save user info
-      await saveUserIdAndRole(exchangedTokens.user.id, exchangedTokens.user.role);
-      await saveUser(exchangedTokens.user);
-
-      if (__DEV__) {
-        console.log('[loginWithOAuth] OAuth login completed successfully');
-      }
-
-      return {
-        tokens: {
-          accessToken: exchangedTokens.accessToken,
-          refreshToken: exchangedTokens.refreshToken,
-        },
-        user: exchangedTokens.user,
-      };
-    } catch (e: any) {
-      if (__DEV__) {
-        console.error('[loginWithOAuth] Error:', e?.response?.data || e.message);
-      }
-      return rejectWithValue(e?.response?.data?.message || e.message || 'OAuth login failed');
-    }
+  async (_payload: { provider: OAuthProvider; token: string }, { rejectWithValue }) => {
+    return rejectWithValue('Social sign-in is not available in this app version.');
   }
 );
 

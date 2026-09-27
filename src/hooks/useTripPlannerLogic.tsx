@@ -87,7 +87,7 @@ export interface TripPlannerLogic {
   clearCurrentTripData: () => void;
 
   // Segment Actions
-  addSegment: (tripId: string, data: CreateSegmentData) => Promise<UserSegment>;
+  addSegment: (tripId: string, data: CreateSegmentData) => Promise<TripPlan>;
   updateSegment: (
     tripId: string,
     segmentId: string,
@@ -195,7 +195,7 @@ export function useTripPlannerLogic(): TripPlannerLogic {
   const addSegment = async (
     tripId: string,
     data: CreateSegmentData
-  ): Promise<UserSegment> => {
+  ): Promise<TripPlan> => {
     try {
       const result = await dispatch(addSegmentAsync({ tripId, payload: data })).unwrap();
       return result;

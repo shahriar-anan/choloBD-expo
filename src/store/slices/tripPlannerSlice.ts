@@ -191,9 +191,8 @@ export const addSegmentAsync = createAsyncThunk(
   ) => {
     try {
       console.log('[tripPlannerSlice] Adding segment to trip:', tripId);
-      const segment = await tripApi.addSegment(tripId, payload);
-      console.log('[tripPlannerSlice] Segment added:', segment.id);
-      return segment;
+      const trip = await tripApi.addSegment(tripId, payload);
+      return trip;
     } catch (error: any) {
       console.error('[tripPlannerSlice] addSegment error:', error);
       return rejectWithValue(error);
@@ -216,9 +215,8 @@ export const updateSegmentAsync = createAsyncThunk(
   ) => {
     try {
       console.log('[tripPlannerSlice] Updating segment:', segmentId, 'trip:', tripId);
-      const segment = await tripApi.updateSegment(tripId, segmentId, payload);
-      console.log('[tripPlannerSlice] Segment updated:', segment.id);
-      return segment;
+      const trip = await tripApi.updateSegment(tripId, segmentId, payload);
+      return trip;
     } catch (error: any) {
       console.error('[tripPlannerSlice] updateSegment error:', error);
       return rejectWithValue(error);
@@ -237,9 +235,8 @@ export const deleteSegmentAsync = createAsyncThunk(
   ) => {
     try {
       console.log('[tripPlannerSlice] Deleting segment:', segmentId);
-      await tripApi.deleteSegment(tripId, segmentId);
-      console.log('[tripPlannerSlice] Segment deleted:', segmentId);
-      return segmentId;
+      const trip = await tripApi.deleteSegment(tripId, segmentId);
+      return trip;
     } catch (error: any) {
       console.error('[tripPlannerSlice] deleteSegment error:', error);
       return rejectWithValue(error);
@@ -499,17 +496,10 @@ const tripPlannerSlice = createSlice({
         state.formError = null;
       })
       .addCase(addSegmentAsync.fulfilled, (state, action) => {
-        console.log('[tripPlannerSlice] addSegment fulfilled:', action.payload.id);
         state.formLoading = false;
         state.formError = null;
-        state.currentSegments.push(action.payload);
-        // Update current trip segment count if exists
-        if (state.currentTrip) {
-          state.currentTrip.userSegments = state.currentSegments;
-          if (state.currentTrip._count) {
-            state.currentTrip._count.userSegments = state.currentSegments.length;
-          }
-        }
+        state.currentTrip = action.payload;
+        state.currentSegments = action.payload.userSegments || [];
       })
       .addCase(addSegmentAsync.rejected, (state, action: any) => {
         console.error('[tripPlannerSlice] addSegment rejected:', action.payload);
@@ -525,17 +515,10 @@ const tripPlannerSlice = createSlice({
         state.formError = null;
       })
       .addCase(updateSegmentAsync.fulfilled, (state, action) => {
-        console.log('[tripPlannerSlice] updateSegment fulfilled:', action.payload.id);
         state.formLoading = false;
         state.formError = null;
-        const idx = state.currentSegments.findIndex((s) => s.id === action.payload.id);
-        if (idx >= 0) {
-          state.currentSegments[idx] = action.payload;
-        }
-        // Update in current trip
-        if (state.currentTrip) {
-          state.currentTrip.userSegments = state.currentSegments;
-        }
+        state.currentTrip = action.payload;
+        state.currentSegments = action.payload.userSegments || [];
       })
       .addCase(updateSegmentAsync.rejected, (state, action: any) => {
         console.error('[tripPlannerSlice] updateSegment rejected:', action.payload);
@@ -551,16 +534,10 @@ const tripPlannerSlice = createSlice({
         state.formError = null;
       })
       .addCase(deleteSegmentAsync.fulfilled, (state, action) => {
-        console.log('[tripPlannerSlice] deleteSegment fulfilled:', action.payload);
         state.formLoading = false;
         state.formError = null;
-        state.currentSegments = state.currentSegments.filter((s) => s.id !== action.payload);
-        if (state.currentTrip) {
-          state.currentTrip.userSegments = state.currentSegments;
-          if (state.currentTrip._count) {
-            state.currentTrip._count.userSegments = state.currentSegments.length;
-          }
-        }
+        state.currentTrip = action.payload;
+        state.currentSegments = action.payload.userSegments || [];
       })
       .addCase(deleteSegmentAsync.rejected, (state, action: any) => {
         console.error('[tripPlannerSlice] deleteSegment rejected:', action.payload);

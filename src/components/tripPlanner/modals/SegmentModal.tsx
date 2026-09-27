@@ -141,15 +141,19 @@ export function SegmentModal({
         const daySegments = trip.userSegments?.filter((s) => s.dayNumber === dayNumber) || [];
         const nextOrder = daySegments.length + 1;
 
+        const description =
+          notes.trim().length >= 2
+            ? notes.trim()
+            : customActivityName.trim().length >= 2
+              ? customActivityName.trim()
+              : `Day ${dayNumber} stop`;
+
         const payload: CreateSegmentData = {
           dayNumber,
           segmentOrder: nextOrder,
+          shortDescription: description,
           customNotes: notes || undefined,
-          startTime: startTime || undefined,
-          endTime: endTime || undefined,
-          estimatedCost: costNum,
           customActivitySpotId: activitySpotId,
-          customActivitySpotName: activitySpotName,
           customHotel: selectedHotel,
           customTransport: selectedTransport,
         };
@@ -157,12 +161,12 @@ export function SegmentModal({
       } else {
         // Edit mode
         const payload: UpdateSegmentData = {
+          shortDescription:
+            notes.trim().length >= 2
+              ? notes.trim()
+              : existingSegment?.shortDescription,
           customNotes: notes || undefined,
-          startTime: startTime || undefined,
-          endTime: endTime || undefined,
-          estimatedCost: costNum,
           customActivitySpotId: activitySpotId,
-          customActivitySpotName: activitySpotName,
           customHotel: selectedHotel,
           customTransport: selectedTransport,
         };

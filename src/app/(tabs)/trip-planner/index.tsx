@@ -12,8 +12,6 @@ import { useTranslation } from 'react-i18next';
 import { TRANSLATION_KEYS } from '../../../constants/translationKeys';
 import { useTripPlannerLogic } from '../../../hooks/useTripPlannerLogic';
 
-console.log('[TripPlannerIndex] Screen loaded');
-
 export default function TripPlannerIndex() {
   const router = useRouter();
   const { t } = useTranslation();
@@ -24,23 +22,21 @@ export default function TripPlannerIndex() {
   }, []);
 
   const handleCreateNew = () => {
-    console.log('[TripPlannerIndex] Creating new trip');
     router.push('/(tabs)/trip-planner/create');
   };
 
   const handleTripPress = (tripId: string) => {
-    console.log('[TripPlannerIndex] Opening trip:', tripId);
     router.push(`/(tabs)/trip-planner/${tripId}`);
   };
 
   const handleDeleteTrip = (tripId: string, tripName: string) => {
     Alert.alert(
-      'Delete Trip',
-      `Are you sure you want to delete "${tripName}"? This cannot be undone.`,
+      t(TRANSLATION_KEYS.TRIP_PLANNER.DELETE_TRIP_TITLE),
+      t(TRANSLATION_KEYS.TRIP_PLANNER.DELETE_TRIP_MESSAGE, { name: tripName }),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t(TRANSLATION_KEYS.COMMON.CANCEL), style: 'cancel' },
         {
-          text: 'Delete',
+          text: t(TRANSLATION_KEYS.COMMON.DELETE),
           style: 'destructive',
           onPress: () => deleteTrip(tripId),
         },

@@ -95,6 +95,9 @@ export default function MyToursPage() {
           <Text className="mt-1 text-sm text-muted dark:text-muted-dark">
             {t(TRANSLATION_KEYS.TOUR_BUILDER.MY_TOURS_SUBTITLE, { count: list?.length || 0 })}
           </Text>
+          <Text className="mt-2 text-xs text-muted dark:text-muted-dark">
+            {t(TRANSLATION_KEYS.TOUR_BUILDER.CATALOG_LIST_NOTE)}
+          </Text>
         </View>
 
         {/* Loading State */}

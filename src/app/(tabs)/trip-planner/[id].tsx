@@ -29,8 +29,6 @@ const TAB_NAMES: { key: TabName; labelKey: string; icon: string }[] = [
   { key: 'itinerary', labelKey: TRANSLATION_KEYS.TRIP_PLANNER.TAB_ITINERARY, icon: 'list' },
 ];
 
-console.log('[TripDetails] Screen loaded');
-
 export default function TripDetails() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
@@ -128,13 +126,13 @@ export default function TripDetails() {
         <TripOverview trip={currentTrip} />
 
         {/* Horizontal Tab Navigation */}
-        <View className="px-6 mt-6">
-          <View className="flex-row gap-4">
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mt-6">
+          <View className="flex-row px-6 gap-6">
             {TAB_NAMES.map((tab) => (
               <TouchableOpacity
                 key={tab.key}
                 onPress={() => setActiveTab(tab.key)}
-                className="items-center flex-1 py-3"
+                className="items-center py-3 min-w-[72px]"
                 style={{
                   borderBottomWidth: activeTab === tab.key ? 2 : 0,
                   borderBottomColor: activeTab === tab.key ? primaryColor : 'transparent',
@@ -158,7 +156,7 @@ export default function TripDetails() {
               </TouchableOpacity>
             ))}
           </View>
-        </View>
+        </ScrollView>
 
         {/* Tab Content */}
         <View className="px-6 py-6 pb-12">

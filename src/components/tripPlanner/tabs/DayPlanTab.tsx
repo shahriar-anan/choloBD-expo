@@ -12,8 +12,9 @@ import { TripPlan, UserSegment } from '../../../types/trips';
 import { useTripPlannerLogic } from '../../../hooks/useTripPlannerLogic';
 import { useTheme } from '../../../hooks/useTheme';
 import { theme } from '../../../constants/theme';
-import { SegmentModal } from '../modals/SegmentModal';
 import { DeleteSegmentConfirm } from '../modals/DeleteSegmentConfirm';
+import { StopSegmentForm } from '../StopSegmentForm';
+import { tripDurationFromDates, countStopsForDay, createBlankStop, nextSegmentOrderForDay, WizardItineraryStop, MAX_STOPS_PER_DAY } from '../../../utils/tripPlanItinerary';
 
 interface DayPlanTabProps {
   trip: TripPlan;
@@ -21,7 +22,6 @@ interface DayPlanTabProps {
 
 export function DayPlanTab({ trip }: DayPlanTabProps) {
   const { t } = useTranslation();
-  console.log('[DayPlanTab] Rendered, trip:', trip.name, 'segments:', trip.userSegments?.length);
   const { isDark } = useTheme();
   const { updateSegment, deleteSegment, isFormSubmitting, addSegment } = useTripPlannerLogic();
   const primaryColor = isDark ? theme.colors['primary-dark'] : theme.colors.primary;
@@ -36,48 +36,24 @@ export function DayPlanTab({ trip }: DayPlanTabProps) {
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
   const [selectedSegment, setSelectedSegment] = useState<UserSegment | null>(null);
 
-  const totalDays = trip.userSegments?.reduce((max, s) => Math.max(max, s.dayNumber), 0) || 0;
+  const totalDays = tripDurationFromDates(trip.startDate, trip.endDate);
 
   // ==== MODAL HANDLERS ====
   const openAddModal = (day: number) => {
-    console.log('[DayPlanTab] openAddModal called for day:', day);
     setSelectedDay(day);
     setSelectedSegment(null);
     setAddModalVisible(true);
   };
 
   const openEditModal = (segment: UserSegment) => {
-    console.log('[DayPlanTab] openEditModal called for segment:', segment.id);
     setSelectedSegment(segment);
     setSelectedDay(segment.dayNumber);
     setEditModalVisible(true);
   };
 
   const openDeleteModal = (segment: UserSegment) => {
-    console.log('[DayPlanTab] openDeleteModal called for segment:', segment.id);
     setSelectedSegment(segment);
     setDeleteModalVisible(true);
-  };
-
-  // ==== SEGMENT OPERATIONS ====
-  const handleAddSegment = async (data: any) => {
-    try {
-      await addSegment(trip.id, data);
-      setAddModalVisible(false);
-    } catch (error: any) {
-      Alert.alert(t(TRANSLATION_KEYS.COMMON.ERROR), error?.message || 'Failed to add segment');
-    }
-  };
-
-  const handleUpdateSegment = async (data: any) => {
-    try {
-      if (selectedSegment) {
-        await updateSegment(trip.id, selectedSegment.id, data);
-        setEditModalVisible(false);
-      }
-    } catch (error: any) {
-      Alert.alert(t(TRANSLATION_KEYS.COMMON.ERROR), error?.message || 'Failed to update segment');
-    }
   };
 
   const handleDeleteSegment = async () => {
@@ -91,7 +67,39 @@ export function DayPlanTab({ trip }: DayPlanTabProps) {
     }
   };
 
-  if (totalDays === 0) {
+  const segmentToWizard = (segment: UserSegment): WizardItineraryStop => ({
+    id: segment.id,
+    dayNumber: segment.dayNumber,
+    segmentOrder: segment.segmentOrder,
+    shortDescription: segment.shortDescription || segment.customNotes || `Day ${segment.dayNumber}`,
+    tourSpotId: segment.customTourSpotId || '',
+    activitySpotId: segment.customActivitySpotId,
+    transportOption: segment.customTransport,
+    hotelOption: segment.customHotel,
+    notes: segment.customNotes,
+  });
+
+  const handleSaveStop = async (stop: WizardItineraryStop, mode: 'add' | 'edit') => {
+    const payload = {
+      dayNumber: stop.dayNumber,
+      segmentOrder: stop.segmentOrder,
+      shortDescription: stop.shortDescription,
+      customTourSpotId: stop.tourSpotId,
+      customActivitySpotId: stop.activitySpotId,
+      customHotel: stop.hotelOption,
+      customTransport: stop.transportOption,
+      customNotes: stop.notes,
+    };
+    if (mode === 'add') {
+      await addSegment(trip.id, payload);
+      setAddModalVisible(false);
+    } else if (selectedSegment) {
+      await updateSegment(trip.id, selectedSegment.id, payload);
+      setEditModalVisible(false);
+    }
+  };
+
+  if (totalDays < 1) {
     return (
       <View className="items-center justify-center py-8">
         <Feather name="map" size={40} color={mutedColor} />
@@ -141,13 +149,10 @@ export function DayPlanTab({ trip }: DayPlanTabProps) {
                     {/* Card Header with Time and Actions */}
                     <View className="flex-row items-start justify-between p-4 border-b border-border dark:border-border-dark">
                       <View className="flex-1">
-                        {segment.startTime && segment.endTime && (
-                          <View className="flex-row items-center">
-                            <Feather name="clock" size={16} color={primaryColor} />
-                            <Text className="ml-2 font-bold text-base text-text dark:text-text-dark">
-                              {segment.startTime} - {segment.endTime}
-                            </Text>
-                          </View>
+                        {segment.shortDescription && (
+                          <Text className="text-base font-semibold text-text dark:text-text-dark mb-2">
+                            {segment.shortDescription}
+                          </Text>
                         )}
                       </View>
 
@@ -305,7 +310,13 @@ export function DayPlanTab({ trip }: DayPlanTabProps) {
 
             {/* Add Segment Button */}
             <TouchableOpacity
-              onPress={() => openAddModal(dayNum)}
+              onPress={() => {
+                if (countStopsForDay(trip.userSegments?.map(segmentToWizard) || [], dayNum) >= MAX_STOPS_PER_DAY) {
+                  Alert.alert(t(TRANSLATION_KEYS.COMMON.ERROR), t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_STOP_LIMIT, { max: MAX_STOPS_PER_DAY }));
+                  return;
+                }
+                openAddModal(dayNum);
+              }}
               className="flex-row items-center justify-center py-3 rounded-lg border-2"
               style={{
                 borderColor: primaryColor,
@@ -322,26 +333,43 @@ export function DayPlanTab({ trip }: DayPlanTabProps) {
       })}
 
       {/* Modals */}
-      <SegmentModal
-        visible={addModalVisible}
-        mode="add"
-        trip={trip}
-        dayNumber={selectedDay || 1}
-        onClose={() => setAddModalVisible(false)}
-        onSubmit={handleAddSegment}
-        isSubmitting={isFormSubmitting}
-      />
-
-      <SegmentModal
-        visible={editModalVisible}
-        mode="edit"
-        trip={trip}
-        dayNumber={selectedDay || 1}
-        existingSegment={selectedSegment || undefined}
-        onClose={() => setEditModalVisible(false)}
-        onSubmit={handleUpdateSegment}
-        isSubmitting={isFormSubmitting}
-      />
+      {trip.primaryLocationId && (addModalVisible || editModalVisible) && (
+        <StopSegmentForm
+          visible={addModalVisible || editModalVisible}
+          locationId={trip.primaryLocationId}
+          dayNumber={selectedDay || 1}
+          isLastStopOnDay={
+            addModalVisible
+              ? true
+              : selectedSegment
+                ? selectedSegment.segmentOrder ===
+                  Math.max(
+                    ...(trip.userSegments || [])
+                      .filter((s) => s.dayNumber === selectedSegment.dayNumber)
+                      .map((s) => s.segmentOrder),
+                    selectedSegment.segmentOrder
+                  )
+                : true
+          }
+          initial={
+            addModalVisible
+              ? createBlankStop(selectedDay || 1, nextSegmentOrderForDay(
+                  (trip.userSegments || []).map(segmentToWizard),
+                  selectedDay || 1
+                ))
+              : segmentToWizard(selectedSegment!)
+          }
+          onClose={() => {
+            setAddModalVisible(false);
+            setEditModalVisible(false);
+          }}
+          onSave={(stop) => {
+            void handleSaveStop(stop, addModalVisible ? 'add' : 'edit').catch((error: any) => {
+              Alert.alert(t(TRANSLATION_KEYS.COMMON.ERROR), error?.message || 'Failed to save segment');
+            });
+          }}
+        />
+      )}
 
       <DeleteSegmentConfirm
         visible={deleteModalVisible}

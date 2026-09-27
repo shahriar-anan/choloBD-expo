@@ -1,7 +1,5 @@
 /**
- * Trip Planner API Client
- * Handles all HTTP calls to trip planner endpoints
- * Base URL: http://localhost:5000/api/trip-plans
+ * Personal tour plan API client (GET/POST/PUT/DELETE /api/tour-builder/my)
  */
 
 import { getApiInstance } from './axiosClient';
@@ -17,15 +15,20 @@ import {
   TripApiResponse,
   TripApiError,
   PaginationInfo,
+  PersonalDaySegmentApi,
 } from '../../types/trips';
-import { AxiosError } from 'axios';
+import {
+  mapPersonalPlanToTripPlan,
+  mapCreateTripDataToPersonalApi,
+  mapUpdateTripDataToPersonalApi,
+  mapCreateSegmentToDaySegment,
+  mergeSegmentUpdate,
+  daySegmentsForPut,
+  buildTripSummaryFromPlan,
+  normalizeDaySegmentsInput,
+} from './personalPlanMapping';
 
-/**
- * Helper to map HTTP errors to typed TripApiError
- */
 function mapApiError(error: any): TripApiError {
-  console.error('[tripPlanner.ts] Mapping API error:', error?.response?.status, error?.message);
-
   if (error?.response?.status === 400) {
     return {
       type: 'VALIDATION',
@@ -33,28 +36,32 @@ function mapApiError(error: any): TripApiError {
       message: error?.response?.data?.message || 'Validation failed. Check your input.',
       details: error?.response?.data?.details,
     };
-  } else if (error?.response?.status === 401) {
+  }
+  if (error?.response?.status === 401) {
     return {
       type: 'UNAUTHORIZED',
       statusCode: 401,
       message: error?.response?.data?.message || 'Unauthorized. Please login again.',
       details: error?.response?.data?.details,
     };
-  } else if (error?.response?.status === 403) {
+  }
+  if (error?.response?.status === 403) {
     return {
       type: 'FORBIDDEN',
       statusCode: 403,
       message: error?.response?.data?.message || 'Access denied. You do not own this trip.',
       details: error?.response?.data?.details,
     };
-  } else if (error?.response?.status === 404) {
+  }
+  if (error?.response?.status === 404) {
     return {
       type: 'NOT_FOUND',
       statusCode: 404,
-      message: error?.response?.data?.message || 'Trip plan or segment not found.',
+      message: error?.response?.data?.message || 'Trip plan not found.',
       details: error?.response?.data?.details,
     };
-  } else if (error?.response?.status === 409) {
+  }
+  if (error?.response?.status === 409) {
     return {
       type: 'CONFLICT',
       statusCode: 409,
@@ -62,236 +69,169 @@ function mapApiError(error: any): TripApiError {
         error?.response?.data?.message || 'Conflict: Cannot delete trip with confirmed bookings.',
       details: error?.response?.data?.details,
     };
-  } else if (error?.response?.status === 500) {
+  }
+  if (error?.response?.status === 500) {
     return {
       type: 'SERVER',
       statusCode: 500,
       message: 'Server error. Please try again later.',
       details: error?.response?.data?.details,
     };
-  } else {
-    return {
-      type: 'UNKNOWN',
-      statusCode: error?.response?.status || 0,
-      message: error?.message || 'An unknown error occurred.',
-      details: error?.response?.data?.details,
-    };
   }
+  return {
+    type: 'UNKNOWN',
+    statusCode: error?.response?.status || 0,
+    message: error?.message || 'An unknown error occurred.',
+    details: error?.response?.data?.details,
+  };
 }
 
-/**
- * POST /api/trip-plans
- * Create a new trip plan for the authenticated user
- */
+async function putDaySegments(tripId: string, segments: PersonalDaySegmentApi[]): Promise<TripPlan> {
+  const api = getApiInstance();
+  const res = await api.put<TripApiResponse<any>>(`/api/tour-builder/my/${tripId}`, {
+    daySegments: normalizeDaySegmentsInput(daySegmentsForPut(segments)),
+  });
+  return mapPersonalPlanToTripPlan(res.data.data);
+}
+
 export async function createTrip(payload: CreateTripData): Promise<TripPlan> {
   try {
-    console.log('[tripPlanner.ts] ========== CREATE TRIP PLAN API CALL ==========');
-    console.log('[tripPlanner.ts] Trip Name:', payload.name);
-    console.log('[tripPlanner.ts] Endpoint: POST /api/trip-plans');
-    console.log('[tripPlanner.ts] Request Payload:', JSON.stringify(payload, null, 2));
-
     const api = getApiInstance();
-    console.log('[tripPlanner.ts] Sending POST request...');
-    const res = await api.post<TripApiResponse<TripPlan>>('/api/trip-plans', payload);
-
-    console.log('[tripPlanner.ts] ✅ API Response Status:', res.status);
-    console.log('[tripPlanner.ts] Created Trip ID:', res.data.data?.id);
-    return res.data.data;
+    const { daySegments, ...rest } = payload;
+    const normalizedSegments = daySegments?.length
+      ? normalizeDaySegmentsInput(daySegments)
+      : undefined;
+    const body = mapCreateTripDataToPersonalApi(rest, normalizedSegments);
+    const res = await api.post<TripApiResponse<any>>('/api/tour-builder/my', body);
+    return mapPersonalPlanToTripPlan(res.data.data);
   } catch (error: any) {
-    console.error('[tripPlanner.ts] ❌ API Error Status:', error?.response?.status);
-    console.error('[tripPlanner.ts] Error Message:', error?.message);
-    console.error('[tripPlanner.ts] Error Response Data:', error?.response?.data);
     throw mapApiError(error);
   }
 }
 
-/**
- * GET /api/trip-plans
- * Fetch all trips for authenticated user with optional filters and pagination
- */
 export async function getTrips(
   filters?: TripFilters
 ): Promise<{ trips: TripPlan[]; pagination: PaginationInfo }> {
   try {
-    console.log('[tripPlanner.ts] Fetching trips with filters:', filters);
     const api = getApiInstance();
-
-    const params: any = {};
+    const params: Record<string, string | number | boolean> = {};
     if (filters?.status) params.status = filters.status;
     if (filters?.locationId) params.locationId = filters.locationId;
-    if (filters?.isPublic !== undefined) params.isPublic = filters.isPublic;
     if (filters?.page) params.page = filters.page;
     if (filters?.limit) params.limit = filters.limit;
 
-    const res = await api.get<TripApiResponse<TripPlan[]>>('/api/trip-plans', { params });
-    console.log('[tripPlanner.ts] getTrips success, count:', res.data.data?.length);
+    const res = await api.get<TripApiResponse<{ results: any[]; total: number; page: number; limit: number }>>(
+      '/api/tour-builder/my',
+      { params }
+    );
+
+    const block = res.data.data;
+    const results = block?.results ?? [];
+    const limit = block?.limit ?? 10;
+    const total = block?.total ?? results.length;
+    const page = block?.page ?? 1;
 
     return {
-      trips: res.data.data || [],
-      pagination: res.data.pagination || {
-        total: res.data.data?.length || 0,
-        page: 1,
-        limit: 10,
-        pages: 1,
+      trips: results.map(mapPersonalPlanToTripPlan),
+      pagination: {
+        total,
+        page,
+        limit,
+        pages: limit > 0 ? Math.ceil(total / limit) : 1,
       },
     };
   } catch (error: any) {
-    console.error('[tripPlanner.ts] getTrips error:', error?.response?.status, error?.message);
     throw mapApiError(error);
   }
 }
 
-/**
- * GET /api/trip-plans/:tripId
- * Fetch detailed information for a specific trip including all segments
- */
 export async function getTripDetails(tripId: string): Promise<TripPlan> {
   try {
-    console.log('[tripPlanner.ts] Fetching trip details:', tripId);
     const api = getApiInstance();
-    const res = await api.get<TripApiResponse<TripPlan>>(`/api/trip-plans/${tripId}`);
-    console.log('[tripPlanner.ts] getTripDetails success, segments count:', res.data.data?.userSegments?.length);
-    return res.data.data;
+    const res = await api.get<TripApiResponse<any>>(`/api/tour-builder/my/${tripId}`);
+    return mapPersonalPlanToTripPlan(res.data.data);
   } catch (error: any) {
-    console.error('[tripPlanner.ts] getTripDetails error:', error?.response?.status, error?.message);
     throw mapApiError(error);
   }
 }
 
-/**
- * PUT /api/trip-plans/:tripId
- * Update an existing trip plan (name, budget, status, etc.)
- */
 export async function updateTrip(tripId: string, payload: UpdateTripData): Promise<TripPlan> {
   try {
-    console.log('[tripPlanner.ts] Updating trip:', tripId);
-    console.log('[tripPlanner.ts] Update Payload:', JSON.stringify(payload, null, 2));
     const api = getApiInstance();
-    const res = await api.put<TripApiResponse<TripPlan>>(`/api/trip-plans/${tripId}`, payload);
-    console.log('[tripPlanner.ts] updateTrip success, id:', res.data.data?.id);
-    return res.data.data;
+    const body = mapUpdateTripDataToPersonalApi(payload);
+    const res = await api.put<TripApiResponse<any>>(`/api/tour-builder/my/${tripId}`, body);
+    return mapPersonalPlanToTripPlan(res.data.data);
   } catch (error: any) {
-    console.error('[tripPlanner.ts] updateTrip error:', error?.response?.status, error?.message);
     throw mapApiError(error);
   }
 }
 
-/**
- * DELETE /api/trip-plans/:tripId
- * Delete a trip plan (only if no confirmed bookings)
- */
 export async function deleteTrip(tripId: string): Promise<{ success: boolean }> {
   try {
-    console.log('[tripPlanner.ts] Deleting trip:', tripId);
     const api = getApiInstance();
-    await api.delete(`/api/trip-plans/${tripId}`);
-    console.log('[tripPlanner.ts] deleteTrip success');
+    await api.delete(`/api/tour-builder/my/${tripId}`);
     return { success: true };
   } catch (error: any) {
-    console.error('[tripPlanner.ts] deleteTrip error:', error?.response?.status, error?.message);
     throw mapApiError(error);
   }
 }
 
-/**
- * POST /api/trip-plans/:tripId/segments
- * Add a new segment (activity, accommodation, transport) to a specific day
- */
-export async function addSegment(tripId: string, payload: CreateSegmentData): Promise<UserSegment> {
-  try {
-    console.log('[tripPlanner.ts] Adding segment to trip:', tripId);
-    console.log('[tripPlanner.ts] Segment Payload:', JSON.stringify(payload, null, 2));
-    const api = getApiInstance();
-    const res = await api.post<TripApiResponse<UserSegment>>(
-      `/api/trip-plans/${tripId}/segments`,
-      payload
-    );
-    console.log('[tripPlanner.ts] addSegment success, segment id:', res.data.data?.id);
-    return res.data.data;
-  } catch (error: any) {
-    console.error('[tripPlanner.ts] addSegment error:', error?.response?.status, error?.message);
-    throw mapApiError(error);
+export async function addSegment(tripId: string, payload: CreateSegmentData): Promise<TripPlan> {
+  const trip = await getTripDetails(tripId);
+  const dayNumber = payload.dayNumber;
+  const existing = trip.daySegments ?? [];
+  const dayStops = existing.filter((s) => s.dayNumber === dayNumber);
+  if (dayStops.length >= 4) {
+    throw mapApiError({ response: { status: 400, data: { message: 'Day can have at most 4 stops' } } });
   }
+  const nextOrder = payload.segmentOrder ?? dayStops.length + 1;
+  const segmentInput = mapCreateSegmentToDaySegment({ ...payload, segmentOrder: nextOrder }, dayNumber);
+  const next = [...daySegmentsForPut(existing), segmentInput];
+  const api = getApiInstance();
+  const res = await api.put<TripApiResponse<any>>(`/api/tour-builder/my/${tripId}`, {
+    daySegments: normalizeDaySegmentsInput(next),
+  });
+  return mapPersonalPlanToTripPlan(res.data.data);
 }
 
-/**
- * PUT /api/trip-plans/:tripId/segments/:segmentId
- * Update an existing segment (add bookings, notes, timings, etc.)
- */
 export async function updateSegment(
   tripId: string,
   segmentId: string,
   payload: UpdateSegmentData
-): Promise<UserSegment> {
-  try {
-    console.log('[tripPlanner.ts] Updating segment:', segmentId, 'for trip:', tripId);
-    console.log('[tripPlanner.ts] Update Payload:', JSON.stringify(payload, null, 2));
-    const api = getApiInstance();
-    const res = await api.put<TripApiResponse<UserSegment>>(
-      `/api/trip-plans/${tripId}/segments/${segmentId}`,
-      payload
-    );
-    console.log('[tripPlanner.ts] updateSegment success, segment id:', res.data.data?.id);
-    return res.data.data;
-  } catch (error: any) {
-    console.error('[tripPlanner.ts] updateSegment error:', error?.response?.status, error?.message);
-    throw mapApiError(error);
+): Promise<TripPlan> {
+  const trip = await getTripDetails(tripId);
+  const existing = trip.daySegments ?? [];
+  const idx = existing.findIndex((s) => s.id === segmentId);
+  if (idx < 0) {
+    throw mapApiError({ response: { status: 404, data: { message: 'Segment not found' } } });
   }
+  const merged = mergeSegmentUpdate(existing[idx], payload);
+  const next = existing.map((s, i) =>
+    i === idx ? { ...s, ...merged, shortDescription: merged.shortDescription } : s
+  );
+  const api = getApiInstance();
+  const res = await api.put<TripApiResponse<any>>(`/api/tour-builder/my/${tripId}`, {
+    daySegments: normalizeDaySegmentsInput(daySegmentsForPut(next as PersonalDaySegmentApi[])),
+  });
+  return mapPersonalPlanToTripPlan(res.data.data);
 }
 
-/**
- * DELETE /api/trip-plans/:tripId/segments/:segmentId
- * Remove a segment from a trip
- */
-export async function deleteSegment(tripId: string, segmentId: string): Promise<{ success: boolean }> {
-  try {
-    console.log('[tripPlanner.ts] Deleting segment:', segmentId, 'from trip:', tripId);
-    const api = getApiInstance();
-    await api.delete(`/api/trip-plans/${tripId}/segments/${segmentId}`);
-    console.log('[tripPlanner.ts] deleteSegment success');
-    return { success: true };
-  } catch (error: any) {
-    console.error('[tripPlanner.ts] deleteSegment error:', error?.response?.status, error?.message);
-    throw mapApiError(error);
+export async function deleteSegment(tripId: string, segmentId: string): Promise<TripPlan> {
+  const trip = await getTripDetails(tripId);
+  const existing = trip.daySegments ?? [];
+  const next = existing.filter((s) => s.id !== segmentId);
+  if (next.length === existing.length) {
+    throw mapApiError({ response: { status: 404, data: { message: 'Segment not found' } } });
   }
+  return putDaySegments(tripId, next);
 }
 
-/**
- * GET /api/trip-plans/:tripId/segments/day/:dayNumber
- * Fetch all segments for a specific day
- */
 export async function getDaySegments(tripId: string, dayNumber: number): Promise<UserSegment[]> {
-  try {
-    console.log('[tripPlanner.ts] Fetching segments for day:', dayNumber, 'trip:', tripId);
-    const api = getApiInstance();
-    const res = await api.get<TripApiResponse<UserSegment[]>>(
-      `/api/trip-plans/${tripId}/segments/day/${dayNumber}`
-    );
-    console.log('[tripPlanner.ts] getDaySegments success, count:', res.data.data?.length);
-    return res.data.data || [];
-  } catch (error: any) {
-    console.error('[tripPlanner.ts] getDaySegments error:', error?.response?.status, error?.message);
-    throw mapApiError(error);
-  }
+  const trip = await getTripDetails(tripId);
+  return (trip.userSegments ?? []).filter((s) => s.dayNumber === dayNumber);
 }
 
-/**
- * GET /api/trip-plans/:tripId/summary
- * Fetch cost breakdown and booking summary for a trip
- */
 export async function getTripSummary(tripId: string): Promise<TripSummary> {
-  try {
-    console.log('[tripPlanner.ts] Fetching trip summary:', tripId);
-    const api = getApiInstance();
-    const res = await api.get<TripApiResponse<TripSummary>>(`/api/trip-plans/${tripId}/summary`);
-    console.log('[tripPlanner.ts] getTripSummary success');
-    console.log('[tripPlanner.ts] Total estimated cost:', res.data.data?.totalEstimatedCost);
-    console.log('[tripPlanner.ts] Budget status:', res.data.data?.budgetStatus);
-    return res.data.data;
-  } catch (error: any) {
-    console.error('[tripPlanner.ts] getTripSummary error:', error?.response?.status, error?.message);
-    throw mapApiError(error);
-  }
+  const trip = await getTripDetails(tripId);
+  return buildTripSummaryFromPlan(trip);
 }
-
-console.log('[tripPlanner.ts] Trip Planner API client module loaded');

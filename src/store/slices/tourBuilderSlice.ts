@@ -68,14 +68,13 @@ export const fetchTourPlans = createAsyncThunk(
 );
 
 /**
- * Async thunk: Fetch tour plans by admin ID
- * Pass 'me' for current authenticated admin or specific adminId
+ * Catalog tour packages for admin screens (replaces removed by-admin list).
  */
 export const fetchTourPlansByAdmin = createAsyncThunk(
   'tourBuilder/fetchTourPlansByAdmin',
-  async ({ adminId = 'me', filters }: { adminId?: string; filters?: TourFilters } = {}, { rejectWithValue }) => {
+  async ({ filters }: { adminId?: string; filters?: TourFilters } = {}, { rejectWithValue }) => {
     try {
-      const tours = await tourApi.getTourPlansByAdmin(adminId, filters);
+      const tours = await tourApi.getTourPlans(filters);
       return tours;
     } catch (error: any) {
       if (__DEV__) console.error('[tourBuilderSlice] fetchTourPlansByAdmin error:', error);

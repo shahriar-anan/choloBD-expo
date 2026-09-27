@@ -18,6 +18,16 @@ export type HotelTypePreference = 'RESORT' | 'HOSTEL' | 'BOUTIQUE' | 'BUDGET' | 
  */
 export type TransportTypePreference = 'BUS' | 'FLIGHT' | 'TRAIN' | 'CAR_RENTAL' | 'FERRY' | 'SELF_MANAGED';
 
+export type TourTypePreference =
+  | 'ADVENTURE'
+  | 'CULTURAL'
+  | 'BEACH'
+  | 'CITY_TOUR'
+  | 'NATURE'
+  | 'RELIGIOUS'
+  | 'HISTORICAL'
+  | 'MIXED';
+
 /**
  * Budget status compared to estimated budget
  */
@@ -76,6 +86,44 @@ export interface SegmentBookingDetails {
 }
 
 /**
+ * Day segment shape from personal tour plan API (TourDaySegment)
+ */
+export interface PersonalDaySegmentApi {
+  id: string;
+  dayNumber: number;
+  segmentOrder?: number;
+  shortDescription: string;
+  tourSpotId?: string | null;
+  activitySpotId?: string | null;
+  transportOption?: string | null;
+  hotelOption?: string | null;
+  hotelId?: string | null;
+  transportId?: string | null;
+  notes?: string | null;
+  startTime?: string | null;
+  endTime?: string | null;
+  estimatedCost?: number | null;
+  tourSpotName?: string | null;
+  activitySpotName?: string | null;
+  hotelRoomBookingId?: string | null;
+  transportBookingId?: string | null;
+  activityBookingId?: string | null;
+}
+
+export interface PersonalDaySegmentInput {
+  dayNumber: number;
+  shortDescription: string;
+  segmentOrder?: number;
+  tourSpotId?: string;
+  activitySpotId?: string;
+  transportOption?: string;
+  hotelOption?: string;
+  hotelId?: string;
+  transportId?: string;
+  notes?: string;
+}
+
+/**
  * Single day segment of a trip plan
  */
 export interface UserSegment {
@@ -83,6 +131,7 @@ export interface UserSegment {
   userTripPlanId: string;
   dayNumber: number;
   segmentOrder: number;
+  shortDescription?: string;
   customNotes?: string;
   startTime?: string;
   endTime?: string;
@@ -125,6 +174,8 @@ export interface TripPlan {
   updatedAt: string;
   user: TripUser;
   primaryLocation: TripLocation;
+  /** Raw day segments from GET /api/tour-builder/my/:id */
+  daySegments?: PersonalDaySegmentApi[];
   userSegments: UserSegment[];
   _count?: {
     userSegments: number;
@@ -164,6 +215,7 @@ export interface TripSummary {
 export interface CreateTripData {
   name: string;
   description?: string;
+  tourType: TourTypePreference;
   generalNotes?: string[];
   primaryLocationId: string;
   startDate: string;
@@ -172,7 +224,8 @@ export interface CreateTripData {
   participantCount: number;
   preferredHotelType: HotelTypePreference;
   preferredTransport: TransportTypePreference;
-  isPublic?: boolean;
+  basedOnPackageId?: string;
+  daySegments?: PersonalDaySegmentInput[];
 }
 
 /**
@@ -186,6 +239,7 @@ export interface UpdateTripData {
   status?: TripStatus;
   participantCount?: number;
   isPublic?: boolean;
+  daySegments?: PersonalDaySegmentInput[];
 }
 
 /**
@@ -194,13 +248,10 @@ export interface UpdateTripData {
 export interface CreateSegmentData {
   dayNumber: number;
   segmentOrder?: number;
+  shortDescription: string;
   customNotes?: string;
-  startTime?: string;
-  endTime?: string;
-  estimatedCost?: number;
   customTourSpotId?: string;
   customActivitySpotId?: string;
-  customActivitySpotName?: string;
   customHotel?: HotelTypePreference;
   customTransport?: TransportTypePreference;
 }
@@ -211,16 +262,10 @@ export interface CreateSegmentData {
 export interface UpdateSegmentData {
   dayNumber?: number;
   segmentOrder?: number;
+  shortDescription?: string;
   customNotes?: string;
-  startTime?: string;
-  endTime?: string;
-  estimatedCost?: number;
-  hotelRoomBookingId?: string;
-  transportBookingId?: string;
-  activityBookingId?: string;
   customTourSpotId?: string;
   customActivitySpotId?: string;
-  customActivitySpotName?: string;
   customHotel?: HotelTypePreference;
   customTransport?: TransportTypePreference;
 }

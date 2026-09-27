@@ -163,24 +163,18 @@ export default function Register() {
               <View className="flex-1 h-px bg-border dark:bg-border-dark" />
             </View>
 
-            {/* OAuth Error Display */}
-            {(googleError || facebookError) && (
-              <View className="flex-row items-center gap-3 p-4 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 mb-4">
-                <Ionicons name="alert-circle" size={20} color={theme.colors.error} />
-                <Text className="flex-1 text-sm text-danger font-medium">
-                  {googleError || facebookError}
-                </Text>
-              </View>
-            )}
+            <Text className="mb-3 text-xs text-center text-muted dark:text-muted-dark">
+              {t(TRANSLATION_KEYS.AUTH.LOGIN.SOCIAL_UNAVAILABLE)}
+            </Text>
 
             {/* Google Sign-Up Button */}
             <TouchableOpacity
               onPress={signInWithGoogle}
-              disabled={googleLoading || facebookLoading || auth.isLoading}
+              disabled
               className={`flex-row items-center justify-center gap-3 p-4 rounded-xl mb-3
                            bg-white border border-gray-200
                            dark:bg-gray-900 dark:border-gray-700
-                           ${googleLoading || facebookLoading || auth.isLoading ? 'opacity-60' : 'active:opacity-80'}`}
+                           opacity-50`}
             >
               {googleLoading ? (
                 <ActivityIndicator color={theme.colors.primary} size="small" />
@@ -197,10 +191,10 @@ export default function Register() {
             {/* Facebook Sign-Up Button */}
             <TouchableOpacity
               onPress={signInWithFacebook}
-              disabled={googleLoading || facebookLoading || auth.isLoading}
+              disabled
               className={`flex-row items-center justify-center gap-3 p-4 rounded-xl
                            bg-[#1877F2]
-                           ${facebookLoading || googleLoading || auth.isLoading ? 'opacity-60' : 'active:opacity-80'}`}
+                           opacity-50`}
             >
               {facebookLoading ? (
                 <ActivityIndicator color="white" size="small" />

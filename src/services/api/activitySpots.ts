@@ -1,6 +1,5 @@
 /**
  * Activity Spots API Service
- * Handles fetching activity spots from the backend
  */
 
 import { getApiInstance } from './axiosClient';
@@ -16,7 +15,9 @@ export interface ActivitySpot {
 
 export async function getActivitySpots(locationId: string): Promise<ActivitySpot[]> {
   const api = getApiInstance();
-  const response = await api.get(`/api/activity-spots/location/${locationId}`);
+  const response = await api.get('/api/activity-spots', {
+    params: { locationId },
+  });
   const data = response.data.data || [];
   return data.map((spot: any) => ({
     id: spot.id,
@@ -28,4 +29,17 @@ export async function getActivitySpots(locationId: string): Promise<ActivitySpot
   }));
 }
 
-
+export async function getActivitySpotById(activitySpotId: string): Promise<ActivitySpot | null> {
+  const api = getApiInstance();
+  const response = await api.get(`/api/activity-spots/${activitySpotId}`);
+  const spot = response.data?.data;
+  if (!spot) return null;
+  return {
+    id: spot.id,
+    name: spot.name,
+    description: spot.description,
+    location: [spot.city, spot.state, spot.country].filter(Boolean).join(', ') || 'Unknown Location',
+    imageUrl: spot.imageUrl,
+    rating: spot.rating,
+  };
+}

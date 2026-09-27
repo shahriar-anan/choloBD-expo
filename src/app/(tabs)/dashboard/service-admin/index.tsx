@@ -41,8 +41,7 @@ export default function ServiceAdminIndex() {
         });
 
         // Step 2: Try to fetch hotels regardless of profile status
-        // The new /api/v1/hotels/my-hotel endpoint should work based on JWT token
-        console.log('[ServiceAdminIndex] 🔄 Fetching hotels from /api/v1/hotels/my-hotel (JWT-based)...');
+        console.log('[ServiceAdminIndex] Fetching hotels from GET /api/hotels/my (JWT-based)...');
         const res = await fetchMyHotel();
         console.log('[ServiceAdminIndex] ✅ Hotels API response:', {
           isArray: Array.isArray(res),

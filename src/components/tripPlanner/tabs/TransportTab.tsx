@@ -1,6 +1,5 @@
 /**
- * Transport Tab Component
- * Display and manage transport bookings
+ * Transport tab — read-only stop transport preferences (no booking in increment 01).
  */
 
 import React from 'react';
@@ -9,6 +8,8 @@ import { Feather } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { TRANSLATION_KEYS } from '../../../constants/translationKeys';
 import { TripPlan } from '../../../types/trips';
+import { useTheme } from '../../../hooks/useTheme';
+import theme from '../../../constants/theme';
 
 interface TransportTabProps {
   trip: TripPlan;
@@ -16,72 +17,39 @@ interface TransportTabProps {
 
 export function TransportTab({ trip }: TransportTabProps) {
   const { t } = useTranslation();
-  const transportCount = trip.userSegments?.filter((s) => s.transportBookingId).length || 0;
+  const { isDark } = useTheme();
+  const mutedColor = isDark ? theme.colors['muted-dark'] : theme.colors.muted;
+  const primaryColor = isDark ? theme.colors['primary-dark'] : theme.colors.primary;
+
+  const stops = (trip.userSegments || []).filter((s) => s.customTransport);
 
   return (
-    <View>
-      {transportCount > 0 ? (
-        <View>
-          <Text className="mb-4 text-sm font-semibold text-text dark:text-text-dark">
-            {t(TRANSLATION_KEYS.TRIP_PLANNER.TRANSPORT_BOOKING_COUNT, { count: transportCount, plural: transportCount !== 1 ? 's' : '' })}
+    <View className="px-2">
+      <Text className="text-sm text-muted dark:text-muted-dark mb-4">
+        {t(TRANSLATION_KEYS.TRIP_PLANNER.TRANSPORT_READ_ONLY_NOTE)}
+      </Text>
+      {stops.length === 0 ? (
+        <View className="items-center py-8">
+          <Feather name="truck" size={36} color={mutedColor} />
+          <Text className="mt-3 text-muted dark:text-muted-dark text-center">
+            {t(TRANSLATION_KEYS.TRIP_PLANNER.TRANSPORT_EMPTY_TITLE)}
           </Text>
-          {trip.userSegments
-            ?.filter((s) => s.transportDetails)
-            .map((segment) => (
-              <View
-                key={segment.id}
-                className="p-4 mb-3 border rounded-lg bg-surface dark:bg-surface-dark border-border dark:border-border-dark"
-              >
-                <View className="flex-row items-start justify-between">
-                  <View className="flex-1">
-                    <View className="flex-row items-center mb-1">
-                      <Feather name="truck" size={14} color="#0066FF" />
-                      <Text className="ml-2 font-semibold text-text dark:text-text-dark">
-                        {segment.transportDetails?.name || t(TRANSLATION_KEYS.TRIP_PLANNER.TRANSPORT_FALLBACK)}
-                      </Text>
-                    </View>
-                    <Text className="mt-1 text-xs text-muted dark:text-muted-dark">
-                      {t(TRANSLATION_KEYS.TRIP_PLANNER.DAY_PLAN_DAY, { day: segment.dayNumber })}
-                    </Text>
-                  </View>
-                  <View className="items-end">
-                    <Text className="font-bold text-text dark:text-text-dark">
-                      ₹{segment.transportDetails?.cost || 0}
-                    </Text>
-                    <View
-                      className="px-2 py-1 mt-1 rounded"
-                      style={{
-                        backgroundColor:
-                          segment.transportDetails?.bookingStatus === 'CONFIRMED'
-                            ? '#DBEAFE'
-                            : '#FEF3C7',
-                      }}
-                    >
-                      <Text
-                        className="text-xs font-semibold"
-                        style={{
-                          color:
-                            segment.transportDetails?.bookingStatus === 'CONFIRMED'
-                              ? '#0066FF'
-                              : '#F59E0B',
-                        }}
-                      >
-                        {segment.transportDetails?.bookingStatus || 'PENDING'}
-                      </Text>
-                    </View>
-                  </View>
-                </View>
-              </View>
-            ))}
         </View>
       ) : (
-        <View className="items-center justify-center py-8">
-          <Feather name="truck" size={40} color="#D1D5DB" />
-          <Text className="mt-3 text-muted dark:text-muted-dark">{t(TRANSLATION_KEYS.TRIP_PLANNER.TRANSPORT_EMPTY_TITLE)}</Text>
-          <Text className="mt-1 text-xs text-muted dark:text-muted-dark">
-            {t(TRANSLATION_KEYS.TRIP_PLANNER.TRANSPORT_EMPTY_SUBTITLE)}
-          </Text>
-        </View>
+        stops.map((seg) => (
+          <View
+            key={seg.id}
+            className="p-4 mb-3 rounded-lg border border-border dark:border-border-dark bg-surface dark:bg-surface-dark"
+          >
+            <View className="flex-row items-center mb-1">
+              <Feather name="truck" size={14} color={primaryColor} />
+              <Text className="ml-2 font-semibold text-text dark:text-text-dark">{seg.customTransport}</Text>
+            </View>
+            <Text className="text-xs text-muted dark:text-muted-dark">
+              {t(TRANSLATION_KEYS.TRIP_PLANNER.DAY_PLAN_DAY, { day: seg.dayNumber })} · {seg.shortDescription}
+            </Text>
+          </View>
+        ))
       )}
     </View>
   );

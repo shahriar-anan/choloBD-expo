@@ -59,33 +59,6 @@ function mapApiError(error: any): TourApiError {
 }
 
 /**
- * GET /api/tour-builder/by-admin/:adminId
- * Fetch tour packages created by a specific admin
- * Use "me" for current authenticated admin, or provide specific adminId
- */
-export async function getTourPlansByAdmin(adminId: string = 'me', filters?: TourFilters): Promise<TourPackage[]> {
-  try {
-    console.log('[tourBuilder.ts] Fetching tour plans by admin:', adminId, 'filters:', filters);
-    const api = getApiInstance();
-
-    const params: any = {};
-    if (filters?.locationId) params.locationId = filters.locationId;
-    if (filters?.tourType) params.tourType = filters.tourType;
-    if (filters?.isActive !== undefined) params.isActive = filters.isActive;
-    if (filters?.isPopular !== undefined) params.isPopular = filters.isPopular;
-    if (filters?.minBudget !== undefined) params.minBudget = filters.minBudget;
-    if (filters?.maxBudget !== undefined) params.maxBudget = filters.maxBudget;
-
-    const res = await api.get<TourApiResponse<TourPackage[]>>(`/api/tour-builder/by-admin/${adminId}`, { params });
-    console.log('[tourBuilder.ts] getTourPlansByAdmin success, count:', res.data.data?.length);
-    return res.data.data || [];
-  } catch (error: any) {
-    console.error('[tourBuilder.ts] getTourPlansByAdmin error:', error?.response?.status, error?.message);
-    throw mapApiError(error);
-  }
-}
-
-/**
  * GET /api/tour-builder
  * Fetch list of tour packages with optional filters
  */
@@ -191,19 +164,13 @@ export async function deleteTourPlan(tourPackageId: string): Promise<{ success: 
 }
 
 /**
- * GET /api/tour-spots (all) or /api/tour-spots/location/:locationId (by location)
- * Fetch list of available tour spots, optionally filtered by location
+ * GET /api/tour-spots or GET /api/tour-spots?locationId=
  */
 export async function getTourSpots(locationId?: string): Promise<Array<{ id: string; name: string; location: string }>> {
   try {
-    const endpoint = locationId 
-      ? `/api/tour-spots/location/${locationId}` 
-      : `/api/tour-spots`;
-    
-    console.log('[tourBuilder.ts] Fetching tour spots from:', endpoint);
     const api = getApiInstance();
-    
-    const res = await api.get<TourApiResponse<Array<any>>>(endpoint);
+    const params = locationId ? { locationId } : undefined;
+    const res = await api.get<TourApiResponse<Array<any>>>('/api/tour-spots', { params });
     console.log('[tourBuilder.ts] getTourSpots success, count:', res.data.data?.length);
     
     // Transform response to expected format
@@ -224,19 +191,13 @@ export async function getTourSpots(locationId?: string): Promise<Array<{ id: str
 }
 
 /**
- * GET /api/activity-spots (all) or /api/activity-spots/location/:locationId (by location)
- * Fetch list of available activity spots, optionally filtered by location
+ * GET /api/activity-spots or GET /api/activity-spots?locationId=
  */
 export async function getActivitySpots(locationId?: string): Promise<Array<{ id: string; name: string; location: string }>> {
   try {
-    const endpoint = locationId 
-      ? `/api/activity-spots/location/${locationId}` 
-      : `/api/activity-spots`;
-    
-    console.log('[tourBuilder.ts] Fetching activity spots from:', endpoint);
     const api = getApiInstance();
-    
-    const res = await api.get<TourApiResponse<Array<any>>>(endpoint);
+    const params = locationId ? { locationId } : undefined;
+    const res = await api.get<TourApiResponse<Array<any>>>('/api/activity-spots', { params });
     console.log('[tourBuilder.ts] getActivitySpots success, count:', res.data.data?.length);
     
     // Transform response to expected format
