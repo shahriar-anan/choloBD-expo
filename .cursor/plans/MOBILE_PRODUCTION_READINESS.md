@@ -33,7 +33,7 @@ Segment booking FKs on personal plans wait until 04 and 06 clients exist (see in
 
 | Area | Backend today | Mobile before program |
 | --- | --- | --- |
-| Personal trip plans | `/api/tour-builder/my` + `daySegments` on PUT, web wizard constraints | API retarget done. Wizard still auto-names a plan and dumps stops onto day 1. Day editor and hotels/transport tabs are not QA-complete. |
+| Personal trip plans | `/api/tour-builder/my` + `daySegments` on PUT, web wizard constraints | Wizard, scrolling detail, and edit passed device QA on 2026-09-28. Checkout stays in increment 07. |
 | Spot lists | `?locationId=` query | `/location/:id` paths |
 | Admin “my tours” | No `by-admin`; catalog `GET /api/tour-builder` | `GET /api/tour-builder/by-admin/:id` |
 | Service-admin hotel | `GET /api/hotels/my` | Legacy v1 my-hotel path |
@@ -52,7 +52,7 @@ Refund **policy** lives in the backend; the app calls eligibility and displays `
 
 | # | Folder | Focus | Depends on | Status |
 | --- | --- | --- | --- | --- |
-| 01 | [01-trip-plan-api](mobile-production-readiness/01-trip-plan-api/) | Trip plan wizard, day segments, QA-ready plan screens | — | **In progress** — API retarget done; wizard, day editor, and production UI not started |
+| 01 | [01-trip-plan-api](mobile-production-readiness/01-trip-plan-api/) | Trip plan wizard, day segments, QA-ready plan screens | — | **Done** — manual QA passed 2026-09-28. Checkout stays in increment 07. |
 | 02 | [02-cancel-refund](mobile-production-readiness/02-cancel-refund/) | Hotel + package cancel/refund UI | 01 | Not started |
 | 03 | [03-package-payment](mobile-production-readiness/03-package-payment/) | Pay `PackageBooking` | 02 | Not started |
 | 04 | [04-activity-booking](mobile-production-readiness/04-activity-booking/) | Activity book, pay, QR, cancel | 03 | Not started |

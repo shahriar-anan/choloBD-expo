@@ -3,6 +3,7 @@
  */
 
 import { getApiInstance } from './axiosClient';
+import { unwrapList } from './personalPlanMapping';
 
 export interface ActivitySpot {
   id: string;
@@ -16,15 +17,20 @@ export interface ActivitySpot {
 export async function getActivitySpots(locationId: string): Promise<ActivitySpot[]> {
   const api = getApiInstance();
   const response = await api.get('/api/activity-spots', {
-    params: { locationId },
+    params: { locationId, limit: 100 },
   });
-  const data = response.data.data || [];
+  const data = unwrapList<any>(response.data?.data);
   return data.map((spot: any) => ({
     id: spot.id,
     name: spot.name,
     description: spot.description,
-    location: [spot.city, spot.state, spot.country].filter(Boolean).join(', ') || 'Unknown Location',
-    imageUrl: spot.imageUrl,
+    location:
+      spot.location?.name ||
+      [spot.location?.city, spot.location?.state, spot.location?.country]
+        .filter(Boolean)
+        .join(', ') ||
+      'Unknown Location',
+    imageUrl: spot.images?.[0]?.url || spot.imageUrl,
     rating: spot.rating,
   }));
 }

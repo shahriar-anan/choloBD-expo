@@ -14,7 +14,7 @@ import { useTheme } from '../../../hooks/useTheme';
 import { theme } from '../../../constants/theme';
 import { DeleteSegmentConfirm } from '../modals/DeleteSegmentConfirm';
 import { StopSegmentForm } from '../StopSegmentForm';
-import { tripDurationFromDates, countStopsForDay, createBlankStop, nextSegmentOrderForDay, WizardItineraryStop, MAX_STOPS_PER_DAY } from '../../../utils/tripPlanItinerary';
+import { tripDurationFromDates, countStopsForDay, nextSegmentOrderForDay, WizardItineraryStop, MAX_STOPS_PER_DAY } from '../../../utils/tripPlanItinerary';
 
 interface DayPlanTabProps {
   trip: TripPlan;
@@ -353,10 +353,16 @@ export function DayPlanTab({ trip }: DayPlanTabProps) {
           }
           initial={
             addModalVisible
-              ? createBlankStop(selectedDay || 1, nextSegmentOrderForDay(
-                  (trip.userSegments || []).map(segmentToWizard),
-                  selectedDay || 1
-                ))
+              ? {
+                  id: `stop-${Date.now()}`,
+                  dayNumber: selectedDay || 1,
+                  segmentOrder: nextSegmentOrderForDay(
+                    (trip.userSegments || []).map(segmentToWizard),
+                    selectedDay || 1
+                  ),
+                  shortDescription: '',
+                  tourSpotId: '',
+                }
               : segmentToWizard(selectedSegment!)
           }
           onClose={() => {

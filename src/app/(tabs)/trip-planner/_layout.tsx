@@ -13,6 +13,7 @@ export default function TripPlannerLayout() {
     >
       <Stack.Screen name="index" />
       <Stack.Screen name="create" />
+      <Stack.Screen name="edit" />
       <Stack.Screen name="list" />
       <Stack.Screen name="[id]" />
     </Stack>

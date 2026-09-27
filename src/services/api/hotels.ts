@@ -1,5 +1,6 @@
 import { getApiInstance } from './axiosClient';
 import { Hotel } from '../../types/hotels';
+import { unwrapList } from './personalPlanMapping';
 
 export interface HotelFilters {
   locationId?: string;
@@ -18,7 +19,7 @@ export async function fetchHotels(filters: HotelFilters = {}): Promise<Hotel[]> 
   if (filters.maxRating) params.maxRating = filters.maxRating;
   if (filters.isActive !== undefined) params.isActive = filters.isActive;
   const res = await api.get('/api/hotels', { params });
-  return res.data.data || [];
+  return unwrapList<Hotel>(res.data?.data);
 }
 
 export { Hotel } from '../../types/hotels';

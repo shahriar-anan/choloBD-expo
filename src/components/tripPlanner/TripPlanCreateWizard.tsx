@@ -1,8 +1,8 @@
 /**
- * Four-step personal trip plan create wizard (details → catalog → itinerary → review).
+ * Phone layout of the web custom tour builder: details, itinerary, photos.
  */
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -11,136 +11,163 @@ import {
   ScrollView,
   ActivityIndicator,
   Alert,
+  Image,
   Platform,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import * as ImagePicker from 'expo-image-picker';
 import { Feather } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { useRouter } from 'expo-router';
 import { TRANSLATION_KEYS } from '../../constants/translationKeys';
-import { useTheme } from '../../hooks/useTheme';
-import theme from '../../constants/theme';
-import { LocationSelection } from './LocationSelection';
-import { Location } from '../../types/locations';
+import { useFetchLocations } from '../../hooks/useFetchLocations';
+import { getApiInstance } from '../../services/api/axiosClient';
+import { unwrapList, catalogSegmentsToWizardStops } from '../../services/api/personalPlanMapping';
+import { uploadCommunityImageToCloudinary } from '../../services/api/cloudinaryUpload';
 import {
-  WizardItineraryStop,
-  TOUR_TYPE_VALUES,
-  inferEndDateString,
-  toPersonalPlanStartIso,
-  toPersonalPlanEndIso,
-  getDetailsContinueBlockReason,
-  getItineraryContinueBlockReason,
-  countStopsForDay,
-  nextSegmentOrderForDay,
-  createBlankStop,
-  applyOvernightHotelToLastStop,
-  wizardStopsToDaySegments,
+  attachPersonalTourImages,
+  savePersonalTourPlan,
+  updatePersonalTourPlan,
+} from '../../services/api/tripPlanner';
+import { TripPlan } from '../../types/trips';
+import { NamedOption } from './StopEditorSheet';
+import { StopEditorSheet } from './StopEditorSheet';
+import {
+  MAX_DURATION,
   MAX_STOPS_PER_DAY,
+  MIN_DURATION,
+  TOUR_TYPE_VALUES,
+  WizardStop,
+  applyOvernightHotelToLastStop,
+  clampDaySegmentsToDuration,
+  countStopsForDay,
+  createBlankStop,
+  formatDisplayDate,
+  formatEnumLabel,
+  formatTaka,
+  getDetailsContinueReason,
+  getItineraryContinueReason,
+  inferEndDateString,
   missingDurationDays,
+  moveStopWithinDay,
+  nextSegmentOrderForDay,
+  removeStop,
+  sumStopTotals,
+  toDateInputValue,
 } from '../../utils/tripPlanItinerary';
-import {
-  HotelTypePreference,
-  TransportTypePreference,
-  TourTypePreference,
-  CreateTripData,
-} from '../../types/trips';
-import { getTourPlan, getTourPlans } from '../../services/api/tourBuilder';
-import { catalogSegmentsToWizardStops } from '../../services/api/personalPlanMapping';
-import { TourPackage } from '../../types/tours';
-import { StopSegmentForm } from './StopSegmentForm';
 
-const HOTEL_TYPES: HotelTypePreference[] = [
-  'RESORT',
-  'HOSTEL',
-  'BOUTIQUE',
-  'BUDGET',
-  'LUXURY',
-  'GUESTHOUSE',
-  'APARTMENT',
-];
-const TRANSPORT_TYPES: TransportTypePreference[] = [
-  'BUS',
-  'FLIGHT',
-  'TRAIN',
-  'CAR_RENTAL',
-  'FERRY',
-  'SELF_MANAGED',
-];
+const STEPS = ['details', 'itinerary', 'photos'] as const;
+const CATALOG_PAGE_SIZE = 4;
 
-export interface TripPlanWizardDraft {
+export interface WizardInitial {
   packageName: string;
   shortDescription: string;
-  tourType: TourTypePreference | '';
-  location: Location | null;
+  tourType: string;
+  locationId: string;
   startDate: string;
   duration: number;
-  participantCount: number;
-  estimatedBudget: string;
-  preferredHotelType: HotelTypePreference;
-  preferredTransport: TransportTypePreference;
-  basedOnPackageId: string;
-  basedOnPackageName: string;
-  daySegments: WizardItineraryStop[];
-}
-
-function initialDraft(): TripPlanWizardDraft {
-  return {
-    packageName: '',
-    shortDescription: '',
-    tourType: '',
-    location: null,
-    startDate: '',
-    duration: 3,
-    participantCount: 2,
-    estimatedBudget: '10000',
-    preferredHotelType: 'RESORT',
-    preferredTransport: 'BUS',
-    basedOnPackageId: '',
-    basedOnPackageName: '',
-    daySegments: [],
-  };
+  totalBudget: number;
+  basedOnPackageId?: string;
+  stops: WizardStop[];
+  images?: { url: string }[];
 }
 
 interface TripPlanCreateWizardProps {
-  onCreate: (payload: CreateTripData) => Promise<{ id: string }>;
-  isSubmitting: boolean;
+  mode: 'create' | 'edit';
+  initial?: WizardInitial;
+  planId?: string;
+  onSaved: (plan: TripPlan) => void;
+  onCancel: () => void;
 }
 
-export function TripPlanCreateWizard({ onCreate, isSubmitting }: TripPlanCreateWizardProps) {
+function readCost(raw: any): number {
+  const value = raw?.entryFee ?? raw?.cost ?? raw?.pricePerNight ?? raw?.basePrice ?? raw?.price;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function toNamed(raw: any): NamedOption {
+  return {
+    id: raw.id,
+    name: raw.name || raw.packageName || 'Untitled',
+    cost: readCost(raw),
+    locationId: raw.locationId || raw.location?.id,
+  };
+}
+
+export function TripPlanCreateWizard({
+  mode,
+  initial,
+  planId,
+  onSaved,
+  onCancel,
+}: TripPlanCreateWizardProps) {
   const { t } = useTranslation();
-  const router = useRouter();
-  const { isDark } = useTheme();
-  const primaryColor = isDark ? theme.colors['primary-dark'] : theme.colors.primary;
-  const mutedColor = isDark ? theme.colors['muted-dark'] : theme.colors.muted;
-  const placeholderColor = mutedColor;
+  const { locations, loading: locationsLoading } = useFetchLocations();
+  const divisions = useMemo(
+    () => locations.filter((location) => location.locationType === 'DIVISION'),
+    [locations]
+  );
 
   const [step, setStep] = useState(0);
-  const [draft, setDraft] = useState<TripPlanWizardDraft>(initialDraft);
-  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [packageName, setPackageName] = useState(initial?.packageName || '');
+  const [shortDescription, setShortDescription] = useState(initial?.shortDescription || '');
+  const [tourType, setTourType] = useState(initial?.tourType || '');
+  const [locationId, setLocationId] = useState(initial?.locationId || '');
+  const [startDate, setStartDate] = useState(initial?.startDate || '');
+  const [duration, setDuration] = useState(initial?.duration || 0);
+  const [totalBudget, setTotalBudget] = useState(
+    initial?.totalBudget ? String(initial.totalBudget) : ''
+  );
+  const [basedOnPackageId, setBasedOnPackageId] = useState(initial?.basedOnPackageId || '');
+  const [stops, setStops] = useState<WizardStop[]>(initial?.stops || []);
+  const [catalog, setCatalog] = useState<any[]>([]);
+  const [catalogPage, setCatalogPage] = useState(0);
   const [catalogLoading, setCatalogLoading] = useState(false);
-  const [catalogList, setCatalogList] = useState<TourPackage[]>([]);
+  const [cloning, setCloning] = useState(false);
+  const [checklistDismissed, setChecklistDismissed] = useState(false);
+  const [assetsLoading, setAssetsLoading] = useState(false);
+  const [tourSpots, setTourSpots] = useState<NamedOption[]>([]);
+  const [activitySpots, setActivitySpots] = useState<NamedOption[]>([]);
+  const [hotels, setHotels] = useState<NamedOption[]>([]);
   const [activeDay, setActiveDay] = useState(1);
-  const [stopEditorVisible, setStopEditorVisible] = useState(false);
-  const [editingStop, setEditingStop] = useState<WizardItineraryStop | null>(null);
+  const [editor, setEditor] = useState<WizardStop | null>(null);
+  const [showDate, setShowDate] = useState(false);
+  const [photos, setPhotos] = useState<{ uri: string; mimeType?: string | null; fileName?: string | null }[]>([]);
+  const [saving, setSaving] = useState(false);
 
-  const totalSteps = 4;
-  const stepTitles = [
-    t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_DETAILS_TITLE),
-    t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_CATALOG_TITLE),
-    t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_ITINERARY_TITLE),
-    t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_REVIEW_TITLE),
-  ];
+  const budgetNumber = Number(totalBudget) || 0;
+  const inferredEnd = inferEndDateString(startDate, duration);
+  const unlocked = Boolean(locationId && tourType);
+  const liveTotal = sumStopTotals(stops);
+  const missingDays = missingDurationDays(stops, duration);
+  const detailsReason = getDetailsContinueReason({
+    packageName,
+    totalBudget: budgetNumber,
+    division: locationId,
+    tourType,
+    duration,
+    startDate,
+    shortDescription,
+  });
+  const itineraryReason = getItineraryContinueReason(stops, duration, liveTotal, budgetNumber);
+  const dayStops = stops
+    .filter((stop) => stop.dayNumber === activeDay)
+    .sort((a, b) => a.segmentOrder - b.segmentOrder);
 
   useEffect(() => {
-    if (step !== 1) return;
+    if (mode !== 'create') return;
     let cancelled = false;
     (async () => {
       setCatalogLoading(true);
       try {
-        const list = await getTourPlans({ isActive: true });
-        if (!cancelled) setCatalogList(list.slice(0, 20));
+        const api = getApiInstance();
+        const res = await api.get('/api/tour-builder', { params: { limit: 100, isActive: true } });
+        const list = unwrapList<any>(res.data?.data).filter(
+          (item) => !item.kind || item.kind === 'CATALOG'
+        );
+        if (!cancelled) setCatalog(list);
       } catch {
-        if (!cancelled) setCatalogList([]);
+        if (!cancelled) setCatalog([]);
       } finally {
         if (!cancelled) setCatalogLoading(false);
       }
@@ -148,456 +175,643 @@ export function TripPlanCreateWizard({ onCreate, isSubmitting }: TripPlanCreateW
     return () => {
       cancelled = true;
     };
-  }, [step]);
+  }, [mode]);
 
-  const patch = useCallback((partial: Partial<TripPlanWizardDraft>) => {
-    setDraft((prev) => ({ ...prev, ...partial }));
-  }, []);
-
-  const endDateYmd = useMemo(
-    () => inferEndDateString(draft.startDate, draft.duration),
-    [draft.startDate, draft.duration]
-  );
-
-  const detailsBlock = getDetailsContinueBlockReason({
-    packageName: draft.packageName,
-    shortDescription: draft.shortDescription,
-    tourType: draft.tourType,
-    locationId: draft.location?.id ?? '',
-    startDate: draft.startDate,
-    duration: draft.duration,
-    estimatedBudget: Number(draft.estimatedBudget) || 0,
-    participantCount: draft.participantCount,
-  });
-
-  const itineraryBlock = getItineraryContinueBlockReason(draft.daySegments, draft.duration);
-
-  const handleBack = () => {
-    if (step === 0) {
-      router.back();
+  useEffect(() => {
+    if (!locationId) {
+      setTourSpots([]);
+      setActivitySpots([]);
+      setHotels([]);
       return;
     }
-    setStep((s) => s - 1);
-  };
+    let cancelled = false;
+    (async () => {
+      setAssetsLoading(true);
+      try {
+        const api = getApiInstance();
+        const [tourRes, activityRes, hotelRes] = await Promise.all([
+          api.get('/api/tour-spots', { params: { divisionId: locationId, limit: 100 } }),
+          api.get('/api/activity-spots', { params: { divisionId: locationId, limit: 100 } }),
+          api.get('/api/hotels', { params: { divisionId: locationId, limit: 100 } }),
+        ]);
+        if (cancelled) return;
+        setTourSpots(unwrapList<any>(tourRes.data?.data).map(toNamed));
+        setActivitySpots(unwrapList<any>(activityRes.data?.data).map(toNamed));
+        setHotels(unwrapList<any>(hotelRes.data?.data).map(toNamed));
+      } catch {
+        if (!cancelled) {
+          setTourSpots([]);
+          setActivitySpots([]);
+          setHotels([]);
+        }
+      } finally {
+        if (!cancelled) setAssetsLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [locationId]);
 
-  const applyCatalog = async (pkg: TourPackage) => {
+  const pagedCatalog = catalog.slice(
+    catalogPage * CATALOG_PAGE_SIZE,
+    catalogPage * CATALOG_PAGE_SIZE + CATALOG_PAGE_SIZE
+  );
+  const catalogPages = Math.max(1, Math.ceil(catalog.length / CATALOG_PAGE_SIZE));
+
+  const applyCatalog = async (id: string) => {
+    setCloning(true);
+    setBasedOnPackageId(id);
+    setChecklistDismissed(false);
     try {
-      setCatalogLoading(true);
-      const detail = await getTourPlan(pkg.id);
-      const duration = detail.duration || draft.duration;
-      const stops = detail.daySegments?.length
-        ? catalogSegmentsToWizardStops(detail.daySegments, duration)
-        : [];
-      setDraft((prev) => ({
-        ...prev,
-        basedOnPackageId: detail.id,
-        basedOnPackageName: detail.packageName,
-        packageName: detail.packageName || prev.packageName,
-        shortDescription: detail.shortDescription || prev.shortDescription,
-        tourType: (detail.tourType as TourTypePreference) || prev.tourType,
-        duration,
-        daySegments: applyOvernightHotelToLastStop(stops),
-        location: detail.location
-          ? ({
-              id: detail.location.id,
-              name: detail.location.name,
-              locationType: 'CITY',
-              country: 'Bangladesh',
-            } as Location)
-          : prev.location,
-      }));
-    } catch (e: any) {
-      Alert.alert(t(TRANSLATION_KEYS.COMMON.ERROR), e?.message || 'Failed to load catalog package');
+      const api = getApiInstance();
+      const res = await api.get(`/api/tour-builder/${id}`);
+      const tour = res.data?.data;
+      if (!tour) return;
+      setPackageName(tour.packageName || '');
+      setShortDescription(tour.shortDescription || '');
+      setTourType(tour.tourType || '');
+      setLocationId(tour.location?.id || tour.locationId || '');
+      setDuration(tour.duration || 0);
+      setTotalBudget(String(tour.totalBudget || tour.estimatedBudget || ''));
+      setStops(catalogSegmentsToWizardStops(tour.daySegments || []));
+      setActiveDay(1);
+    } catch (error: any) {
+      Alert.alert(t(TRANSLATION_KEYS.COMMON.ERROR), error?.message || 'Could not clone catalog tour');
     } finally {
-      setCatalogLoading(false);
+      setCloning(false);
     }
   };
 
   const clearCatalog = () => {
-    setDraft(initialDraft());
-    setStep(0);
+    setBasedOnPackageId('');
+    setPackageName('');
+    setShortDescription('');
+    setTourType('');
+    setLocationId('');
+    setStartDate('');
+    setDuration(0);
+    setTotalBudget('');
+    setStops([]);
+    setChecklistDismissed(false);
   };
 
-  const openAddStop = (dayNumber: number) => {
-    if (countStopsForDay(draft.daySegments, dayNumber) >= MAX_STOPS_PER_DAY) {
+  const commitStops = (next: WizardStop[]) => {
+    setStops(applyOvernightHotelToLastStop(next));
+  };
+
+  const openAdd = () => {
+    if (countStopsForDay(stops, activeDay) >= MAX_STOPS_PER_DAY) {
       Alert.alert(
         t(TRANSLATION_KEYS.COMMON.ERROR),
-        t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_STOP_LIMIT, { max: MAX_STOPS_PER_DAY })
+        t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_STOP_LIMIT, { max: MAX_STOPS_PER_DAY, day: activeDay })
       );
       return;
     }
-    setEditingStop(
-      createBlankStop(dayNumber, nextSegmentOrderForDay(draft.daySegments, dayNumber))
+    setEditor(createBlankStop(activeDay, nextSegmentOrderForDay(stops, activeDay)));
+  };
+
+  const saveEditor = (stop: WizardStop) => {
+    const exists = stops.some((item) => item.id === stop.id);
+    const next = exists ? stops.map((item) => (item.id === stop.id ? stop : item)) : [...stops, stop];
+    commitStops(next);
+    setEditor(null);
+    const stillMissing = missingDurationDays(
+      applyOvernightHotelToLastStop(next),
+      duration
     );
-    setStopEditorVisible(true);
-  };
-
-  const saveStop = (stop: WizardItineraryStop) => {
-    setDraft((prev) => {
-      const without = prev.daySegments.filter((s) => s.id !== stop.id);
-      const next = applyOvernightHotelToLastStop([...without, stop]);
-      return { ...prev, daySegments: next };
-    });
-    setStopEditorVisible(false);
-    setEditingStop(null);
-  };
-
-  const removeStop = (stopId: string) => {
-    setDraft((prev) => ({
-      ...prev,
-      daySegments: applyOvernightHotelToLastStop(prev.daySegments.filter((s) => s.id !== stopId)),
-    }));
-  };
-
-  const handleSavePlan = async () => {
-    if (!draft.location || !draft.tourType || !draft.startDate || !endDateYmd) return;
-    const payload: CreateTripData = {
-      name: draft.packageName.trim(),
-      description: draft.shortDescription.trim(),
-      tourType: draft.tourType,
-      primaryLocationId: draft.location.id,
-      startDate: toPersonalPlanStartIso(draft.startDate),
-      endDate: toPersonalPlanEndIso(endDateYmd),
-      estimatedBudget: Number(draft.estimatedBudget) || 0,
-      participantCount: draft.participantCount,
-      preferredHotelType: draft.preferredHotelType,
-      preferredTransport: draft.preferredTransport,
-      basedOnPackageId: draft.basedOnPackageId || undefined,
-      daySegments: wizardStopsToDaySegments(draft.daySegments),
-    };
-    try {
-      const created = await onCreate(payload);
-      Alert.alert(
-        t(TRANSLATION_KEYS.COMMON.SUCCESS),
-        t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_CREATE_SUCCESS),
-        [{ text: t(TRANSLATION_KEYS.COMMON.CONFIRM), onPress: () => router.replace(`/(tabs)/trip-planner/${created.id}`) }]
-      );
-    } catch (e: any) {
-      Alert.alert(t(TRANSLATION_KEYS.COMMON.ERROR), e?.message || t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_CREATE_FAIL));
+    if (stillMissing.length > 0 && stillMissing[0] !== activeDay) {
+      setActiveDay(stillMissing[0]);
     }
   };
 
-  const renderDetails = () => (
-    <ScrollView className="flex-1 px-6 py-4" keyboardShouldPersistTaps="handled">
-      <LocationSelection
-        onLocationSelected={(loc) => patch({ location: loc })}
-        selectedLocation={draft.location}
-      />
-      <View className="mt-4">
-        <Text className="text-sm font-semibold text-text dark:text-text-dark mb-2">
-          {t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_PACKAGE_NAME)}
-        </Text>
-        <TextInput
-          value={draft.packageName}
-          onChangeText={(v) => patch({ packageName: v })}
-          className="p-3 border rounded-lg border-border dark:border-border-dark bg-surface dark:bg-surface-dark text-text dark:text-text-dark"
-          placeholder={t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_PACKAGE_NAME_PH)}
-          placeholderTextColor={placeholderColor}
-        />
-      </View>
-      <View className="mt-4">
-        <Text className="text-sm font-semibold text-text dark:text-text-dark mb-2">
-          {t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_SHORT_DESC)}
-        </Text>
-        <TextInput
-          value={draft.shortDescription}
-          onChangeText={(v) => patch({ shortDescription: v })}
-          multiline
-          className="p-3 border rounded-lg border-border dark:border-border-dark bg-surface dark:bg-surface-dark text-text dark:text-text-dark min-h-[80px]"
-          placeholder={t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_SHORT_DESC_PH)}
-          placeholderTextColor={placeholderColor}
-        />
-      </View>
-      <Text className="text-sm font-semibold text-text dark:text-text-dark mt-4 mb-2">
-        {t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_TOUR_TYPE)}
-      </Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-4">
-        {TOUR_TYPE_VALUES.map((type) => (
-          <TouchableOpacity
-            key={type}
-            onPress={() => patch({ tourType: type })}
-            className={`px-3 py-2 rounded-full mr-2 border ${
-              draft.tourType === type ? 'bg-primary border-primary' : 'border-border dark:border-border-dark'
-            }`}
-          >
-            <Text className={`text-xs font-medium ${draft.tourType === type ? 'text-white' : 'text-text dark:text-text-dark'}`}>
-              {type.replace('_', ' ')}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-      <TouchableOpacity
-        onPress={() => setShowDatePicker(true)}
-        className="flex-row items-center p-3 border rounded-lg border-border dark:border-border-dark mb-4"
-      >
-        <Feather name="calendar" size={18} color={primaryColor} />
-        <Text className="ml-3 text-text dark:text-text-dark">
-          {draft.startDate || t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_START_DATE_LABEL)}
-        </Text>
-      </TouchableOpacity>
-      {showDatePicker && (
-        <DateTimePicker
-          value={draft.startDate ? new Date(`${draft.startDate}T12:00:00`) : new Date()}
-          mode="date"
-          minimumDate={new Date()}
-          onChange={(_, date) => {
-            setShowDatePicker(Platform.OS === 'ios');
-            if (date) {
-              const ymd = date.toISOString().slice(0, 10);
-              patch({ startDate: ymd });
-            }
-          }}
-        />
-      )}
-      <Text className="text-sm font-semibold text-text dark:text-text-dark mb-2">
-        {t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_DURATION_DAYS)}
-      </Text>
-      <View className="flex-row flex-wrap mb-4">
-        {[1, 2, 3, 4, 5, 7, 10, 14].map((d) => (
-          <TouchableOpacity
-            key={d}
-            onPress={() => patch({ duration: d })}
-            className={`w-12 h-10 items-center justify-center rounded-lg mr-2 mb-2 border ${
-              draft.duration === d ? 'bg-primary border-primary' : 'border-border dark:border-border-dark'
-            }`}
-          >
-            <Text className={draft.duration === d ? 'text-white font-semibold' : 'text-text dark:text-text-dark'}>
-              {d}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-      <View className="flex-row gap-3">
-        <View className="flex-1">
-          <Text className="text-sm font-semibold text-text dark:text-text-dark mb-2">
-            {t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_BUDGET)}
-          </Text>
-          <TextInput
-            value={draft.estimatedBudget}
-            onChangeText={(v) => patch({ estimatedBudget: v })}
-            keyboardType="numeric"
-            className="p-3 border rounded-lg border-border dark:border-border-dark text-text dark:text-text-dark"
-            placeholderTextColor={placeholderColor}
-          />
-        </View>
-        <View className="flex-1">
-          <Text className="text-sm font-semibold text-text dark:text-text-dark mb-2">
-            {t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_TRAVELERS)}
-          </Text>
-          <TextInput
-            value={String(draft.participantCount)}
-            onChangeText={(v) => patch({ participantCount: Math.max(1, parseInt(v, 10) || 1) })}
-            keyboardType="number-pad"
-            className="p-3 border rounded-lg border-border dark:border-border-dark text-text dark:text-text-dark"
-            placeholderTextColor={placeholderColor}
-          />
-        </View>
-      </View>
-      {detailsBlock && (
-        <Text className="text-xs text-muted dark:text-muted-dark mt-4">
-          {t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_DETAILS_HINT)}
-        </Text>
-      )}
-      <TouchableOpacity
-        disabled={Boolean(detailsBlock) || !draft.location}
-        onPress={() => setStep(1)}
-        className={`mt-6 py-3 rounded-lg ${detailsBlock || !draft.location ? 'bg-muted opacity-50' : 'bg-primary'}`}
-      >
-        <Text className="text-center font-semibold text-white">{t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_CONTINUE)}</Text>
-      </TouchableOpacity>
-    </ScrollView>
-  );
+  const pickPhotos = async () => {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      Alert.alert(t(TRANSLATION_KEYS.COMMON.ERROR), t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_PHOTO_PERMISSION));
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsMultipleSelection: true,
+      selectionLimit: 3,
+      quality: 0.8,
+    });
+    if (result.canceled) return;
+    setPhotos(
+      result.assets.slice(0, 3).map((asset) => ({
+        uri: asset.uri,
+        mimeType: asset.mimeType,
+        fileName: asset.fileName,
+      }))
+    );
+  };
 
-  const renderCatalog = () => (
-    <ScrollView className="flex-1 px-6 py-4">
-      <Text className="text-sm text-muted dark:text-muted-dark mb-4">
-        {t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_CATALOG_SUBTITLE)}
-      </Text>
-      {draft.basedOnPackageId ? (
-        <View className="p-4 mb-4 rounded-lg border border-primary bg-primary/10">
-          <Text className="font-semibold text-text dark:text-text-dark">{draft.basedOnPackageName}</Text>
-          <TouchableOpacity onPress={clearCatalog} className="mt-3">
-            <Text className="text-sm text-primary dark:text-primary-dark font-semibold">
-              {t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_CLEAR_CATALOG)}
-            </Text>
-          </TouchableOpacity>
-        </View>
-      ) : null}
-      {catalogLoading ? (
-        <ActivityIndicator color={primaryColor} />
-      ) : (
-        catalogList.map((pkg) => (
-          <TouchableOpacity
-            key={pkg.id}
-            onPress={() => applyCatalog(pkg)}
-            className="p-4 mb-3 rounded-lg border border-border dark:border-border-dark bg-surface dark:bg-surface-dark"
-          >
-            <Text className="font-semibold text-text dark:text-text-dark">{pkg.packageName}</Text>
-            <Text className="text-xs text-muted dark:text-muted-dark mt-1">
-              {pkg.duration} {t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_DAYS_LABEL)} · {pkg.tourType}
-            </Text>
-          </TouchableOpacity>
-        ))
-      )}
-      <TouchableOpacity onPress={() => setStep(2)} className="mt-4 py-3 rounded-lg bg-primary">
-        <Text className="text-center font-semibold text-white">{t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_CONTINUE)}</Text>
-      </TouchableOpacity>
-    </ScrollView>
-  );
+  const savePlan = async () => {
+    if (detailsReason || itineraryReason) {
+      Alert.alert(t(TRANSLATION_KEYS.COMMON.ERROR), detailsReason || itineraryReason || '');
+      return;
+    }
+    setSaving(true);
+    try {
+      const input = {
+        packageName,
+        totalBudget: budgetNumber,
+        shortDescription,
+        tourType,
+        locationId,
+        startDate,
+        duration,
+        basedOnPackageId: mode === 'create' ? basedOnPackageId || undefined : undefined,
+        daySegments: stops,
+      };
+      const saved =
+        mode === 'edit' && planId
+          ? await updatePersonalTourPlan(planId, input)
+          : await savePersonalTourPlan(input);
+      if (photos.length > 0) {
+        try {
+          const urls: string[] = [];
+          for (const photo of photos) {
+            const url = await uploadCommunityImageToCloudinary(
+              {
+                uri: photo.uri,
+                name: photo.fileName || `tour-${saved.id}.jpg`,
+                type: photo.mimeType,
+              },
+              `cholo_bd/tour-packages/${saved.id}/images`
+            );
+            urls.push(url);
+          }
+          const withImages = await attachPersonalTourImages(saved.id, urls);
+          onSaved(withImages);
+          return;
+        } catch (error: any) {
+          Alert.alert(
+            t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_SAVED_TITLE),
+            error?.message || t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_PHOTO_FAIL)
+          );
+        }
+      }
+      onSaved(saved);
+    } catch (error: any) {
+      Alert.alert(
+        t(TRANSLATION_KEYS.COMMON.ERROR),
+        error?.message || t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_SAVE_FAIL)
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
 
-  const renderItinerary = () => {
-    const missing = missingDurationDays(draft.daySegments, draft.duration);
-    return (
-      <View className="flex-1">
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} className="px-6 pt-4 max-h-12">
-          {Array.from({ length: draft.duration }, (_, i) => i + 1).map((day) => (
-            <TouchableOpacity
-              key={day}
-              onPress={() => setActiveDay(day)}
-              className={`px-4 py-2 mr-2 rounded-full ${
-                activeDay === day ? 'bg-primary' : 'bg-surface dark:bg-surface-dark border border-border dark:border-border-dark'
-              }`}
-            >
-              <Text className={activeDay === day ? 'text-white font-semibold' : 'text-text dark:text-text-dark'}>
-                {t(TRANSLATION_KEYS.TRIP_PLANNER.DAY_PLAN_DAY, { day })}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-        {missing.length > 0 && (
-          <Text className="px-6 py-2 text-xs text-warning">
-            {t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_MISSING_DAYS, { days: missing.join(', ') })}
-          </Text>
-        )}
-        <ScrollView className="flex-1 px-6 py-2">
-          {draft.daySegments
-            .filter((s) => s.dayNumber === activeDay)
-            .sort((a, b) => a.segmentOrder - b.segmentOrder)
-            .map((stop) => (
-              <View
-                key={stop.id}
-                className="p-4 mb-3 rounded-lg border border-border dark:border-border-dark bg-surface dark:bg-surface-dark"
+  const goNext = () => {
+    if (step === 0 && detailsReason) {
+      Alert.alert(t(TRANSLATION_KEYS.COMMON.ERROR), detailsReason);
+      return;
+    }
+    if (step === 1 && itineraryReason) {
+      Alert.alert(t(TRANSLATION_KEYS.COMMON.ERROR), itineraryReason);
+      return;
+    }
+    setStep((current) => Math.min(current + 1, 2));
+  };
+
+  const visitNames = stops
+    .map((stop) => stop.tourSpotName)
+    .filter((name): name is string => Boolean(name));
+
+  return (
+    <View className="flex-1">
+      <View className="px-4 pt-2 pb-3 border-b border-border dark:border-border-dark">
+        <Text className="text-xl font-bold text-text dark:text-text-dark">
+          {mode === 'edit'
+            ? t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_EDIT_TITLE)
+            : t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_CREATE_TITLE)}
+        </Text>
+        <View className="flex-row gap-2 mt-3">
+          {STEPS.map((key, index) => {
+            const selected = step === index;
+            const locked = index > step || (index === 2 && Boolean(itineraryReason));
+            return (
+              <TouchableOpacity
+                key={key}
+                disabled={locked && index > step}
+                onPress={() => {
+                  if (index > step) return;
+                  if (index === 2 && itineraryReason) return;
+                  setStep(index);
+                }}
+                className={`flex-1 py-2 rounded-full items-center ${selected ? 'bg-primary' : 'bg-surface dark:bg-surface-dark'}`}
               >
-                <Text className="font-semibold text-text dark:text-text-dark">{stop.shortDescription}</Text>
-                <Text className="text-xs text-muted dark:text-muted-dark mt-1">
-                  {stop.tourSpotName || stop.tourSpotId}
+                <Text className={`text-xs font-semibold ${selected ? 'text-onPrimary' : 'text-muted'}`}>
+                  {index + 1}. {t(
+                    index === 0
+                      ? TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_STEP_DETAILS
+                      : index === 1
+                        ? TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_STEP_ITINERARY
+                        : TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_STEP_PHOTOS
+                  )}
                 </Text>
-                <View className="flex-row mt-3 gap-3">
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      </View>
+
+      <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingBottom: 24 }} keyboardShouldPersistTaps="handled">
+        {step === 0 && mode === 'create' ? (
+          <View className="mt-4 mb-2">
+            <View className="flex-row items-start justify-between">
+              <View className="flex-1 pr-3">
+                <Text className="text-base font-semibold text-text dark:text-text-dark">
+                  {t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_CATALOG_TITLE)}
+                </Text>
+                <Text className="text-xs text-muted dark:text-muted-dark mt-1">
+                  {t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_CATALOG_HINT)}
+                </Text>
+              </View>
+              {basedOnPackageId ? (
+                <TouchableOpacity onPress={clearCatalog}>
+                  <Text className="text-xs font-semibold text-primary">
+                    {t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_CLEAR_CATALOG)}
+                  </Text>
+                </TouchableOpacity>
+              ) : null}
+            </View>
+            {catalogLoading || cloning ? (
+              <ActivityIndicator className="mt-4" />
+            ) : pagedCatalog.length === 0 ? (
+              <Text className="text-sm text-muted mt-3">{t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_NO_CATALOG)}</Text>
+            ) : (
+              pagedCatalog.map((tour) => {
+                const selected = basedOnPackageId === tour.id;
+                const image = tour.images?.[0]?.url;
+                return (
                   <TouchableOpacity
-                    onPress={() => {
-                      setEditingStop(stop);
-                      setStopEditorVisible(true);
-                    }}
+                    key={tour.id}
+                    onPress={() => applyCatalog(tour.id)}
+                    className={`mt-3 rounded-xl overflow-hidden border ${selected ? 'border-primary' : 'border-border dark:border-border-dark'}`}
                   >
-                    <Text className="text-sm text-primary dark:text-primary-dark">{t(TRANSLATION_KEYS.COMMON.EDIT)}</Text>
+                    {image ? <Image source={{ uri: image }} className="h-28 w-full" /> : null}
+                    <View className="p-3 bg-surface dark:bg-surface-dark">
+                      <Text className="font-semibold text-text dark:text-text-dark">{tour.packageName}</Text>
+                      <Text className="text-xs text-muted mt-1">
+                        {tour.location?.name || 'Bangladesh'} · {formatEnumLabel(tour.tourType)} · {tour.duration}{' '}
+                        {t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_DAYS)} · {formatTaka(tour.totalBudget)}
+                      </Text>
+                      {selected ? (
+                        <Text className="text-xs text-primary font-semibold mt-1">
+                          {t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_SELECTED)}
+                        </Text>
+                      ) : null}
+                    </View>
                   </TouchableOpacity>
-                  <TouchableOpacity onPress={() => removeStop(stop.id)}>
-                    <Text className="text-sm text-danger">{t(TRANSLATION_KEYS.COMMON.DELETE)}</Text>
+                );
+              })
+            )}
+            {catalogPages > 1 ? (
+              <View className="flex-row justify-between mt-3">
+                <TouchableOpacity disabled={catalogPage === 0} onPress={() => setCatalogPage((page) => page - 1)}>
+                  <Text className="text-primary">{t(TRANSLATION_KEYS.COMMON.BACK)}</Text>
+                </TouchableOpacity>
+                <Text className="text-muted text-xs">
+                  {catalogPage + 1}/{catalogPages}
+                </Text>
+                <TouchableOpacity
+                  disabled={catalogPage >= catalogPages - 1}
+                  onPress={() => setCatalogPage((page) => page + 1)}
+                >
+                  <Text className="text-primary">{t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_NEXT)}</Text>
+                </TouchableOpacity>
+              </View>
+            ) : null}
+          </View>
+        ) : null}
+
+        {step === 0 ? (
+          <View className="mt-4 gap-4">
+            <Question number={1} title={t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_Q_NAME)} hint={t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_Q_NAME_HINT)}>
+              <TextInput
+                value={packageName}
+                onChangeText={setPackageName}
+                placeholder={t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_Q_NAME_PH)}
+                placeholderTextColor="#94A3B8"
+                className="border border-border dark:border-border-dark rounded-lg px-3 py-3 text-text dark:text-text-dark"
+              />
+            </Question>
+            <Question number={2} title={t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_Q_BUDGET)} hint={t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_Q_BUDGET_HINT)}>
+              <TextInput
+                value={totalBudget}
+                onChangeText={setTotalBudget}
+                keyboardType="numeric"
+                placeholder="15000"
+                placeholderTextColor="#94A3B8"
+                className="border border-border dark:border-border-dark rounded-lg px-3 py-3 text-text dark:text-text-dark"
+              />
+              {budgetNumber > 0 ? <Text className="text-primary mt-1">{formatTaka(budgetNumber)}</Text> : null}
+            </Question>
+            <Question
+              number={3}
+              title={t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_Q_DIVISION)}
+              hint={t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_Q_DIVISION_HINT)}
+            >
+              {locationsLoading ? <ActivityIndicator /> : null}
+              {divisions.map((division) => {
+                const selected = locationId === division.id;
+                return (
+                  <TouchableOpacity
+                    key={division.id}
+                    onPress={() => setLocationId(division.id)}
+                    className={`px-3 py-2 rounded-lg mb-2 ${selected ? 'bg-primary' : 'bg-surface dark:bg-surface-dark'}`}
+                  >
+                    <Text className={selected ? 'text-onPrimary' : 'text-text dark:text-text-dark'}>{division.name}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+              {locationId ? (
+                <Text className="text-xs text-muted mt-1">
+                  {t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_SPOT_COUNTS, {
+                    tours: tourSpots.length,
+                    activities: activitySpots.length,
+                  })}
+                </Text>
+              ) : null}
+            </Question>
+            <Question number={4} title={t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_Q_TYPE)} hint={t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_Q_TYPE_HINT)}>
+              <View className="flex-row flex-wrap gap-2">
+                {TOUR_TYPE_VALUES.map((value) => {
+                  const selected = tourType === value;
+                  return (
+                    <TouchableOpacity
+                      key={value}
+                      onPress={() => setTourType(value)}
+                      className={`px-3 py-2 rounded-full ${selected ? 'bg-primary' : 'bg-surface dark:bg-surface-dark'}`}
+                    >
+                      <Text className={selected ? 'text-onPrimary text-xs' : 'text-text dark:text-text-dark text-xs'}>
+                        {formatEnumLabel(value)}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </Question>
+            {unlocked ? (
+              <>
+                <Question number={5} title={t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_Q_DURATION)} hint={t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_Q_DURATION_HINT)}>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                    <View className="flex-row gap-2">
+                      {Array.from({ length: MAX_DURATION - MIN_DURATION + 1 }, (_, index) => index + 1).map((value) => {
+                        const selected = duration === value;
+                        return (
+                          <TouchableOpacity
+                            key={value}
+                            onPress={() => {
+                              setDuration(value);
+                              setStops((current) => clampDaySegmentsToDuration(current, value));
+                              setActiveDay(1);
+                            }}
+                            className={`w-10 h-10 rounded-full items-center justify-center ${selected ? 'bg-primary' : 'bg-surface dark:bg-surface-dark'}`}
+                          >
+                            <Text className={selected ? 'text-onPrimary font-semibold' : 'text-text dark:text-text-dark'}>
+                              {value}
+                            </Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+                  </ScrollView>
+                </Question>
+                <Question number={6} title={t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_Q_START)} hint={t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_Q_START_HINT)}>
+                  <TouchableOpacity
+                    onPress={() => setShowDate(true)}
+                    className="border border-border dark:border-border-dark rounded-lg px-3 py-3"
+                  >
+                    <Text className="text-text dark:text-text-dark">
+                      {startDate ? formatDisplayDate(startDate) : t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_PICK_DATE)}
+                    </Text>
+                  </TouchableOpacity>
+                  {showDate ? (
+                    <DateTimePicker
+                      value={startDate ? new Date(`${startDate}T00:00:00`) : new Date()}
+                      mode="date"
+                      display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                      onChange={(_, date) => {
+                        if (Platform.OS !== 'ios') setShowDate(false);
+                        if (date) setStartDate(toDateInputValue(date));
+                      }}
+                    />
+                  ) : null}
+                  {inferredEnd ? (
+                    <Text className="text-xs text-muted mt-2">
+                      {t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_END_INFERRED, { date: formatDisplayDate(inferredEnd) })}
+                    </Text>
+                  ) : null}
+                </Question>
+                <Question number={7} title={t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_Q_DESC)} hint={t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_Q_DESC_HINT)}>
+                  <TextInput
+                    value={shortDescription}
+                    onChangeText={setShortDescription}
+                    multiline
+                    placeholder={t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_Q_DESC_PH)}
+                    placeholderTextColor="#94A3B8"
+                    className="border border-border dark:border-border-dark rounded-lg px-3 py-3 text-text dark:text-text-dark min-h-[96px]"
+                  />
+                </Question>
+              </>
+            ) : null}
+          </View>
+        ) : null}
+
+        {step === 1 ? (
+          <View className="mt-4">
+            <View className="rounded-xl p-3 bg-surface dark:bg-surface-dark mb-3">
+              <Text className="font-semibold text-text dark:text-text-dark mb-2">
+                {t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_RULES_TITLE)}
+              </Text>
+              <Text className="text-xs text-muted dark:text-muted-dark leading-5">
+                {t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_RULES_BODY)}
+              </Text>
+            </View>
+            {missingDays.length > 0 ? (
+              <Text className="text-sm text-text dark:text-text-dark mb-2">
+                {t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_MISSING_DAYS, { days: missingDays.join(', ') })}
+              </Text>
+            ) : null}
+            {itineraryReason ? <Text className="text-xs text-muted mb-3">{itineraryReason}</Text> : null}
+            {basedOnPackageId && !checklistDismissed ? (
+              <View className="rounded-xl p-3 border border-primary mb-3">
+                <View className="flex-row justify-between">
+                  <Text className="font-semibold text-primary flex-1">
+                    {t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_TEMPLATE_LOADED)}
+                  </Text>
+                  <TouchableOpacity onPress={() => setChecklistDismissed(true)}>
+                    <Text className="text-xs text-muted">{t(TRANSLATION_KEYS.COMMON.CLOSE)}</Text>
+                  </TouchableOpacity>
+                </View>
+                <Text className="text-xs text-muted mt-1">
+                  {t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_TEMPLATE_HINT)}
+                </Text>
+              </View>
+            ) : null}
+            {assetsLoading ? <ActivityIndicator className="mb-3" /> : null}
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-3">
+              <View className="flex-row gap-2">
+                {Array.from({ length: duration || 0 }, (_, index) => index + 1).map((day) => {
+                  const selected = activeDay === day;
+                  const empty = countStopsForDay(stops, day) === 0;
+                  return (
+                    <TouchableOpacity
+                      key={day}
+                      onPress={() => setActiveDay(day)}
+                      className={`px-3 py-2 rounded-lg ${selected ? 'bg-primary' : 'bg-surface dark:bg-surface-dark'}`}
+                    >
+                      <Text className={selected ? 'text-onPrimary text-xs font-semibold' : 'text-text dark:text-text-dark text-xs'}>
+                        {t(TRANSLATION_KEYS.TRIP_PLANNER.DAY_PLAN_DAY, { day })}
+                        {empty ? ' ·' : ''}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </ScrollView>
+            {dayStops.map((stop, index) => (
+              <View key={stop.id} className="rounded-xl p-3 mb-2 bg-surface dark:bg-surface-dark">
+                <TouchableOpacity onPress={() => setEditor(stop)}>
+                  <Text className="font-semibold text-text dark:text-text-dark">
+                    {t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_STOP_LABEL, { order: stop.segmentOrder || index + 1 })}
+                  </Text>
+                  <Text className="text-sm text-text dark:text-text-dark mt-1">
+                    {stop.shortDescription || stop.tourSpotName || t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_STOP_EMPTY)}
+                  </Text>
+                  <Text className="text-xs text-muted mt-1">
+                    {[stop.tourSpotName, stop.activitySpotName, formatEnumLabel(stop.transportOption), index === dayStops.length - 1 ? stop.hotelName || formatEnumLabel(stop.hotelOption) : '']
+                      .filter(Boolean)
+                      .join(' · ')}
+                  </Text>
+                </TouchableOpacity>
+                <View className="flex-row gap-4 mt-2">
+                  <TouchableOpacity onPress={() => commitStops(moveStopWithinDay(stops, stop.id, 'up'))}>
+                    <Text className="text-xs text-primary">{t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_MOVE_UP)}</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => commitStops(moveStopWithinDay(stops, stop.id, 'down'))}>
+                    <Text className="text-xs text-primary">{t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_MOVE_DOWN)}</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => commitStops(removeStop(stops, stop.id))}>
+                    <Text className="text-xs text-error">{t(TRANSLATION_KEYS.COMMON.DELETE)}</Text>
                   </TouchableOpacity>
                 </View>
               </View>
             ))}
-          <TouchableOpacity
-            onPress={() => openAddStop(activeDay)}
-            className="py-3 rounded-lg border border-dashed border-primary items-center mb-8"
-          >
-            <Text className="text-primary dark:text-primary-dark font-semibold">
-              {t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_ADD_STOP)}
+            <TouchableOpacity onPress={openAdd} className="border border-dashed border-primary rounded-lg py-3 items-center mt-1">
+              <Text className="text-primary font-semibold">{t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_ADD_STOP)}</Text>
+            </TouchableOpacity>
+            <Text className="text-xs text-muted mt-3">
+              {t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_LIVE_TOTAL, {
+                total: formatTaka(liveTotal),
+                budget: formatTaka(budgetNumber),
+              })}
             </Text>
-          </TouchableOpacity>
-        </ScrollView>
-        {itineraryBlock && (
-          <Text className="px-6 text-xs text-muted dark:text-muted-dark pb-2">
-            {t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_ITINERARY_HINT)}
-          </Text>
-        )}
+          </View>
+        ) : null}
+
+        {step === 2 ? (
+          <View className="mt-4">
+            <View className="rounded-xl p-4 bg-surface dark:bg-surface-dark mb-4">
+              <Text className="text-lg font-bold text-text dark:text-text-dark">{packageName}</Text>
+              <Text className="text-sm text-muted mt-1">
+                {duration} {t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_DAYS)} · {formatTaka(liveTotal)} / {formatTaka(budgetNumber)}
+              </Text>
+              <Text className="text-sm text-text dark:text-text-dark mt-2">
+                {visitNames.join(', ') || t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_NO_SPOTS_YET)}
+              </Text>
+            </View>
+            <Text className="font-semibold text-text dark:text-text-dark">
+              {t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_PHOTOS_TITLE)}
+            </Text>
+            <Text className="text-xs text-muted mt-1 mb-3">{t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_PHOTOS_HINT)}</Text>
+            <TouchableOpacity onPress={pickPhotos} className="bg-surface dark:bg-surface-dark rounded-lg py-3 items-center">
+              <Text className="text-primary font-semibold">{t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_PICK_PHOTOS)}</Text>
+            </TouchableOpacity>
+            <View className="flex-row flex-wrap gap-2 mt-3">
+              {photos.map((photo) => (
+                <Image key={photo.uri} source={{ uri: photo.uri }} className="w-24 h-24 rounded-lg" />
+              ))}
+            </View>
+          </View>
+        ) : null}
+      </ScrollView>
+
+      <View className="px-4 py-3 border-t border-border dark:border-border-dark flex-row gap-3">
         <TouchableOpacity
-          disabled={Boolean(itineraryBlock)}
-          onPress={() => setStep(3)}
-          className={`mx-6 mb-6 py-3 rounded-lg ${itineraryBlock ? 'bg-muted opacity-50' : 'bg-primary'}`}
+          onPress={() => (step === 0 ? onCancel() : setStep((current) => current - 1))}
+          className="flex-1 py-3 rounded-lg items-center bg-surface dark:bg-surface-dark"
         >
-          <Text className="text-center font-semibold text-white">{t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_CONTINUE)}</Text>
+          <Text className="font-semibold text-text dark:text-text-dark">
+            {step === 0 ? t(TRANSLATION_KEYS.COMMON.CANCEL) : t(TRANSLATION_KEYS.COMMON.BACK)}
+          </Text>
         </TouchableOpacity>
-        {draft.location && editingStop && (
-          <StopSegmentForm
-            visible={stopEditorVisible}
-            locationId={draft.location.id}
-            dayNumber={editingStop.dayNumber}
-            isLastStopOnDay={
-              editingStop.segmentOrder ===
-              Math.max(
-                ...draft.daySegments.filter((s) => s.dayNumber === editingStop.dayNumber).map((s) => s.segmentOrder),
-                editingStop.segmentOrder
-              )
-            }
-            initial={editingStop}
-            onClose={() => {
-              setStopEditorVisible(false);
-              setEditingStop(null);
-            }}
-            onSave={saveStop}
-          />
+        {step < 2 ? (
+          <TouchableOpacity onPress={goNext} className="flex-1 py-3 rounded-lg items-center bg-primary">
+            <Text className="font-semibold text-onPrimary">{t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_CONTINUE)}</Text>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity onPress={savePlan} disabled={saving} className="flex-1 py-3 rounded-lg items-center bg-primary">
+            {saving ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text className="font-semibold text-onPrimary">
+                {mode === 'edit'
+                  ? t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_SAVE_CHANGES)
+                  : t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_CREATE_BTN)}
+              </Text>
+            )}
+          </TouchableOpacity>
         )}
       </View>
-    );
-  };
 
-  const renderReview = () => (
-    <ScrollView className="flex-1 px-6 py-4">
-      <Text className="text-lg font-bold text-text dark:text-text-dark">{draft.packageName}</Text>
-      <Text className="text-sm text-muted dark:text-muted-dark mt-2">{draft.shortDescription}</Text>
-      <Text className="text-sm text-text dark:text-text-dark mt-4">
-        {draft.location?.name} · {draft.tourType} · {draft.duration} {t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_DAYS_LABEL)}
-      </Text>
-      <Text className="text-sm text-text dark:text-text-dark mt-1">
-        {draft.startDate} → {endDateYmd}
-      </Text>
-      <Text className="text-sm font-semibold text-text dark:text-text-dark mt-6 mb-2">
-        {t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_REVIEW_STOPS)}
-      </Text>
-      {draft.daySegments
-        .slice()
-        .sort((a, b) => a.dayNumber - b.dayNumber || a.segmentOrder - b.segmentOrder)
-        .map((s) => (
-          <Text key={s.id} className="text-sm text-muted dark:text-muted-dark mb-1">
-            Day {s.dayNumber}: {s.shortDescription}
-          </Text>
-        ))}
-      <TouchableOpacity
-        disabled={isSubmitting}
-        onPress={handleSavePlan}
-        className="mt-8 py-3 rounded-lg bg-primary"
-        style={{ opacity: isSubmitting ? 0.6 : 1 }}
-      >
-        <Text className="text-center font-semibold text-white">
-          {isSubmitting
-            ? t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_CREATING_TRIP)
-            : t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_SAVE_PLAN)}
-        </Text>
-      </TouchableOpacity>
-    </ScrollView>
+      {editor ? (
+        <StopEditorSheet
+          visible
+          stop={editor}
+          divisionId={locationId}
+          isLastStop={
+            editor.segmentOrder ===
+            Math.max(
+              ...stops.filter((stop) => stop.dayNumber === editor.dayNumber).map((stop) => stop.segmentOrder),
+              editor.segmentOrder
+            )
+          }
+          onClose={() => setEditor(null)}
+          onSave={saveEditor}
+        />
+      ) : null}
+    </View>
   );
+}
 
+function Question({
+  number,
+  title,
+  hint,
+  children,
+}: {
+  number: number;
+  title: string;
+  hint?: string;
+  children: React.ReactNode;
+}) {
   return (
-    <View className="flex-1 bg-background dark:bg-background-dark">
-      <View className="px-6 py-4 border-b border-border dark:border-border-dark flex-row items-center justify-between">
-        <View className="flex-1">
-          <Text className="text-xl font-bold text-text dark:text-text-dark">{stepTitles[step]}</Text>
-          <Text className="text-xs text-muted dark:text-muted-dark mt-1">
-            {t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_STEP_OF, { step: step + 1, total: totalSteps })}
-          </Text>
+    <View className="rounded-2xl p-3 bg-surface dark:bg-surface-dark">
+      <View className="flex-row gap-3">
+        <View className="w-7 h-7 rounded-full bg-primary items-center justify-center">
+          <Text className="text-onPrimary text-xs font-bold">{number}</Text>
         </View>
-        <TouchableOpacity onPress={handleBack} className="p-2">
-          <Feather name={step === 0 ? 'x' : 'chevron-left'} size={24} color={primaryColor} />
-        </TouchableOpacity>
+        <View className="flex-1">
+          <Text className="font-semibold text-text dark:text-text-dark">{title}</Text>
+          {hint ? <Text className="text-xs text-muted dark:text-muted-dark mt-1 mb-2">{hint}</Text> : null}
+          {children}
+        </View>
       </View>
-      <View className="h-1 bg-border dark:bg-border-dark">
-        <View className="h-1 bg-primary" style={{ width: `${((step + 1) / totalSteps) * 100}%` }} />
-      </View>
-      {step === 0 && renderDetails()}
-      {step === 1 && renderCatalog()}
-      {step === 2 && renderItinerary()}
-      {step === 3 && renderReview()}
     </View>
   );
 }

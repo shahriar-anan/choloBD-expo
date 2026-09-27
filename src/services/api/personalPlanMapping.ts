@@ -18,7 +18,7 @@ import {
   TransportTypePreference,
   TourTypePreference,
 } from '../../types/trips';
-import { applyOvernightHotelToLastStop, wizardStopsToDaySegments, WizardItineraryStop } from '../../utils/tripPlanItinerary';
+import { applyOvernightHotelToLastStop, wizardStopsToDaySegments, WizardItineraryStop, WizardStop, createClientStopId, inferEndDateString, toDateInputValue } from '../../utils/tripPlanItinerary';
 
 export function mapDaySegmentToUserSegment(
   seg: PersonalDaySegmentApi,
@@ -271,30 +271,196 @@ export function normalizeDaySegmentsInput(
   return wizardStopsToDaySegments(applyOvernightHotelToLastStop(wizard));
 }
 
-export function catalogSegmentsToWizardStops(
-  segments: Array<{
-    dayNumber: number;
-    segmentOrder?: number;
-    shortDescription?: string;
-    tourSpotId?: string | null;
-    activitySpotId?: string | null;
-    transportOption?: string | null;
-    hotelOption?: string | null;
-    notes?: string | null;
-  }>,
-  duration: number
-): WizardItineraryStop[] {
-  return segments
-    .filter((s) => s.dayNumber >= 1 && s.dayNumber <= duration)
-    .map((seg) => ({
-      id: `stop-${seg.dayNumber}-${seg.segmentOrder ?? 1}-${Math.random().toString(36).slice(2, 7)}`,
-      dayNumber: seg.dayNumber,
-      segmentOrder: seg.segmentOrder ?? 1,
-      shortDescription: seg.shortDescription?.trim() || `Day ${seg.dayNumber}`,
-      tourSpotId: seg.tourSpotId || '',
-      activitySpotId: seg.activitySpotId || undefined,
-      transportOption: (seg.transportOption as TransportTypePreference) || undefined,
-      hotelOption: (seg.hotelOption as HotelTypePreference) || undefined,
-      notes: seg.notes || undefined,
-    }));
+export function catalogSegmentsToWizardStops(segments: any[]): WizardStop[] {
+  return (segments || []).map((segment) => ({
+    id: createClientStopId(),
+    dayNumber: segment.dayNumber,
+    segmentOrder: segment.segmentOrder || 1,
+    shortDescription: segment.shortDescription || segment.tourSpotName || 'Stop',
+    tourSpotId: segment.tourSpotId || '',
+    tourSpotName: segment.tourSpotName,
+    activitySpotId: segment.activitySpotId || undefined,
+    activitySpotName: segment.activitySpotName,
+    transportOption: segment.transportOption || '',
+    hotelOption: segment.hotelOption || '',
+    hotelId: segment.hotelId || '',
+    hotelName: segment.hotelName,
+    notes: segment.notes || '',
+    activityCost: Number(segment.activityCost || segment.estimatedCost || 0),
+    hotelCost: Number(segment.hotelCost || 0),
+  }));
+}
+
+export function unwrapList<T>(data: unknown): T[] {
+  if (Array.isArray(data)) return data as T[];
+  if (data && typeof data === 'object' && Array.isArray((data as { results?: T[] }).results)) {
+    return (data as { results: T[] }).results;
+  }
+  return [];
+}
+
+function asHotel(value?: string | null): HotelTypePreference {
+  const allowed: HotelTypePreference[] = [
+    'RESORT', 'HOSTEL', 'BOUTIQUE', 'BUDGET', 'LUXURY', 'GUESTHOUSE', 'APARTMENT',
+  ];
+  return allowed.includes(value as HotelTypePreference) ? (value as HotelTypePreference) : 'RESORT';
+}
+
+function asTransport(value?: string | null): TransportTypePreference {
+  const allowed: TransportTypePreference[] = [
+    'BUS', 'FLIGHT', 'TRAIN', 'CAR_RENTAL', 'FERRY', 'SELF_MANAGED',
+  ];
+  return allowed.includes(value as TransportTypePreference)
+    ? (value as TransportTypePreference)
+    : 'BUS';
+}
+
+function mapPackageSegment(seg: any, planId: string): UserSegment {
+  const now = new Date().toISOString();
+  return {
+    id: seg.id || createClientStopId(),
+    userTripPlanId: planId,
+    dayNumber: seg.dayNumber,
+    segmentOrder: seg.segmentOrder || 1,
+    shortDescription: seg.shortDescription || '',
+    customNotes: seg.notes || seg.customNotes || seg.shortDescription || '',
+    estimatedCost: Number(seg.estimatedCost || 0),
+    customTourSpotId: seg.tourSpotId || undefined,
+    customActivitySpotId: seg.activitySpotId || undefined,
+    customActivitySpotName: seg.activitySpotName || undefined,
+    tourSpotName: seg.tourSpotName || undefined,
+    activitySpotName: seg.activitySpotName || undefined,
+    hotelName: seg.hotelName || undefined,
+    customHotel: seg.hotelOption ? asHotel(seg.hotelOption) : undefined,
+    customTransport: seg.transportOption ? asTransport(seg.transportOption) : undefined,
+    createdAt: seg.createdAt || now,
+    updatedAt: seg.updatedAt || now,
+  };
+}
+
+export function mapPersonalPackageToTripPlan(pkg: any): TripPlan {
+  const id = pkg.id;
+  const location = pkg.location || {};
+  const segments = (pkg.daySegments || []).map((seg: any) => mapPackageSegment(seg, id));
+  return {
+    id,
+    userId: pkg.createdByUserId || pkg.userId || '',
+    name: pkg.packageName || 'Trip plan',
+    description: pkg.shortDescription || '',
+    shortDescription: pkg.shortDescription || '',
+    generalNotes: Array.isArray(pkg.generalNotes) ? pkg.generalNotes : undefined,
+    primaryLocationId: location.id || pkg.locationId || '',
+    startDate: pkg.startDate || new Date().toISOString(),
+    endDate: pkg.endDate || pkg.startDate || new Date().toISOString(),
+    status: (pkg.status as TripStatus) || 'PLANNING',
+    estimatedBudget: Number(pkg.estimatedBudget ?? pkg.totalBudget ?? 0),
+    actualCost: pkg.actualCost != null ? Number(pkg.actualCost) : undefined,
+    participantCount: Number(pkg.participantCount ?? pkg.maxGroupSize ?? 1),
+    preferredHotelType: asHotel(pkg.preferredHotelType),
+    preferredTransport: asTransport(pkg.preferredTransport),
+    isPublic: false,
+    createdAt: pkg.createdAt || new Date().toISOString(),
+    updatedAt: pkg.updatedAt || new Date().toISOString(),
+    user: {
+      id: pkg.createdByUserId || '',
+      userName: '',
+      email: '',
+      firstName: '',
+      lastName: '',
+    },
+    primaryLocation: {
+      id: location.id || pkg.locationId || '',
+      name: location.name || 'Bangladesh',
+      locationType: location.locationType || 'REGION',
+      country: location.country || 'Bangladesh',
+    },
+    userSegments: segments,
+    images: Array.isArray(pkg.images)
+      ? pkg.images.map((image: any) => ({ url: image.url, altText: image.altText }))
+      : [],
+    tourType: pkg.tourType,
+    duration: pkg.duration,
+    maxGroupSize: pkg.maxGroupSize,
+    rating: pkg.rating,
+    isActive: pkg.isActive,
+    basedOnPackageName: pkg.basedOnPackage?.packageName,
+    basedOnPackageId: pkg.basedOnPackageId || pkg.basedOnPackage?.id,
+  };
+}
+
+export function tripPlanToWizardStops(trip: TripPlan): WizardStop[] {
+  return (trip.userSegments || []).map((segment) => ({
+    id: segment.id,
+    dayNumber: segment.dayNumber,
+    segmentOrder: segment.segmentOrder,
+    shortDescription: segment.shortDescription || segment.customNotes || '',
+    tourSpotId: segment.customTourSpotId || '',
+    tourSpotName: segment.tourSpotName,
+    activitySpotId: segment.customActivitySpotId,
+    activitySpotName: segment.activitySpotName || segment.customActivitySpotName,
+    transportOption: segment.customTransport,
+    hotelOption: segment.customHotel,
+    hotelName: segment.hotelName,
+    notes: segment.customNotes,
+    activityCost: 0,
+    hotelCost: segment.estimatedCost || 0,
+  }));
+}
+
+export interface PersonalPlanSaveInput {
+  packageName: string;
+  totalBudget: number;
+  shortDescription: string;
+  tourType: string;
+  locationId: string;
+  startDate: string;
+  duration: number;
+  basedOnPackageId?: string;
+  daySegments: WizardStop[];
+  imageURLs?: string[];
+}
+
+export function buildPersonalPlanBody(input: PersonalPlanSaveInput, mode: 'create' | 'edit') {
+  const endDate = inferEndDateString(input.startDate, input.duration);
+  const segments = applyOvernightHotelToLastStop(input.daySegments);
+  const body: Record<string, unknown> = {
+    packageName: input.packageName.trim(),
+    totalBudget: input.totalBudget,
+    estimatedBudget: input.totalBudget,
+    shortDescription: input.shortDescription.trim(),
+    tourType: input.tourType,
+    locationId: input.locationId,
+    startDate: input.startDate,
+    endDate,
+    daySegments: segments.map((segment) => ({
+      dayNumber: segment.dayNumber,
+      segmentOrder: segment.segmentOrder,
+      shortDescription: segment.shortDescription.trim(),
+      tourSpotId: segment.tourSpotId,
+      activitySpotId: segment.activitySpotId || undefined,
+      transportOption: segment.transportOption || undefined,
+      hotelOption: segment.hotelOption || undefined,
+      hotelId: segment.hotelId || undefined,
+      notes: segment.notes?.trim() || undefined,
+      estimatedCost: (segment.activityCost || 0) + (segment.hotelCost || 0),
+    })),
+  };
+  if (mode === 'create' && input.basedOnPackageId) {
+    body.basedOnPackageId = input.basedOnPackageId;
+  }
+  if (input.imageURLs && input.imageURLs.length > 0) {
+    body.imageURLs = input.imageURLs;
+  }
+  return body;
+}
+
+export function durationFromTrip(trip: TripPlan): number {
+  if (trip.duration && trip.duration > 0) return trip.duration;
+  const start = toDateInputValue(trip.startDate);
+  const end = toDateInputValue(trip.endDate);
+  if (!start || !end) return 1;
+  const startDate = new Date(`${start}T00:00:00`);
+  const endDate = new Date(`${end}T00:00:00`);
+  const diff = Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+  return Math.max(1, diff + 1);
 }

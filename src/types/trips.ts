@@ -132,6 +132,9 @@ export interface UserSegment {
   dayNumber: number;
   segmentOrder: number;
   shortDescription?: string;
+  tourSpotName?: string;
+  activitySpotName?: string;
+  hotelName?: string;
   customNotes?: string;
   startTime?: string;
   endTime?: string;
@@ -177,6 +180,15 @@ export interface TripPlan {
   /** Raw day segments from GET /api/tour-builder/my/:id */
   daySegments?: PersonalDaySegmentApi[];
   userSegments: UserSegment[];
+  images?: { url: string; altText?: string }[];
+  tourType?: string;
+  duration?: number;
+  shortDescription?: string;
+  maxGroupSize?: number;
+  rating?: number;
+  isActive?: boolean;
+  basedOnPackageName?: string;
+  basedOnPackageId?: string;
   _count?: {
     userSegments: number;
     tripBookings: number;

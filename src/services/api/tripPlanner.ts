@@ -26,6 +26,10 @@ import {
   daySegmentsForPut,
   buildTripSummaryFromPlan,
   normalizeDaySegmentsInput,
+  buildPersonalPlanBody,
+  mapPersonalPackageToTripPlan,
+  PersonalPlanSaveInput,
+  unwrapList,
 } from './personalPlanMapping';
 
 function mapApiError(error: any): TripApiError {
@@ -103,7 +107,7 @@ export async function createTrip(payload: CreateTripData): Promise<TripPlan> {
       : undefined;
     const body = mapCreateTripDataToPersonalApi(rest, normalizedSegments);
     const res = await api.post<TripApiResponse<any>>('/api/tour-builder/my', body);
-    return mapPersonalPlanToTripPlan(res.data.data);
+    return mapPersonalPackageToTripPlan(res.data.data);
   } catch (error: any) {
     throw mapApiError(error);
   }
@@ -120,24 +124,20 @@ export async function getTrips(
     if (filters?.page) params.page = filters.page;
     if (filters?.limit) params.limit = filters.limit;
 
-    const res = await api.get<TripApiResponse<{ results: any[]; total: number; page: number; limit: number }>>(
-      '/api/tour-builder/my',
-      { params }
-    );
-
-    const block = res.data.data;
-    const results = block?.results ?? [];
-    const limit = block?.limit ?? 10;
-    const total = block?.total ?? results.length;
-    const page = block?.page ?? 1;
+    const res = await api.get<TripApiResponse<any>>('/api/tour-builder/my', { params });
+    const raw = unwrapList<any>(res.data.data);
+    const trips = raw.map(mapPersonalPackageToTripPlan);
+    const page = Number(res.data.data?.page || params.page || 1);
+    const limit = Number(res.data.data?.limit || params.limit || trips.length || 10);
+    const total = res.data.data?.total ?? trips.length;
 
     return {
-      trips: results.map(mapPersonalPlanToTripPlan),
-      pagination: {
+      trips,
+      pagination: res.data.pagination || {
         total,
         page,
         limit,
-        pages: limit > 0 ? Math.ceil(total / limit) : 1,
+        pages: Math.max(1, Math.ceil(total / (limit || 1))),
       },
     };
   } catch (error: any) {
@@ -149,7 +149,7 @@ export async function getTripDetails(tripId: string): Promise<TripPlan> {
   try {
     const api = getApiInstance();
     const res = await api.get<TripApiResponse<any>>(`/api/tour-builder/my/${tripId}`);
-    return mapPersonalPlanToTripPlan(res.data.data);
+    return mapPersonalPackageToTripPlan(res.data.data);
   } catch (error: any) {
     throw mapApiError(error);
   }
@@ -160,7 +160,7 @@ export async function updateTrip(tripId: string, payload: UpdateTripData): Promi
     const api = getApiInstance();
     const body = mapUpdateTripDataToPersonalApi(payload);
     const res = await api.put<TripApiResponse<any>>(`/api/tour-builder/my/${tripId}`, body);
-    return mapPersonalPlanToTripPlan(res.data.data);
+    return mapPersonalPackageToTripPlan(res.data.data);
   } catch (error: any) {
     throw mapApiError(error);
   }
@@ -234,4 +234,48 @@ export async function getDaySegments(tripId: string, dayNumber: number): Promise
 export async function getTripSummary(tripId: string): Promise<TripSummary> {
   const trip = await getTripDetails(tripId);
   return buildTripSummaryFromPlan(trip);
+}
+
+export async function savePersonalTourPlan(input: PersonalPlanSaveInput): Promise<TripPlan> {
+  try {
+    const api = getApiInstance();
+    const res = await api.post<TripApiResponse<any>>(
+      '/api/tour-builder/my',
+      buildPersonalPlanBody(input, 'create')
+    );
+    return mapPersonalPackageToTripPlan(res.data.data);
+  } catch (error: any) {
+    throw mapApiError(error);
+  }
+}
+
+export async function updatePersonalTourPlan(
+  tourPackageId: string,
+  input: PersonalPlanSaveInput
+): Promise<TripPlan> {
+  try {
+    const api = getApiInstance();
+    const res = await api.put<TripApiResponse<any>>(
+      `/api/tour-builder/my/${tourPackageId}`,
+      buildPersonalPlanBody(input, 'edit')
+    );
+    return mapPersonalPackageToTripPlan(res.data.data);
+  } catch (error: any) {
+    throw mapApiError(error);
+  }
+}
+
+export async function attachPersonalTourImages(
+  tourPackageId: string,
+  imageURLs: string[]
+): Promise<TripPlan> {
+  try {
+    const api = getApiInstance();
+    const res = await api.put<TripApiResponse<any>>(`/api/tour-builder/my/${tourPackageId}`, {
+      imageURLs,
+    });
+    return mapPersonalPackageToTripPlan(res.data.data);
+  } catch (error: any) {
+    throw mapApiError(error);
+  }
 }

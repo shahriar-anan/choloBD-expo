@@ -4,13 +4,14 @@
  */
 
 import React, { useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { TRANSLATION_KEYS } from '../../../constants/translationKeys';
 import { useTripPlannerLogic } from '../../../hooks/useTripPlannerLogic';
+import { formatTaka } from '../../../utils/tripPlanItinerary';
 
 export default function TripPlannerIndex() {
   const router = useRouter();
@@ -108,20 +109,25 @@ export default function TripPlannerIndex() {
               <TouchableOpacity
                 onPress={() => handleTripPress(trip.id)}
                 activeOpacity={0.7}
-                className="flex-1 p-4"
+                className="flex-1"
               >
-                <Text className="text-lg font-bold text-text dark:text-text-dark">
-                  {trip.name}
-                </Text>
-                <Text className="text-xs text-muted dark:text-muted-dark mt-1">
-                  {trip.primaryLocation.name}
-                </Text>
-                <View className="mt-3 flex-row items-center">
-                  <View className="bg-primary/10 dark:bg-primary-dark/10 px-3 py-1 rounded">
-                    <Text className="text-xs font-semibold text-primary dark:text-primary-dark">
-                      {trip.status}
+                {trip.images?.[0]?.url ? (
+                  <Image source={{ uri: trip.images[0].url }} className="h-28 w-full" />
+                ) : null}
+                <View className="p-4">
+                  <Text className="text-lg font-bold text-text dark:text-text-dark">
+                    {trip.name}
+                  </Text>
+                  {trip.shortDescription || trip.description ? (
+                    <Text className="text-sm text-muted dark:text-muted-dark mt-1" numberOfLines={2}>
+                      {trip.shortDescription || trip.description}
                     </Text>
-                  </View>
+                  ) : null}
+                  <Text className="text-xs text-muted dark:text-muted-dark mt-2">
+                    {trip.primaryLocation.name}
+                    {trip.duration ? ` · ${trip.duration} ${t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_DAYS)}` : ''}
+                    {` · ${formatTaka(trip.estimatedBudget)}`}
+                  </Text>
                 </View>
               </TouchableOpacity>
 

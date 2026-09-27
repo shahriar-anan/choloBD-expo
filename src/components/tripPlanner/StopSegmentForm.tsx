@@ -24,7 +24,6 @@ import {
   WizardItineraryStop,
   MAX_STOPS_PER_DAY,
   nextSegmentOrderForDay,
-  createBlankStop,
   countStopsForDay,
 } from '../../utils/tripPlanItinerary';
 import { HotelTypePreference, TransportTypePreference } from '../../types/trips';

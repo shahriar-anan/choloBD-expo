@@ -4,6 +4,7 @@
  */
 
 import { getApiInstance } from './axiosClient';
+import { unwrapList } from './personalPlanMapping';
 
 export interface TourSpot {
   id: string;
@@ -88,7 +89,7 @@ export async function getTourSpots(filters?: TourSpotFilters): Promise<TourSpot[
   });
 
   const response = await api.get('/api/tour-spots', { params });
-  const data = response.data.data || [];
+  const data = unwrapList<any>(response.data?.data);
   
   console.log('[getTourSpots] 📦 Response received:', {
     status: response.status,

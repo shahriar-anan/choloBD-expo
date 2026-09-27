@@ -4,6 +4,7 @@
  */
 
 import { getApiInstance } from './axiosClient';
+import { unwrapList } from './personalPlanMapping';
 import {
   TourPackage,
   TourFilters,
@@ -76,8 +77,9 @@ export async function getTourPlans(filters?: TourFilters): Promise<TourPackage[]
     if (filters?.maxBudget !== undefined) params.maxBudget = filters.maxBudget;
 
     const res = await api.get<TourApiResponse<TourPackage[]>>('/api/tour-builder', { params });
-    console.log('[tourBuilder.ts] getTourPlans success, count:', res.data.data?.length);
-    return res.data.data || [];
+    const rows = unwrapList<TourPackage>(res.data?.data);
+    console.log('[tourBuilder.ts] getTourPlans success, count:', rows.length);
+    return rows;
   } catch (error: any) {
     console.error('[tourBuilder.ts] getTourPlans error:', error?.response?.status, error?.message);
     throw mapApiError(error);
@@ -163,56 +165,66 @@ export async function deleteTourPlan(tourPackageId: string): Promise<{ success: 
   }
 }
 
+function formatSpotLocation(spot: any): string {
+  return (
+    spot.location?.name ||
+    [spot.location?.city, spot.location?.state, spot.location?.country]
+      .filter(Boolean)
+      .join(', ') ||
+    'Unknown Location'
+  );
+}
+
 /**
- * GET /api/tour-spots or GET /api/tour-spots?locationId=
+ * GET /api/tour-spots?locationId=
+ * Fetch list of available tour spots, optionally filtered by location
  */
 export async function getTourSpots(locationId?: string): Promise<Array<{ id: string; name: string; location: string }>> {
   try {
+    const params: Record<string, string | number> = { limit: 100 };
+    if (locationId) params.locationId = locationId;
+
+    console.log('[tourBuilder.ts] Fetching tour spots from: /api/tour-spots', params);
     const api = getApiInstance();
-    const params = locationId ? { locationId } : undefined;
+
     const res = await api.get<TourApiResponse<Array<any>>>('/api/tour-spots', { params });
-    console.log('[tourBuilder.ts] getTourSpots success, count:', res.data.data?.length);
-    
-    // Transform response to expected format
-    const spots = (res.data.data || []).map((spot: any) => ({
+    const rows = unwrapList<any>(res.data?.data);
+    console.log('[tourBuilder.ts] getTourSpots success, count:', rows.length);
+
+    return rows.map((spot: any) => ({
       id: spot.id,
       name: spot.name,
-      location: [spot.city, spot.state, spot.country]
-        .filter(Boolean)
-        .join(', ') || 'Unknown Location',
+      location: formatSpotLocation(spot),
     }));
-    
-    return spots;
   } catch (error: any) {
     console.error('[tourBuilder.ts] getTourSpots error:', error?.response?.status, error?.message);
-    // Return empty array on error so UI doesn't break
     return [];
   }
 }
 
 /**
- * GET /api/activity-spots or GET /api/activity-spots?locationId=
+ * GET /api/activity-spots?locationId=
+ * Fetch list of available activity spots, optionally filtered by location
  */
 export async function getActivitySpots(locationId?: string): Promise<Array<{ id: string; name: string; location: string }>> {
   try {
+    const params: Record<string, string | number> = { limit: 100 };
+    if (locationId) params.locationId = locationId;
+
+    console.log('[tourBuilder.ts] Fetching activity spots from: /api/activity-spots', params);
     const api = getApiInstance();
-    const params = locationId ? { locationId } : undefined;
+
     const res = await api.get<TourApiResponse<Array<any>>>('/api/activity-spots', { params });
-    console.log('[tourBuilder.ts] getActivitySpots success, count:', res.data.data?.length);
-    
-    // Transform response to expected format
-    const spots = (res.data.data || []).map((spot: any) => ({
+    const rows = unwrapList<any>(res.data?.data);
+    console.log('[tourBuilder.ts] getActivitySpots success, count:', rows.length);
+
+    return rows.map((spot: any) => ({
       id: spot.id,
       name: spot.name,
-      location: [spot.city, spot.state, spot.country]
-        .filter(Boolean)
-        .join(', ') || 'Unknown Location',
+      location: formatSpotLocation(spot),
     }));
-    
-    return spots;
   } catch (error: any) {
     console.error('[tourBuilder.ts] getActivitySpots error:', error?.response?.status, error?.message);
-    // Return empty array on error so UI doesn't break
     return [];
   }
 }

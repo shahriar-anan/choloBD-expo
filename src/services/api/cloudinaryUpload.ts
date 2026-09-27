@@ -1,3 +1,5 @@
+import { CLOUDINARY_UPLOAD_PRESET, CLOUDINARY_UPLOAD_URL } from '../../constants/api';
+
 export interface UploadableImage {
   uri: string;
   name?: string | null;
@@ -26,16 +28,18 @@ export interface UploadableImage {
  *      what `buildOptimizedUrl` below does, so callers get an optimized URL
  *      back without any dashboard configuration required.
  */
-export async function uploadCommunityImageToCloudinary(file: UploadableImage): Promise<string> {
+export async function uploadCommunityImageToCloudinary(
+  file: UploadableImage,
+  folder = 'cholo-bd/community'
+): Promise<string> {
   try {
-    // Cloudinary configuration from environment variables
-    const cloudName = process.env.EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME;
-    const uploadPreset = process.env.EXPO_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
-    const uploadUrl = process.env.EXPO_PUBLIC_CLOUDINARY_UPLOAD_URL;
+    // Same unsigned upload the web uses: host URL + upload preset.
+    const uploadPreset = CLOUDINARY_UPLOAD_PRESET;
+    const uploadUrl = CLOUDINARY_UPLOAD_URL;
 
-    if (!cloudName || !uploadPreset || !uploadUrl) {
+    if (!uploadPreset || !uploadUrl) {
       throw new Error(
-        'Cloudinary configuration is missing. Please set EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME, EXPO_PUBLIC_CLOUDINARY_UPLOAD_PRESET, and EXPO_PUBLIC_CLOUDINARY_UPLOAD_URL'
+        'Cloudinary configuration is missing. Set EXPO_PUBLIC_CLOUDINARY_UPLOAD_URL (web NEXT_PUBLIC_PIC_HOST) and EXPO_PUBLIC_CLOUDINARY_UPLOAD_PRESET (web NEXT_PUBLIC_CLOUD_UPLOAD_PRESET).'
       );
     }
 
@@ -51,7 +55,7 @@ export async function uploadCommunityImageToCloudinary(file: UploadableImage): P
     formData.append('upload_preset', uploadPreset);
 
     // Optional: folder organization
-    formData.append('folder', 'cholo-bd/community');
+    formData.append('folder', folder);
 
     // Optional: public_id (filename without extension)
     formData.append('public_id', filename.replace(/\.[^/.]+$/, ''));
