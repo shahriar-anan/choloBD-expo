@@ -1,10 +1,11 @@
 import React from 'react';
-import { View, Text, Image, TouchableOpacity } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../hooks/useTheme';
 import { theme } from '../../constants/theme';
 import { TRANSLATION_KEYS } from '../../constants/translationKeys';
+import { ProfileAvatar } from './profileAvatar';
 
 interface UserInfoUIProps {
   userName?: string;
@@ -15,13 +16,9 @@ interface UserInfoUIProps {
   onLogout: () => void;
 }
 
-export function UserInfoUI({ userName, email, imageUrl, role, userStatus, onLogout }: UserInfoUIProps) {
+export function UserInfoUI({ userName, email, imageUrl, userStatus, onLogout }: UserInfoUIProps) {
   const { isDark } = useTheme();
   const { t } = useTranslation();
-  const avatarUrl = imageUrl || 'https://api.dicebear.com/6.x/initials/svg?seed=' + (userName || email || 'user');
-  const primaryColor = isDark ? theme.colors['primary-dark'] : theme.colors.primary;
-  const onPrimaryColor = isDark ? theme.colors['onPrimary-dark'] : theme.colors['onPrimary'];
-  const successColor = isDark ? theme.colors['success-dark'] : theme.colors.success;
 
   // Status color mapping
   const getStatusColor = (status?: string) => {
@@ -41,14 +38,6 @@ export function UserInfoUI({ userName, email, imageUrl, role, userStatus, onLogo
     }
   };
 
-  // Get translated role
-  const getTranslatedRole = (roleValue?: string) => {
-    if (!roleValue) return t(TRANSLATION_KEYS.DASHBOARD.ROLES.USER);
-    const roleKey = `DASHBOARD.ROLES.${roleValue.toUpperCase()}` as any;
-    const translationKey = TRANSLATION_KEYS.DASHBOARD.ROLES[roleValue.toUpperCase() as keyof typeof TRANSLATION_KEYS.DASHBOARD.ROLES];
-    return translationKey ? t(translationKey) : roleValue;
-  };
-
   // Get translated status
   const getTranslatedStatus = (statusValue?: string) => {
     if (!statusValue) return t(TRANSLATION_KEYS.DASHBOARD.STATUSES.ACTIVE);
@@ -57,7 +46,6 @@ export function UserInfoUI({ userName, email, imageUrl, role, userStatus, onLogo
     return translationKey ? t(translationKey) : statusValue;
   };
 
-  const translatedRole = getTranslatedRole(role);
   const translatedStatus = getTranslatedStatus(userStatus);
 
   return (
@@ -66,16 +54,7 @@ export function UserInfoUI({ userName, email, imageUrl, role, userStatus, onLogo
       <View className="p-6 rounded-2xl bg-white dark:bg-surface-dark border border-border dark:border-border-dark" style={theme.elevation.sm}>
         <View className="flex-row items-center justify-between">
           <View className="flex-row items-center flex-1">
-            {/* Avatar */}
-            <View className="rounded-2xl bg-primary dark:bg-primary-dark p-1">
-              <Image 
-                source={{ uri: avatarUrl }} 
-                style={{ width: 72, height: 72, borderRadius: 16 }} 
-                accessible={true}
-                accessibilityRole="image"
-                accessibilityLabel={`${userName || 'User'}'s profile picture`}
-              />
-            </View>
+            <ProfileAvatar imageUrl={imageUrl} userName={userName} email={email} size={72} />
             
             {/* User Info */}
             <View className="flex-1 ml-4">
@@ -103,19 +82,6 @@ export function UserInfoUI({ userName, email, imageUrl, role, userStatus, onLogo
           >
             <Ionicons name="log-out" size={20} color="white" />
           </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* Stats Grid */}
-      <View className="flex-row gap-3 mt-4">
-        <View className="flex-1 p-4 rounded-xl bg-white dark:bg-surface-dark border border-border dark:border-border-dark" style={theme.elevation.sm}>
-          <View className="flex-row items-center justify-between">
-            <View>
-              <Text className="text-xs text-muted dark:text-muted-dark uppercase tracking-wider">{t(TRANSLATION_KEYS.DASHBOARD.USER_INFO.ROLE)}</Text>
-              <Text className="mt-2 text-lg font-bold text-text dark:text-text-dark">{translatedRole}</Text>
-              </View>
-            <Ionicons name="person" size={24} color={primaryColor} />
-          </View>
         </View>
       </View>
     </View>

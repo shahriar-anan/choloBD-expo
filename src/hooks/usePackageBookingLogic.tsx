@@ -17,6 +17,8 @@ import {
   clearLastPurchasedBooking,
 } from '../store/slices/packageBookingSlice';
 import { CreatePackageBookingData, CancelPackageBookingData } from '../types/packageBookings';
+import { getPackageCancellationEligibility } from '../services/api/packageBookings';
+import { buildCancelSuccessMessage } from '../utilities/bookingCancelHelpers';
 
 export function usePackageBookingLogic() {
   const dispatch = useDispatch<AppDispatch>();
@@ -97,25 +99,39 @@ export function usePackageBookingLogic() {
   );
 
   /**
-   * Cancel a PENDING booking
-   * @param bookingId - ID of the booking to cancel
-   * @param data - Cancellation reason and notes
-   * @param onSuccess - Callback after successful cancellation
+   * Cancel a package booking (eligibility-gated)
    */
   const handleCancelBooking = useCallback(
     async (bookingId: string, data: CancelPackageBookingData = {}, onSuccess?: () => void) => {
       try {
-        await dispatch(cancelPackageBookingAsync({ bookingId, data })).unwrap();
-        
+        const eligibility = await getPackageCancellationEligibility(bookingId);
+        if (!eligibility.canCancel) {
+          Alert.alert('Cannot cancel', eligibility.reason || 'This booking cannot be cancelled');
+          return;
+        }
+
+        const trimmedReason = data.reason?.trim().slice(0, 500);
+        const trimmedNotes = data.notes?.trim().slice(0, 500);
+        const cancelPayload: CancelPackageBookingData = {
+          reason: trimmedReason || undefined,
+          notes: trimmedNotes || undefined,
+        };
+
+        const result = await dispatch(
+          cancelPackageBookingAsync({ bookingId, data: cancelPayload })
+        ).unwrap();
+
         if (__DEV__) console.log('[usePackageBookingLogic] Cancellation successful');
-        Alert.alert('Success', 'Booking cancelled successfully');
-        
+        const message = buildCancelSuccessMessage('Booking cancelled successfully', result);
+        Alert.alert('Success', message);
+
         if (onSuccess) {
           onSuccess();
         }
       } catch (error: any) {
         console.error('[usePackageBookingLogic] Cancel error:', error);
-        const errorMessage = error?.message || 'Failed to cancel booking. Please try again.';
+        const errorMessage =
+          error?.message || error?.reason || 'Failed to cancel booking. Please try again.';
         Alert.alert('Cancellation Failed', errorMessage);
       }
     },

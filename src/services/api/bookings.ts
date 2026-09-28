@@ -1,4 +1,8 @@
 import { getApiInstance } from './axiosClient';
+import {
+    CancellationEligibility,
+    CancelBookingWithRefundData,
+} from '../../types/cancellation';
 
 export interface CreateBookingData {
   hotelId: string;
@@ -64,4 +68,25 @@ export async function updateBooking(bookingId: string, data: UpdateBookingData):
   const api = getApiInstance();
   const res = await api.put(`/api/bookings/hotel-rooms/${bookingId}`, data);
   return res.data?.data ?? null;
+}
+
+export async function getHotelCancellationEligibility(
+  bookingId: string
+): Promise<CancellationEligibility> {
+  const api = getApiInstance();
+  const res = await api.get(
+    `/api/bookings/hotel-rooms/${bookingId}/cancellation-eligibility`
+  );
+  return res.data?.data;
+}
+
+export async function cancelHotelBooking(
+  bookingId: string,
+  reason?: string
+): Promise<CancelBookingWithRefundData<unknown>> {
+  const api = getApiInstance();
+  const res = await api.delete(`/api/bookings/hotel-rooms/${bookingId}`, {
+    data: reason ? { reason } : undefined,
+  });
+  return res.data?.data;
 }

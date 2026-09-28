@@ -4,7 +4,7 @@
 
 Status: Not started. Personal plan CRUD must be done in increment 01. Segment links that store booking ids wait until the activity client (increment 04) and transport client (increment 06) exist, and only if the personal-plan body accepts those fields. UI starts only after Functional typechecks.
 
-A personal plan is not a catalog purchase. Checkout creates a `TripBooking` and pays with `TRIP_PACKAGE`.
+A personal plan is not a catalog purchase. Checkout creates a `TripBooking` and pays with `TRIP_PACKAGE`. Catalog packages are not bought here. Viewing and buying them waits for a later trip-plan segment (see increment 03).
 
 ## Functional
 

@@ -1,4 +1,4 @@
-# Tests — increment 03 (package payment)
+# Tests — increment 03 (payment types)
 
 ## Agent checks
 
@@ -8,12 +8,14 @@ npx tsc --noEmit
 
 ## Device cases
 
-SSLCommerz sandbox or wallet as needed.
+### D-03 No catalog package purchase
 
-### D-03 Pay a package booking
+- Open the current tour-package and trip-plan screens a traveler can reach.
+- Expected: there is no new path that buys a catalog package or starts `PACKAGE_BOOKING` payment. Personal plan checkout is still increment 07 (`TRIP_PACKAGE`), not this increment.
 
-- Setup: `PackageBooking` in `UNPAID` after purchase flow.
-- Steps: pay → complete sandbox → return to app.
-- Expected: initialize with `serviceType: PACKAGE_BOOKING`, `serviceTypeId` = booking id. Transaction poll via `GET /api/payments/transaction/:id`. Booking `PAID` on success.
+### D-03b Hotel pay still sends booking id
 
-Re-run **D-00** (hotel pay regression) if payment shared code changed.
+- Pay an unpaid hotel booking from Complete Payment.
+- Expected: initialize still uses `serviceType: HOTEL_BOOKING`, and the body includes `serviceTypeId` and `bookingId` as the same hotel booking id. No `userId` for authorization.
+
+Re-run hotel pay if `usePaymentLogic` or the initialize body changed.

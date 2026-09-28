@@ -5,6 +5,7 @@ import { useTheme } from '../../hooks/useTheme';
 import { theme } from '../../constants/theme';
 import { useTranslation } from 'react-i18next';
 import { TRANSLATION_KEYS } from '../../constants/translationKeys';
+import { displayRoomName, formatMoney } from '../../utilities/hotelSearch';
 
 interface RoomType {
   id: string;
@@ -32,56 +33,46 @@ export function RoomTypeSelectorUI({ roomTypes, selectedRoomsMap, onChange }: Ro
   const primaryColor = isDark ? theme.colors['primary-dark'] : theme.colors.primary;
 
   return (
-    <View className="mt-5">
-      <Text className="text-lg font-bold font-heading text-text dark:text-text-dark">{t(TRANSLATION_KEYS.BOOKING.AVAILABLE_ROOMS)}</Text>
-
+    <View className="mt-3">
       {roomTypes.map((roomType) => {
-        const label = roomType.name || roomType.roomType || 'Room';
+        const label = displayRoomName(roomType.name || roomType.roomType);
         const price = roomType.pricePerNight ?? 0;
         const available = roomType.availableCount ?? roomType.totalCount ?? undefined;
         const selected = selectedRoomsMap[roomType.id] || 0;
         const primaryImage = roomType.images?.[0]?.url;
+        const plusDisabled = available !== undefined && selected >= available;
 
         return (
-          <View key={roomType.id} className="p-4 mt-3 rounded-xl shadow bg-white dark:bg-surface-dark border border-border dark:border-border-dark">
-            <View className="flex-row items-center justify-between">
-              <View className="flex-row items-center flex-1">
-                {primaryImage && (
-                  <Image source={{ uri: primaryImage }} className="w-16 h-12 rounded-md mr-3 bg-gray-200" />
-                )}
-                <View className="flex-1">
-                  <Text className="font-semibold text-text dark:text-text-dark">{label}</Text>
-                  <Text className="mt-1 text-sm text-muted dark:text-muted-dark">
-                    <Ionicons name="cash" size={14} /> ₹{price} {t(TRANSLATION_KEYS.BOOKING.PER_NIGHT)}
-                  </Text>
-                  {available !== undefined && (
-                    <Text className="text-xs text-muted dark:text-muted-dark mt-1">{available} {t(TRANSLATION_KEYS.BOOKING.AVAILABLE)}</Text>
-                  )}
-                </View>
-              </View>
+          <View key={roomType.id} className="flex-row items-center p-3 mt-3 bg-white border rounded-2xl dark:bg-surface-dark border-border dark:border-border-dark">
+            {primaryImage ? (
+              <Image source={{ uri: primaryImage }} className="w-16 h-16 mr-3 rounded-xl" />
+            ) : null}
+            <View className="flex-1">
+              <Text className="font-semibold text-text dark:text-text-dark">{label}</Text>
+              <Text className="mt-1 text-sm text-muted dark:text-muted-dark">
+                {formatMoney(price)} {t(TRANSLATION_KEYS.BOOKING.PER_NIGHT)}
+              </Text>
+              {available !== undefined ? (
+                <Text className="mt-1 text-xs text-muted dark:text-muted-dark">{available} {t(TRANSLATION_KEYS.BOOKING.AVAILABLE)}</Text>
+              ) : null}
             </View>
-
-            <View className="flex-row items-center justify-end mt-3">
+            <View className="flex-row items-center">
               <TouchableOpacity
                 onPress={() => onChange(roomType.id, -1)}
                 disabled={selected <= 0}
-                className={`p-2 rounded-lg ${selected <= 0 ? 'bg-surface-2 dark:bg-surface-2-dark' : 'bg-surface-2 dark:bg-surface-2-dark'}`}
-                style={{ opacity: selected <= 0 ? 0.5 : 1 }}
+                className="items-center justify-center w-9 h-9 border rounded-full"
+                style={{ borderColor: selected <= 0 ? mutedColor : primaryColor, opacity: selected <= 0 ? 0.4 : 1 }}
               >
-                <Ionicons name="remove" size={18} color={mutedColor} />
+                <Ionicons name="remove" size={16} color={selected <= 0 ? mutedColor : primaryColor} />
               </TouchableOpacity>
-
-              <View className="px-4 py-2 mx-2 rounded-lg bg-background dark:bg-background-dark border border-border dark:border-border-dark">
-                <Text className="font-semibold text-center text-text dark:text-text-dark w-8">{selected}</Text>
-              </View>
-
+              <Text className="w-8 font-bold text-center text-text dark:text-text-dark">{selected}</Text>
               <TouchableOpacity
                 onPress={() => onChange(roomType.id, 1)}
-                disabled={available !== undefined && selected >= available}
-                className={`p-2 rounded-lg ${available !== undefined && selected >= available ? 'bg-surface-2 dark:bg-surface-2-dark' : 'bg-primary dark:bg-primary-dark'}`}
-                style={{ opacity: available !== undefined && selected >= available ? 0.5 : 1 }}
+                disabled={plusDisabled}
+                className="items-center justify-center w-9 h-9 rounded-full"
+                style={{ backgroundColor: plusDisabled ? mutedColor : primaryColor }}
               >
-                <Ionicons name="add" size={18} color={available !== undefined && selected >= available ? mutedColor : onPrimaryColor} />
+                <Ionicons name="add" size={16} color={onPrimaryColor} />
               </TouchableOpacity>
             </View>
           </View>

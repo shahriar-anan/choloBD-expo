@@ -12,6 +12,7 @@ import {
   PackageBookingError,
   PackageBookingStats,
 } from '../../types/packageBookings';
+import { unwrapCancelBookingPayload } from '../../types/cancellation';
 import * as packageBookingApi from '../../services/api/packageBookings';
 
 /**
@@ -142,8 +143,7 @@ export const cancelPackageBookingAsync = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      const booking = await packageBookingApi.cancelPackageBooking(bookingId, data);
-      return booking;
+      return await packageBookingApi.cancelPackageBooking(bookingId, data);
     } catch (error: any) {
       if (__DEV__) console.error('[packageBookingSlice] cancelBooking error:', error);
       return rejectWithValue(error);
@@ -272,14 +272,15 @@ const packageBookingSlice = createSlice({
       })
       .addCase(cancelPackageBookingAsync.fulfilled, (state, action) => {
         state.cancelLoading = false;
+        const booking = unwrapCancelBookingPayload(action.payload);
         // Update in bookings list
-        const index = state.bookings.findIndex((b) => b.id === action.payload.id);
+        const index = state.bookings.findIndex((b) => b.id === booking.id);
         if (index !== -1) {
-          state.bookings[index] = action.payload;
+          state.bookings[index] = booking;
         }
         // Update current booking if it's the same one
-        if (state.currentBooking?.id === action.payload.id) {
-          state.currentBooking = action.payload;
+        if (state.currentBooking?.id === booking.id) {
+          state.currentBooking = booking;
         }
       })
       .addCase(cancelPackageBookingAsync.rejected, (state, action) => {

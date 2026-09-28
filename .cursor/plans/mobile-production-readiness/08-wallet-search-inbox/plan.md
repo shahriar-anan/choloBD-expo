@@ -63,24 +63,11 @@ Device case: D-08c.
 
 ## 4. Notifications
 
-### Functional
+The traveler bell, unread badge, and notification list are increment 03b (`/(tabs)/dashboard/notifications`). Do not build a second inbox here.
 
-Add `src/services/api/notifications.ts`.
+When activity, guide, transport, and trip screens exist, extend that same page so those `relatedEntityType` values open the matching booking. Until then they stay on the notification text, as 03b specifies.
 
-- `GET /api/notifications`
-- `GET /api/notifications/unread-count`
-- `GET /api/notifications/:notificationId`
-- `PATCH /api/notifications/:notificationId/read`
-- `PATCH /api/notifications/read-all`
-- `DELETE /api/notifications/:notificationId`
-
-Do not call `POST /api/notifications` (master admin only).
-
-### UI
-
-An inbox screen and a badge from `unread-count` on the header. Mark read on open. Deep link only when `relatedEntityType` and `relatedEntityId` match a screen this app already has (hotel booking, package booking, and later activity, guide, transport, trip). Unknown types open the notification text only.
-
-Device case: D-08d.
+Device case: D-08d covers those later deep links only.
 
 ## 5. Reviews
 

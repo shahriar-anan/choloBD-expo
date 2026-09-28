@@ -13,6 +13,10 @@ import {
   PackageBookingStats,
   PackageBookingError,
 } from '../../types/packageBookings';
+import {
+  CancellationEligibility,
+  CancelBookingWithRefundData,
+} from '../../types/cancellation';
 
 /**
  * Helper to map HTTP errors to typed PackageBookingError
@@ -161,21 +165,43 @@ export async function getPackageBookingById(bookingId: string): Promise<PackageB
 }
 
 /**
+ * GET /api/bookings/package-bookings/:bookingId/cancellation-eligibility
+ */
+export async function getPackageCancellationEligibility(
+  bookingId: string
+): Promise<CancellationEligibility> {
+  try {
+    const api = getApiInstance();
+    const res = await api.get<PackageBookingApiResponse<CancellationEligibility>>(
+      `/api/bookings/package-bookings/${bookingId}/cancellation-eligibility`
+    );
+    return res.data.data;
+  } catch (error: any) {
+    console.error(
+      '[packageBookings.ts] getPackageCancellationEligibility error:',
+      error?.response?.status,
+      error?.message
+    );
+    throw mapApiError(error);
+  }
+}
+
+/**
  * PUT /api/bookings/package-bookings/:bookingId/cancel
- * Cancel a PENDING package booking
  * @param bookingId - ID of the booking to cancel
  * @param data - Cancellation reason and notes
- * @returns Updated booking with CANCELLED status
  */
 export async function cancelPackageBooking(
   bookingId: string,
   data: CancelPackageBookingData = {}
-): Promise<PackageBooking> {
+): Promise<CancelBookingWithRefundData<PackageBooking>> {
   try {
     console.log('[packageBookings.ts] Cancelling package booking:', bookingId, 'data:', data);
     const api = getApiInstance();
 
-    const res = await api.put<PackageBookingApiResponse<PackageBooking>>(
+    const res = await api.put<
+      PackageBookingApiResponse<CancelBookingWithRefundData<PackageBooking>>
+    >(
       `/api/bookings/package-bookings/${bookingId}/cancel`,
       data
     );

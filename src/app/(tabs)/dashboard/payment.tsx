@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -13,8 +13,9 @@ import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/hooks/useTheme';
 import theme from '@/constants/theme';
 import { usePaymentLogic } from '@/hooks/usePaymentLogic';
+import { chargeWalletCredits, getOwnWallet, pointsCostForTotal } from '@/services/api/wallet';
 import { TRANSLATION_KEYS } from '@/constants/translationKeys';
-import type { ServiceType, TransactionStatus } from '@/types/payments';
+import type { ServiceType } from '@/types/payments';
 
 type ScreenState = 'idle' | 'processing' | 'success' | 'failed' | 'unknown';
 
@@ -30,6 +31,9 @@ export default function DashboardPaymentScreen() {
 
   const { startPayment } = usePaymentLogic();
   const [screenState, setScreenState] = useState<ScreenState>('idle');
+  const [payMethod, setPayMethod] = useState<'card' | 'points'>('card');
+  const [pointsBalance, setPointsBalance] = useState<number | null>(null);
+  const [pointsError, setPointsError] = useState<string | null>(null);
 
   const primaryColor = isDark ? theme.colors['primary-dark'] : theme.colors.primary;
   const successColor = isDark ? theme.colors['success-dark'] : theme.colors.success;
@@ -38,15 +42,59 @@ export default function DashboardPaymentScreen() {
   const bookingId = params.bookingId ?? '';
   const serviceType = (params.serviceType ?? 'HOTEL_BOOKING') as ServiceType;
   const totalPrice = params.totalPrice;
+  const pointsCost = pointsCostForTotal(Number(totalPrice ?? 0));
+  const canPayWithWallet = serviceType !== 'WALLET_TOP_UP' && pointsBalance !== null && pointsBalance >= pointsCost && pointsCost > 0;
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadWallet = async () => {
+      try {
+        const wallet = await getOwnWallet();
+        if (!cancelled) {
+          setPointsBalance(Number(wallet.balance) || 0);
+        }
+      } catch {
+        if (!cancelled) {
+          setPointsBalance(null);
+        }
+      }
+    };
+    loadWallet();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handlePayNow = async () => {
     if (!bookingId) return;
+    setPayMethod('card');
+    setPointsError(null);
     setScreenState('processing');
     const result = await startPayment({ serviceType, serviceTypeId: bookingId });
     if (result.success) {
       setScreenState('success');
     } else {
       setScreenState(result.status === 'PENDING' ? 'unknown' : 'failed');
+    }
+  };
+
+  const handlePayWithWallet = async () => {
+    if (!bookingId || serviceType === 'WALLET_TOP_UP' || !canPayWithWallet) return;
+    setPayMethod('points');
+    setPointsError(null);
+    setScreenState('processing');
+    try {
+      await chargeWalletCredits({
+        serviceType,
+        serviceTypeId: bookingId,
+        paymentAmount: pointsCost,
+      });
+      setPointsBalance((current) => (current === null ? current : current - pointsCost));
+      setScreenState('success');
+    } catch (error: any) {
+      const message = error?.response?.data?.message || t(TRANSLATION_KEYS.PAYMENT.FAILED_DESC);
+      setPointsError(message);
+      setScreenState('failed');
     }
   };
 
@@ -126,10 +174,10 @@ export default function DashboardPaymentScreen() {
               {t(screenState === 'unknown' ? TRANSLATION_KEYS.PAYMENT.PENDING_TITLE : TRANSLATION_KEYS.PAYMENT.FAILED_TITLE)}
             </Text>
             <Text className="mt-2 text-sm text-center text-muted dark:text-muted-dark">
-              {t(screenState === 'unknown' ? TRANSLATION_KEYS.PAYMENT.PENDING_DESC : TRANSLATION_KEYS.PAYMENT.FAILED_DESC)}
+              {pointsError || t(screenState === 'unknown' ? TRANSLATION_KEYS.PAYMENT.PENDING_DESC : TRANSLATION_KEYS.PAYMENT.FAILED_DESC)}
             </Text>
             <TouchableOpacity
-              onPress={handlePayNow}
+              onPress={payMethod === 'points' ? handlePayWithWallet : handlePayNow}
               style={{ backgroundColor: primaryColor, borderRadius: 12, marginTop: 32, width: '100%' }}
               className="py-4 items-center"
             >
@@ -206,7 +254,9 @@ export default function DashboardPaymentScreen() {
                 className="py-4 items-center"
               >
                 <ActivityIndicator color="#fff" />
-                <Text className="text-white text-sm mt-1">{t(TRANSLATION_KEYS.PAYMENT.INITIALIZING)}</Text>
+                <Text className="text-white text-sm mt-1">
+                  {t(payMethod === 'points' ? TRANSLATION_KEYS.PAYMENT.POINTS_PROCESSING : TRANSLATION_KEYS.PAYMENT.INITIALIZING)}
+                </Text>
               </View>
             ) : (
               <TouchableOpacity
@@ -220,6 +270,42 @@ export default function DashboardPaymentScreen() {
                 </Text>
               </TouchableOpacity>
             )}
+
+            {serviceType !== 'WALLET_TOP_UP' ? (
+              <TouchableOpacity
+                onPress={handlePayWithWallet}
+                disabled={!canPayWithWallet || screenState === 'processing'}
+                style={{
+                  borderRadius: 12,
+                  marginTop: 12,
+                  borderWidth: 1,
+                  borderColor: primaryColor,
+                  opacity: canPayWithWallet ? 1 : 0.5,
+                }}
+                className="py-4 items-center"
+                activeOpacity={0.85}
+              >
+                <Text style={{ color: primaryColor }} className="font-bold text-base">
+                  {t(TRANSLATION_KEYS.PAYMENT.PAY_WITH_POINTS)}
+                </Text>
+                <Text className="text-xs text-muted dark:text-muted-dark mt-1">
+                  {t(TRANSLATION_KEYS.PAYMENT.POINTS_COST, { points: pointsCost.toLocaleString('en-US') })}
+                </Text>
+                <Text className="text-xs text-muted dark:text-muted-dark mt-0.5">
+                  {pointsBalance === null
+                    ? '—'
+                    : `${t(TRANSLATION_KEYS.PAYMENT.POINTS_BALANCE)}: ${pointsBalance.toLocaleString('en-US')}`}
+                </Text>
+                {!canPayWithWallet && pointsBalance !== null ? (
+                  <Text className="text-xs mt-1" style={{ color: errorColor }}>
+                    {t(TRANSLATION_KEYS.PAYMENT.INSUFFICIENT_POINTS)}
+                  </Text>
+                ) : null}
+                {pointsError && screenState === 'idle' ? (
+                  <Text className="text-xs mt-1 text-center" style={{ color: errorColor }}>{pointsError}</Text>
+                ) : null}
+              </TouchableOpacity>
+            ) : null}
           </>
         )}
       </ScrollView>

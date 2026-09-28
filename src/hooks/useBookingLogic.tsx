@@ -2,7 +2,10 @@ import { useState, useCallback } from 'react';
 import { Alert } from 'react-native';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store/store';
-import { createBooking, updateBooking, getUserBookings, getBookingById } from '../services/api/bookings';
+import { createBooking, updateBooking, getUserBookings, getBookingById, getHotelCancellationEligibility, cancelHotelBooking } from '../services/api/bookings';
+import { CancellationEligibility } from '../types/cancellation';
+import { buildCancelSuccessMessage } from '../utilities/bookingCancelHelpers';
+import { guestContactIsComplete } from '../components/forms/hotelBookingForm';
 
 export function useBookingLogic() {
   const auth = useSelector((s: RootState) => s.auth);
@@ -32,6 +35,10 @@ export function useBookingLogic() {
     const anyRooms = Object.values(bookingData.selectedRoomsMap).some((v) => v > 0);
     if (!anyRooms) {
       Alert.alert('Error', 'Please select at least one room');
+      return null;
+    }
+    if (!guestContactIsComplete(bookingData.guestName, bookingData.guestEmail, bookingData.guestPhoneNumber)) {
+      Alert.alert('Error', 'Enter the guest name, a valid email, and a mobile number');
       return null;
     }
 
@@ -169,5 +176,39 @@ export function useBookingLogic() {
         throw e;
       }
     }, []),
+    loadEligibility: useCallback(async (bookingId: string): Promise<CancellationEligibility | null> => {
+      try {
+        return await getHotelCancellationEligibility(bookingId);
+      } catch (e: any) {
+        if (__DEV__) console.error('[useBookingLogic] loadEligibility error', e);
+        const errorMsg = e?.response?.data?.message || 'Failed to load cancellation eligibility';
+        Alert.alert('Error', errorMsg);
+        return null;
+      }
+    }, []),
+    cancelBooking: useCallback(
+      async (bookingId: string, onSuccess?: (payload: unknown) => void) => {
+        try {
+          const eligibility = await getHotelCancellationEligibility(bookingId);
+          if (!eligibility.canCancel) {
+            throw new Error(eligibility.reason || 'This booking cannot be cancelled');
+          }
+          const payload = await cancelHotelBooking(bookingId);
+          const message = buildCancelSuccessMessage('Booking cancelled successfully', payload);
+          Alert.alert('Success', message);
+          if (typeof onSuccess === 'function') {
+            onSuccess(payload);
+          }
+          return payload;
+        } catch (e: any) {
+          if (__DEV__) console.error('[useBookingLogic] cancelBooking error', e?.response?.data || e.message);
+          const errorMsg =
+            e?.message || e?.response?.data?.message || 'Failed to cancel booking';
+          Alert.alert('Cancellation Failed', errorMsg);
+          return null;
+        }
+      },
+      []
+    ),
   };
 }

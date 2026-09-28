@@ -1,7 +1,7 @@
 import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { AuthState, AuthUser, AuthTokens, ApiResponse } from '../../types/auth';
 import axios from 'axios';
-import { createApi, getApiInstance, setLogoutCallback } from '../../services/api/axiosClient';
+import { createApi, getApiInstance, ensureFreshAccessToken, setLogoutCallback } from '../../services/api/axiosClient';
 import { saveTokens, clearTokens, saveUserIdAndRole, clearUserIdAndRole, getUserIdAndRole, saveUser, getUser, clearUser } from '../../lib/secureStore';
 import { API_BASE_URL } from '../../constants/api';
 import { OAuthProvider } from '../../constants/oauth';
@@ -26,8 +26,21 @@ export const initializeAuth = createAsyncThunk('auth/initialize', async (_, { re
     const tokensRes = await (await import('../../lib/secureStore')).getTokens();
     const userData = await getUser();
     if (tokensRes && userData) {
-      console.log('[initializeAuth] Found existing tokens and user, restoring auth state');
-      return { tokens: tokensRes, user: userData } as any;
+      try {
+        const tokens = await ensureFreshAccessToken();
+        console.log('[initializeAuth] Restored saved session');
+        return { tokens: tokens ?? tokensRes, user: userData } as any;
+      } catch (refreshError: any) {
+        const status = refreshError?.response?.status;
+        if (status === 401 || status === 400) {
+          console.log('[initializeAuth] Saved session expired');
+          await clearTokens();
+          await clearUser();
+          return null;
+        }
+        console.log('[initializeAuth] Could not refresh session, keeping saved login');
+        return { tokens: tokensRes, user: userData } as any;
+      }
     }
     console.log('[initializeAuth] No existing tokens found');
     return null;

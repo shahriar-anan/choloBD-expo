@@ -1,54 +1,46 @@
 import React from 'react';
-import { View, Text, Image } from 'react-native';
+import { View, Image, Text, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../hooks/useTheme';
-import theme from '../../constants/theme';
 import { TRANSLATION_KEYS } from '../../constants/translationKeys';
+
+const HERO_IMAGE_URL =
+  'https://images.unsplash.com/photo-1753731581991-03a92edcb279?w=1400&h=700&fit=crop';
 
 export default function HeroBackground() {
   const { t } = useTranslation();
-  const { isDark } = useTheme();
-
-  // Hero image with ocean/travel theme
-  const heroImageUrl = 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=800&h=600&fit=crop';
-
-  const textColor = isDark ? theme.colors['text-dark'] : '#fff';
-  const mutedTextColor = isDark ? 'rgba(240, 244, 248, 0.75)' : 'rgba(255, 255, 255, 0.85)';
 
   return (
-    <View className="relative overflow-hidden bg-gray-800 dark:bg-gray-900" style={{ height: 240 }}>
-      {/* Background Image */}
+    <View className="relative overflow-hidden bg-neutral-800" style={{ height: 168 }}>
       <Image
-        source={{ uri: heroImageUrl }}
+        source={{ uri: HERO_IMAGE_URL }}
         style={{ width: '100%', height: '100%' }}
         resizeMode="cover"
       />
-
-      {/* Gradient Overlay - bottom-heavy so image stays visible at top, text readable at bottom */}
       <LinearGradient
-        colors={['transparent', 'rgba(0, 0, 0, 0.42)', 'rgba(0, 0, 0, 0.78)']}
-        start={{ x: 0, y: 0.15 }}
+        colors={['rgba(0,0,0,0.38)', 'transparent', 'rgba(0,0,0,0.20)']}
+        locations={[0, 0.45, 1]}
+        start={{ x: 0, y: 0 }}
         end={{ x: 0, y: 1 }}
         style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
       />
-
-      {/* Content Overlay */}
-      <View className="absolute inset-0 flex-col justify-end px-6 pb-6">
-        {/* Main Hook - Large, Bold */}
+      <View className="absolute top-0 left-0 right-0 px-5 pt-4">
         <Text
-          className="text-3xl font-bold leading-tight mb-2"
-          style={{ color: textColor }}
+          style={{
+            color: '#fff',
+            fontFamily: Platform.select({
+              ios: 'SnellRoundhand-Black',
+              android: 'cursive',
+              default: 'cursive',
+            }),
+            fontWeight: Platform.OS === 'ios' ? undefined : '700',
+            fontSize: 30,
+            textShadowColor: 'rgba(0,0,0,0.55)',
+            textShadowOffset: { width: 0, height: 1 },
+            textShadowRadius: 4,
+          }}
         >
-          {t(TRANSLATION_KEYS.HOME.TAGLINE)}
-        </Text>
-
-        {/* Supporting Message - Smaller, Lighter */}
-        <Text
-          className="text-xs leading-4"
-          style={{ color: mutedTextColor, fontWeight: '300' }}
-        >
-          {t(TRANSLATION_KEYS.HOME.TAGLINE_SUBTITLE)}
+          {t(TRANSLATION_KEYS.HOME.HELLO_TRAVELLER)}
         </Text>
       </View>
     </View>

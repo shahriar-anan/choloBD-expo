@@ -8,9 +8,25 @@ npx tsc --noEmit
 
 After Functional, before UI (per [_shared/global-rules.md](../_shared/global-rules.md)).
 
-## Device cases
+## Device cases — UI polish first
 
-Traveler JWT. Use bookings inside and outside policy windows (server enforces; app displays eligibility only).
+**Passed on device 2026-09-28**, including the later list filter, shorter hero, QR beside the confirmation code, no guest row, no room rows on the list, and Pay with Wallet coins on Complete Payment.
+
+Traveler JWT. Screenshots from before the pass: list showed a gray band above the tab bar; detail header was a tall empty bar; Generate QR covered Cancel booking.
+
+### D-02-ui-list Hotel bookings list chrome
+
+- Open My Bookings (`user-bookings`).
+- Expected: no Homepage / Explore / Dashboard / Tracking bar. No gray band under the last card. Each card shows the hotel cover (placeholder only if that hotel has no image). Leaving the screen restores the tab bar on dashboard home.
+
+### D-02-ui-detail Hotel booking detail chrome
+
+- Open a confirmed hotel booking (the Cox’s Bazar sample is fine: check-in already started, so cancel is not allowed).
+- Expected: full-width hotel photo, hotel name as the title under it, then stay dates, rooms, and guest as grouped rows (not a plain text list). No tab bar. Cancellation reason is readable. Cancel booking is fully visible and disabled. Generate QR sits under it and does not cover it. Unpaid bookings still show Complete payment under QR.
+
+## Device cases — policy
+
+Traveler JWT. Use bookings inside and outside policy windows (server enforces; app displays eligibility only). Run after D-02-ui*.
 
 ### D-02 Hotel cancel outside 24 hours
 

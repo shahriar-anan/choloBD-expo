@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, ActivityIndicator, Pressable } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { View, Text, ScrollView, ActivityIndicator, Pressable, Modal, Alert, Image } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useBookingLogic } from '../../../hooks/useBookingLogic';
@@ -8,13 +8,29 @@ import { useTheme } from '../../../hooks/useTheme';
 import theme from '../../../constants/theme';
 import { HotelBookingForm } from '../../../components/forms/hotelBookingForm';
 import { PaymentStatusBadge } from '../../../components/ui/PaymentStatusBadge';
+import { CancellationEligibilityPreview } from '../../../components/booking/CancellationEligibilityPreview';
 import { useTranslation } from 'react-i18next';
 import { TRANSLATION_KEYS } from '../../../constants/translationKeys';
+import { CancellationEligibility } from '../../../types/cancellation';
+import { shouldFetchCancellationEligibility, getCancelActionLabel } from '../../../utilities/bookingCancelHelpers';
+
+function formatStayDate(value?: string): string {
+  if (!value) return '—';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '—';
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function money(amount: unknown): string {
+  if (amount === null || amount === undefined || amount === '') return '—';
+  return `₹${amount}`;
+}
 
 export default function BookingTrackingPage() {
   const params = useLocalSearchParams();
   const bookingId = params.bookingId as string | undefined;
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { isDark } = useTheme();
   const { t } = useTranslation();
 
@@ -25,8 +41,13 @@ export default function BookingTrackingPage() {
   const [editCheckOutDate, setEditCheckOutDate] = useState('');
   const [editPaymentMethod, setEditPaymentMethod] = useState('');
   const [editSpecialRequests, setEditSpecialRequests] = useState('');
+  const [eligibility, setEligibility] = useState<CancellationEligibility | null>(null);
+  const [eligibilityLoading, setEligibilityLoading] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancelSubmitting, setCancelSubmitting] = useState(false);
+  const [actionBarHeight, setActionBarHeight] = useState(160);
 
-  const { fetchBookingDetails, editBooking, submitting } = useBookingLogic();
+  const { fetchBookingDetails, editBooking, submitting, loadEligibility, cancelBooking } = useBookingLogic();
 
   useEffect(() => {
     if (!bookingId) return;
@@ -50,6 +71,26 @@ export default function BookingTrackingPage() {
     };
     load();
   }, [bookingId, fetchBookingDetails]);
+
+  useEffect(() => {
+    if (!bookingId || !booking || !shouldFetchCancellationEligibility(booking.status)) {
+      setEligibility(null);
+      return;
+    }
+    let cancelled = false;
+    const loadEligibilityData = async () => {
+      setEligibilityLoading(true);
+      const result = await loadEligibility(bookingId);
+      if (!cancelled) {
+        setEligibility(result);
+        setEligibilityLoading(false);
+      }
+    };
+    loadEligibilityData();
+    return () => {
+      cancelled = true;
+    };
+  }, [bookingId, booking?.status, booking?.id, loadEligibility]);
 
   const startEdit = () => {
     if (booking?.status === 'CONFIRMED' || booking?.status === 'CANCELLED') {
@@ -89,150 +130,338 @@ export default function BookingTrackingPage() {
     }
   };
 
-  return (
-    <SafeAreaView edges={["top", "bottom"]} className="flex-1 bg-background dark:bg-background-dark">
-      <View className="flex-row items-center justify-between p-6 border-b border-border dark:border-border-dark">
-        <Pressable
-          onPress={() => {
-            // Replace with root dashboard index to clear nested route
-            if (isEditing) {
-              cancelEdit();
-            } else {
-              router.replace('/(tabs)/dashboard');
-            }
-          }}
-          style={{ padding: 6 }}
-        >
-          <Ionicons name="chevron-back" size={24} color={isDark ? theme.colors['text-dark'] : theme.colors.text} />
-        </Pressable>
-        {booking && !isEditing && booking.status !== 'CONFIRMED' && booking.status !== 'CANCELLED' && (
-          <Pressable
-            onPress={startEdit}
-            className="px-3 py-2 rounded-lg"
-            style={{ backgroundColor: isDark ? theme.colors['primary-dark'] : theme.colors.primary }}
-          >
-            <Ionicons name="pencil" size={16} color="white" />
-          </Pressable>
-        )}
-      </View>
-      <ScrollView className="flex-1 p-6">
-        {loading ? (
-          <View className="items-center justify-center flex-1 py-20">
-            <ActivityIndicator size="large" />
-          </View>
-        ) : booking ? (
-          <>
-            {isEditing ? (
-              <View>
-                <HotelBookingForm
-                  checkInDate={editCheckInDate}
-                  checkOutDate={editCheckOutDate}
-                  guestName={booking.user?.userName || ''}
-                  setGuestName={() => {}}
-                  guestEmail={booking.user?.email || ''}
-                  setGuestEmail={() => {}}
-                  guestPhoneNumber={booking.user?.phone || ''}
-                  setGuestPhoneNumber={() => {}}
-                  paymentMethod={editPaymentMethod}
-                  setPaymentMethod={setEditPaymentMethod}
-                  specialRequests={editSpecialRequests}
-                  setSpecialRequests={setEditSpecialRequests}
-                  onSubmit={handleSaveEdit}
-                  submitting={submitting}
-                  isEditing={true}
-                  onCancel={cancelEdit}
-                />
-              </View>
-            ) : (
-              <View>
-                <Text className="text-2xl font-bold text-text dark:text-text-dark">Booking {booking.confirmationCode}</Text>
-                <View className="flex-row items-center gap-2 mt-2">
-                  <Text className="text-sm text-muted dark:text-muted-dark">Status: {booking.status}</Text>
-                  {booking.paymentStatus && (
-                    <PaymentStatusBadge status={booking.paymentStatus} />
-                  )}
-                </View>
+  const errorColor = isDark ? theme.colors['error-dark'] : theme.colors.error;
+  const surfaceColor = isDark ? theme.colors['surface-dark'] : theme.colors.surface;
+  const borderColor = isDark ? theme.colors['border-dark'] : theme.colors.border;
+  const textColor = isDark ? theme.colors['text-dark'] : theme.colors.text;
+  const mutedColor = isDark ? theme.colors['muted-dark'] : theme.colors.muted;
+  const primaryColor = isDark ? theme.colors['primary-dark'] : theme.colors.primary;
 
-                <View className="p-4 mt-6 bg-white border rounded-xl dark:bg-surface-dark border-border dark:border-border-dark">
-                  <Text className="font-semibold text-text dark:text-text-dark">Hotel</Text>
-                  <Text className="mt-1 text-base text-text dark:text-text-dark">{booking?.hotel?.name}</Text>
-                  <Text className="mt-1 text-sm text-muted dark:text-muted-dark">{booking?.hotel?.location?.city ?? ''}</Text>
-                </View>
+  const handleCancelPress = () => {
+    if (!eligibility?.canCancel) {
+      Alert.alert(
+        t(TRANSLATION_KEYS.PACKAGE_BOOKING.CANNOT_CANCEL),
+        eligibility?.reason || t(TRANSLATION_KEYS.PACKAGE_BOOKING.CANNOT_CANCEL_DESC)
+      );
+      return;
+    }
+    setShowCancelModal(true);
+  };
 
-                <View className="p-4 mt-4 bg-white border rounded-xl dark:bg-surface-dark border-border dark:border-border-dark">
-                  <Text className="font-semibold text-text dark:text-text-dark">Guest</Text>
-                  <Text className="mt-1 text-base text-text dark:text-text-dark">{booking?.user?.userName ?? booking?.user?.email}</Text>
-                </View>
+  const handleConfirmCancel = async () => {
+    if (!bookingId) return;
+    setCancelSubmitting(true);
+    await cancelBooking(bookingId, () => {
+      setShowCancelModal(false);
+      fetchBookingDetails(bookingId).then((res) => {
+        setBooking(res ?? null);
+        setEligibility(null);
+      });
+    });
+    setCancelSubmitting(false);
+  };
 
-                <View className="p-4 mt-4 bg-white border rounded-xl dark:bg-surface-dark border-border dark:border-border-dark">
-                  <Text className="font-semibold text-text dark:text-text-dark">Room Details</Text>
-                  {booking.roomDetails?.map((r: any) => (
-                    <View key={r.hotelRoomId} className="mt-3">
-                      <Text className="font-semibold text-text dark:text-text-dark">{r.hotelRoom?.hotelRoomType?.name ?? r.hotelRoom?.roomNumber ?? 'Room'}</Text>
-                      <Text className="text-sm text-muted dark:text-muted-dark">Price per night: {r.pricePerNight}</Text>
-                      <Text className="text-sm text-muted dark:text-muted-dark">Subtotal: {r.subtotal}</Text>
-                    </View>
-                  ))}
-                </View>
+  const showCancelSection =
+    booking && shouldFetchCancellationEligibility(booking.status);
+  const canEdit = booking && booking.status !== 'CONFIRMED' && booking.status !== 'CANCELLED';
+  const coverUrl = booking?.hotel?.images?.[0]?.url as string | undefined;
+  const hotelName = booking?.hotel?.name || t(TRANSLATION_KEYS.BOOKING.HOTEL_NAME);
+  const city = booking?.hotel?.location?.city || booking?.hotel?.location?.name || '';
+  const leaveDetail = () => {
+    if (isEditing) {
+      cancelEdit();
+      return;
+    }
+    router.replace('/(tabs)/dashboard');
+  };
 
-                <View className="p-4 mt-4 bg-white border rounded-xl dark:bg-surface-dark border-border dark:border-border-dark">
-                  <Text className="font-semibold text-text dark:text-text-dark">Summary</Text>
-                  <Text className="mt-2 text-base text-text dark:text-text-dark">Check-in: {new Date(booking.checkInDate).toLocaleDateString()}</Text>
-                  <Text className="mt-1 text-base text-text dark:text-text-dark">Check-out: {new Date(booking.checkOutDate).toLocaleDateString()}</Text>
-                  <Text className="mt-2 text-lg font-bold text-text dark:text-text-dark">Total: {booking.totalPrice}</Text>
-                </View>
-              </View>
-            )}
-          </>
-        ) : (
-          <View className="items-center justify-center py-20">
-            <Text className="text-muted dark:text-muted-dark">Booking not found</Text>
-          </View>
-        )}
-      </ScrollView>
-
-      {/* Action Buttons Footer */}
-      {booking && !isEditing && (
+  const cancelModal = (
+    <Modal
+      visible={showCancelModal}
+      transparent
+      animationType="slide"
+      onRequestClose={() => setShowCancelModal(false)}
+    >
+      <View className="justify-end flex-1 bg-black/50">
         <View
-          className="px-6 pt-3 pb-4 border-t border-border dark:border-border-dark"
-          style={{ backgroundColor: isDark ? theme.colors['surface-dark'] : theme.colors.surface }}
+          className="p-6 rounded-t-3xl"
+          style={{ backgroundColor: surfaceColor, maxHeight: '80%' }}
         >
-          <View className="gap-3">
-            {/* Generate QR Button */}
+          <Text className="mb-4 text-2xl font-bold text-text dark:text-text-dark">
+            {t(TRANSLATION_KEYS.BOOKING.CANCEL)}
+          </Text>
+          <Text className="mb-4 text-sm text-muted dark:text-muted-dark">
+            {t(TRANSLATION_KEYS.BOOKING.CANCEL_CONFIRM_PROMPT)}
+          </Text>
+          {eligibility && (
+            <CancellationEligibilityPreview
+              eligibility={eligibility}
+              t={t}
+              surfaceColor={isDark ? '#1a1a1a' : '#f5f5f5'}
+              borderColor={borderColor}
+              textColor={textColor}
+              mutedColor={mutedColor}
+              primaryColor={primaryColor}
+            />
+          )}
+          <View className="flex-row gap-3 mt-6">
             <Pressable
-              onPress={() => router.push(`/(tabs)/dashboard/${bookingId}/qr-generate`)}
-              className="flex-row items-center justify-center py-3 rounded-lg"
-              style={{ backgroundColor: isDark ? theme.colors['primary-dark'] : theme.colors.primary }}
+              onPress={() => setShowCancelModal(false)}
+              className="items-center justify-center flex-1 py-3 rounded-lg"
+              style={{ backgroundColor: isDark ? '#333' : '#e0e0e0' }}
             >
-              <Ionicons name="qr-code" size={18} color="white" style={{ marginRight: 8 }} />
-              <Text className="text-sm font-semibold text-white">Generate QR Code</Text>
+              <Text className="font-semibold" style={{ color: textColor }}>
+                {t(TRANSLATION_KEYS.COMMON.CANCEL)}
+              </Text>
             </Pressable>
-
-            {/* Complete Payment Button - Only show if unpaid */}
-            {booking.paymentStatus === 'UNPAID' && (
-              <Pressable
-                onPress={() =>
-                  router.push({
-                    pathname: '/(tabs)/dashboard/payment',
-                    params: {
-                      bookingId: bookingId!,
-                      serviceType: 'HOTEL_BOOKING',
-                      totalPrice: String(booking.totalPrice ?? ''),
-                    },
-                  })
-                }
-                className="flex-row items-center justify-center py-3 rounded-lg"
-                style={{ backgroundColor: isDark ? theme.colors['warning-dark'] : theme.colors.warning }}
-              >
-                <Ionicons name="card-outline" size={18} color="white" style={{ marginRight: 8 }} />
-                <Text className="text-sm font-semibold text-white">
-                  {t(TRANSLATION_KEYS.PAYMENT.COMPLETE_PAYMENT)}
+            <Pressable
+              onPress={handleConfirmCancel}
+              disabled={cancelSubmitting || !eligibility?.canCancel}
+              className="items-center justify-center flex-1 py-3 rounded-lg"
+              style={{
+                backgroundColor: cancelSubmitting || !eligibility?.canCancel ? mutedColor : errorColor,
+              }}
+            >
+              {cancelSubmitting ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Text className="font-semibold text-white">
+                  {t(TRANSLATION_KEYS.COMMON.CONFIRM)}
                 </Text>
-              </Pressable>
-            )}
+              )}
+            </Pressable>
           </View>
         </View>
-      )}
-    </SafeAreaView>
+      </View>
+    </Modal>
+  );
+
+  if (loading || !booking || isEditing) {
+    return (
+      <SafeAreaView edges={['top', 'bottom']} className="flex-1 bg-background dark:bg-background-dark">
+        <View className="flex-row items-center px-4 py-3 border-b border-border dark:border-border-dark">
+          <Pressable onPress={leaveDetail} accessibilityRole="button" accessibilityLabel={t(TRANSLATION_KEYS.BOOKING.BACK)} style={{ padding: 6 }}>
+            <Ionicons name="chevron-back" size={24} color={textColor} />
+          </Pressable>
+        </View>
+        {loading ? (
+          <View className="items-center justify-center flex-1">
+            <ActivityIndicator size="large" color={primaryColor} />
+          </View>
+        ) : !booking ? (
+          <View className="items-center justify-center flex-1">
+            <Text className="text-muted dark:text-muted-dark">{t(TRANSLATION_KEYS.PACKAGE_BOOKING.BOOKING_NOT_FOUND)}</Text>
+          </View>
+        ) : (
+          <ScrollView className="flex-1 p-4">
+            <HotelBookingForm
+              checkInDate={editCheckInDate}
+              checkOutDate={editCheckOutDate}
+              guestName={booking.user?.userName || ''}
+              setGuestName={() => {}}
+              guestEmail={booking.user?.email || ''}
+              setGuestEmail={() => {}}
+              guestPhoneNumber={booking.user?.phone || ''}
+              setGuestPhoneNumber={() => {}}
+              paymentMethod={editPaymentMethod}
+              setPaymentMethod={setEditPaymentMethod}
+              specialRequests={editSpecialRequests}
+              setSpecialRequests={setEditSpecialRequests}
+              onSubmit={handleSaveEdit}
+              submitting={submitting}
+              isEditing={true}
+              onCancel={cancelEdit}
+            />
+          </ScrollView>
+        )}
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <View className="flex-1 bg-background dark:bg-background-dark">
+      <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: actionBarHeight + 16 }}>
+        <View style={{ height: 160, backgroundColor: isDark ? theme.colors['background-dark'] : theme.colors.background }}>
+          {coverUrl ? (
+            <Image source={{ uri: coverUrl }} accessibilityLabel={hotelName} style={{ width: '100%', height: 160 }} />
+          ) : (
+            <View className="items-center justify-center flex-1">
+              <Ionicons name="bed-outline" size={40} color={mutedColor} />
+            </View>
+          )}
+          <Pressable
+            onPress={leaveDetail}
+            accessibilityRole="button"
+            accessibilityLabel={t(TRANSLATION_KEYS.BOOKING.BACK)}
+            className="absolute items-center justify-center w-10 h-10 rounded-full"
+            style={{ top: insets.top + 8, left: 16, backgroundColor: 'rgba(255,255,255,0.92)' }}
+          >
+            <Ionicons name="chevron-back" size={22} color={theme.colors.text} />
+          </Pressable>
+          {canEdit ? (
+            <Pressable
+              onPress={startEdit}
+              accessibilityRole="button"
+              accessibilityLabel={t(TRANSLATION_KEYS.BOOKING.EDIT)}
+              className="absolute items-center justify-center w-10 h-10 rounded-full"
+              style={{ top: insets.top + 8, right: 16, backgroundColor: primaryColor }}
+            >
+              <Ionicons name="pencil" size={16} color="white" />
+            </Pressable>
+          ) : null}
+        </View>
+
+        <View className="px-4 pt-4">
+          <Text className="text-2xl font-bold text-text dark:text-text-dark">{hotelName}</Text>
+          {city ? <Text className="mt-1 text-sm text-muted dark:text-muted-dark">{city}</Text> : null}
+          <View className="flex-row items-center justify-between mt-2">
+            <View className="flex-1 pr-3">
+              <Text className="text-xs text-muted dark:text-muted-dark">
+                {t(TRANSLATION_KEYS.BOOKING.CONFIRMATION_CODE)}
+              </Text>
+              <Text className="text-sm font-semibold text-text dark:text-text-dark">
+                {booking.confirmationCode}
+              </Text>
+            </View>
+            <Pressable
+              onPress={() => router.push(`/(tabs)/dashboard/${bookingId}/qr-generate`)}
+              accessibilityRole="button"
+              accessibilityLabel={t(TRANSLATION_KEYS.BOOKING.QR_CODE)}
+              className="flex-row items-center"
+            >
+              <Ionicons name="qr-code" size={28} color={primaryColor} style={{ marginRight: 8 }} />
+              <Text className="text-lg font-bold" style={{ color: primaryColor }}>
+                {t(TRANSLATION_KEYS.BOOKING.QR_CODE)}
+              </Text>
+            </Pressable>
+          </View>
+          <View className="flex-row items-center mt-2">
+            <Text className="mr-2 text-sm font-semibold text-text dark:text-text-dark">{booking.status}</Text>
+            {booking.paymentStatus ? <PaymentStatusBadge status={booking.paymentStatus} /> : null}
+          </View>
+        </View>
+
+        <View className="p-4 mx-4 mt-4 bg-white border rounded-xl dark:bg-surface-dark border-border dark:border-border-dark">
+          <Text className="mb-3 font-semibold text-text dark:text-text-dark">
+            {t(TRANSLATION_KEYS.BOOKING.YOUR_STAY)}
+          </Text>
+          <View className="flex-row">
+            <View className="flex-1">
+              <Text className="text-xs text-muted dark:text-muted-dark">{t(TRANSLATION_KEYS.BOOKING.CHECK_IN)}</Text>
+              <Text className="mt-1 text-base font-bold text-text dark:text-text-dark">{formatStayDate(booking.checkInDate)}</Text>
+            </View>
+            <View className="flex-1">
+              <Text className="text-xs text-muted dark:text-muted-dark">{t(TRANSLATION_KEYS.BOOKING.CHECK_OUT)}</Text>
+              <Text className="mt-1 text-base font-bold text-text dark:text-text-dark">{formatStayDate(booking.checkOutDate)}</Text>
+            </View>
+          </View>
+          <View className="flex-row items-center justify-between pt-3 mt-3 border-t border-border dark:border-border-dark">
+            <Text className="text-sm text-muted dark:text-muted-dark">{t(TRANSLATION_KEYS.BOOKING.TOTAL_PRICE)}</Text>
+            <Text className="text-lg font-bold text-text dark:text-text-dark">{money(booking.totalPrice)}</Text>
+          </View>
+        </View>
+
+        {Array.isArray(booking.roomDetails) && booking.roomDetails.length > 0 ? (
+          <View className="p-4 mx-4 mt-4 bg-white border rounded-xl dark:bg-surface-dark border-border dark:border-border-dark">
+            <Text className="mb-1 font-semibold text-text dark:text-text-dark">
+              {t(TRANSLATION_KEYS.HOTEL_SEARCH.ROOMS)} ({booking.roomDetails.length})
+            </Text>
+            {booking.roomDetails.map((room: any, index: number) => {
+              const label = room.hotelRoom?.roomNumber
+                ? `${t(TRANSLATION_KEYS.BOOKING.ROOM_NUMBER)} ${room.hotelRoom.roomNumber}`
+                : (room.hotelRoom?.hotelRoomType?.name || t(TRANSLATION_KEYS.BOOKING.ROOM_NUMBER));
+              return (
+                <View
+                  key={room.hotelRoomId || room.id || index}
+                  className="flex-row items-center justify-between py-3"
+                  style={index < booking.roomDetails.length - 1 ? { borderBottomWidth: 1, borderBottomColor: borderColor } : undefined}
+                >
+                  <View className="flex-1 pr-3">
+                    <Text className="font-semibold text-text dark:text-text-dark">{label}</Text>
+                    <Text className="mt-1 text-sm text-muted dark:text-muted-dark">
+                      {money(room.pricePerNight)}{t(TRANSLATION_KEYS.BOOKING.PRICE_PER_NIGHT)}
+                    </Text>
+                  </View>
+                  <Text className="font-bold text-text dark:text-text-dark">{money(room.subtotal)}</Text>
+                </View>
+              );
+            })}
+          </View>
+        ) : null}
+      </ScrollView>
+
+      <View
+        onLayout={(event) => {
+          const next = Math.ceil(event.nativeEvent.layout.height);
+          if (next > 0 && next !== actionBarHeight) {
+            setActionBarHeight(next);
+          }
+        }}
+        style={{
+          position: 'absolute',
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'transparent',
+          paddingHorizontal: 16,
+          paddingTop: 12,
+          paddingBottom: Math.max(insets.bottom, 12),
+        }}
+      >
+        {eligibilityLoading && showCancelSection ? (
+          <ActivityIndicator size="small" color={primaryColor} />
+        ) : null}
+        {eligibility && showCancelSection ? (
+          <CancellationEligibilityPreview
+            eligibility={eligibility}
+            t={t}
+            plain
+            surfaceColor="transparent"
+            borderColor="transparent"
+            textColor={textColor}
+            mutedColor={mutedColor}
+            primaryColor={primaryColor}
+          />
+        ) : null}
+        {showCancelSection ? (
+          <Pressable
+            onPress={handleCancelPress}
+            disabled={!eligibility?.canCancel || eligibilityLoading}
+            className="flex-row items-center justify-center py-3 mt-3 rounded-lg"
+            style={{
+              backgroundColor: !eligibility?.canCancel || eligibilityLoading ? mutedColor : errorColor,
+            }}
+          >
+            <Ionicons name="close-circle-outline" size={18} color="white" style={{ marginRight: 8 }} />
+            <Text className="text-sm font-semibold text-white">
+              {eligibility ? getCancelActionLabel(eligibility) : t(TRANSLATION_KEYS.BOOKING.CANCEL)}
+            </Text>
+          </Pressable>
+        ) : null}
+        {booking.paymentStatus === 'UNPAID' ? (
+          <Pressable
+            onPress={() =>
+              router.push({
+                pathname: '/(tabs)/dashboard/payment',
+                params: {
+                  bookingId: bookingId!,
+                  serviceType: 'HOTEL_BOOKING',
+                  totalPrice: String(booking.totalPrice ?? ''),
+                },
+              })
+            }
+            className="flex-row items-center justify-center py-3 mt-3 rounded-lg"
+            style={{ backgroundColor: isDark ? theme.colors['warning-dark'] : theme.colors.warning }}
+          >
+            <Ionicons name="card-outline" size={18} color="white" style={{ marginRight: 8 }} />
+            <Text className="text-sm font-semibold text-white">
+              {t(TRANSLATION_KEYS.PAYMENT.COMPLETE_PAYMENT)}
+            </Text>
+          </Pressable>
+        ) : null}
+      </View>
+      {cancelModal}
+    </View>
   );
 }
+

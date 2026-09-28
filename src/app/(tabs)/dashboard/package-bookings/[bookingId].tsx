@@ -1,7 +1,7 @@
 /**
  * Package Booking Detail Page
  * Displays detailed information about a specific package booking
- * Allows cancellation if status is PENDING
+ * Cancel flow uses server eligibility (not PENDING-only)
  */
 
 import React, { useEffect, useState } from 'react';
@@ -15,6 +15,13 @@ import { useTheme } from '../../../../hooks/useTheme';
 import { theme } from '../../../../constants/theme';
 import { TRANSLATION_KEYS } from '../../../../constants/translationKeys';
 import { PackageBooking } from '../../../../types/packageBookings';
+import { CancellationEligibility } from '../../../../types/cancellation';
+import { getPackageCancellationEligibility } from '../../../../services/api/packageBookings';
+import { CancellationEligibilityPreview } from '../../../../components/booking/CancellationEligibilityPreview';
+import {
+  shouldFetchCancellationEligibility,
+  getCancelActionLabel,
+} from '../../../../utilities/bookingCancelHelpers';
 
 export default function PackageBookingDetailPage() {
   const router = useRouter();
@@ -32,6 +39,8 @@ export default function PackageBookingDetailPage() {
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
   const [cancelNotes, setCancelNotes] = useState('');
+  const [eligibility, setEligibility] = useState<CancellationEligibility | null>(null);
+  const [eligibilityLoading, setEligibilityLoading] = useState(false);
 
   const primaryColor = isDark ? theme.colors['primary-dark'] : theme.colors.primary;
   const errorColor = isDark ? theme.colors['error-dark'] : theme.colors.error;
@@ -53,15 +62,29 @@ export default function PackageBookingDetailPage() {
     const result = await fetchBookingDetail(bookingId);
     if (result) {
       setBooking(result);
+      if (shouldFetchCancellationEligibility(result.status)) {
+        setEligibilityLoading(true);
+        try {
+          const eligibilityResult = await getPackageCancellationEligibility(bookingId);
+          setEligibility(eligibilityResult);
+        } catch (error: any) {
+          console.error('[PackageBookingDetail] eligibility error', error);
+          setEligibility(null);
+        } finally {
+          setEligibilityLoading(false);
+        }
+      } else {
+        setEligibility(null);
+      }
     }
     setLoading(false);
   };
 
   const handleCancelPress = () => {
-    if (booking?.status !== 'PENDING') {
+    if (!eligibility?.canCancel) {
       Alert.alert(
         t(TRANSLATION_KEYS.PACKAGE_BOOKING.CANNOT_CANCEL),
-        t(TRANSLATION_KEYS.PACKAGE_BOOKING.CANNOT_CANCEL_DESC)
+        eligibility?.reason || t(TRANSLATION_KEYS.PACKAGE_BOOKING.CANNOT_CANCEL_DESC)
       );
       return;
     }
@@ -116,6 +139,9 @@ export default function PackageBookingDetailPage() {
         return mutedColor;
     }
   };
+
+  const showCancelSection =
+    booking && shouldFetchCancellationEligibility(booking.status);
 
   if (loading) {
     return (
@@ -317,17 +343,43 @@ export default function PackageBookingDetailPage() {
             </View>
           )}
 
+          {eligibilityLoading && showCancelSection && (
+            <View className="items-center mb-6">
+              <ActivityIndicator size="small" color={primaryColor} />
+            </View>
+          )}
+
+          {eligibility && showCancelSection && (
+            <View className="mb-6">
+              <CancellationEligibilityPreview
+                eligibility={eligibility}
+                t={t}
+                surfaceColor={surfaceColor}
+                borderColor={borderColor}
+                textColor={textColor}
+                mutedColor={mutedColor}
+                primaryColor={primaryColor}
+              />
+            </View>
+          )}
+
           {/* Cancel Button */}
-          {booking.status === 'PENDING' && (
+          {showCancelSection && (
             <TouchableOpacity
               onPress={handleCancelPress}
+              disabled={!eligibility?.canCancel || eligibilityLoading}
               className="flex-row items-center justify-center p-4 rounded-xl"
-              style={{ backgroundColor: errorColor }}
+              style={{
+                backgroundColor:
+                  !eligibility?.canCancel || eligibilityLoading ? mutedColor : errorColor,
+              }}
               activeOpacity={0.8}
             >
               <Ionicons name="close-circle" size={24} color="#fff" style={{ marginRight: 8 }} />
               <Text className="text-base font-bold text-white">
-                {t(TRANSLATION_KEYS.PACKAGE_BOOKING.CANCEL_BOOKING)}
+                {eligibility
+                  ? getCancelActionLabel(eligibility)
+                  : t(TRANSLATION_KEYS.PACKAGE_BOOKING.CANCEL_BOOKING)}
               </Text>
             </TouchableOpacity>
           )}
@@ -357,6 +409,18 @@ export default function PackageBookingDetailPage() {
               {t(TRANSLATION_KEYS.PACKAGE_BOOKING.CANCEL_CONFIRMATION)}
             </Text>
 
+            {eligibility && (
+              <CancellationEligibilityPreview
+                eligibility={eligibility}
+                t={t}
+                surfaceColor={isDark ? '#1a1a1a' : '#f5f5f5'}
+                borderColor={borderColor}
+                textColor={textColor}
+                mutedColor={mutedColor}
+                primaryColor={primaryColor}
+              />
+            )}
+
             {/* Reason Input */}
             <View className="mb-4">
               <Text className="mb-2 text-sm font-semibold text-text dark:text-text-dark">
@@ -373,6 +437,7 @@ export default function PackageBookingDetailPage() {
                   borderWidth: 1,
                   borderColor,
                 }}
+                maxLength={500}
               />
             </View>
 
@@ -396,6 +461,7 @@ export default function PackageBookingDetailPage() {
                   minHeight: 80,
                   textAlignVertical: 'top',
                 }}
+                maxLength={500}
               />
             </View>
 
@@ -414,9 +480,12 @@ export default function PackageBookingDetailPage() {
 
               <TouchableOpacity
                 onPress={handleConfirmCancel}
-                disabled={cancelLoading}
+                disabled={cancelLoading || !eligibility?.canCancel}
                 className="flex-row items-center justify-center flex-1 p-4 rounded-xl"
-                style={{ backgroundColor: cancelLoading ? mutedColor : errorColor }}
+                style={{
+                  backgroundColor:
+                    cancelLoading || !eligibility?.canCancel ? mutedColor : errorColor,
+                }}
                 activeOpacity={0.8}
               >
                 {cancelLoading ? (

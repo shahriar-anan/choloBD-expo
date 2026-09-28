@@ -25,17 +25,16 @@ export default function HomeHeader({ onNavigate, onLogout }: HomeHeaderProps) {
       }}
     >
       <View
+        className="flex-row items-center justify-between px-3"
         style={{
+          height: 52,
           backgroundColor: bgColor,
           borderBottomWidth: 0.5,
           borderBottomColor: borderColor,
         }}
-        className="flex-row items-center justify-between h-20 px-3 py-2"
       >
-        {/* Left: Side Scroller Button + Brand */}
-        <View className="flex-row items-center gap-2 flex-1">
+        <View className="flex-row items-center gap-1.5 flex-1">
           <SideScroller onNavigate={onNavigate} onLogout={onLogout} />
-          {/* App Brand beside menu */}
           <AppBrandSection />
         </View>
       </View>

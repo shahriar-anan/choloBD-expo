@@ -1,17 +1,24 @@
-import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { View, Text, ScrollView, Pressable } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { useTheme } from '../../../hooks/useTheme';
-import { theme } from '../../../constants/theme';
+import theme from '../../../constants/theme';
 import RoomTypeSelectorUI from '@/components/ui/roomTypeSelectorUI';
-import { HotelBookingForm } from '../../../components/forms/hotelBookingForm';
+import { guestContactFieldState, guestContactIsComplete, HotelBookingForm } from '../../../components/forms/hotelBookingForm';
+import { GradientAppBar } from '../../../components/hotelSearch/HotelFlowChrome';
 import { useExplore } from './_provider';
-import { differenceInCalendarDays, parseISO } from 'date-fns';
 import { useTranslation } from 'react-i18next';
 import { TRANSLATION_KEYS } from '../../../constants/translationKeys';
+import { displayRoomName, formatMoney, nightsBetween, shortRangeLabel } from '../../../utilities/hotelSearch';
+import { RoomType } from '../../../types/hotels';
 
 export default function ExploreBooking() {
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const { isDark } = useTheme();
+  const { t } = useTranslation();
   const {
     hotelDetail,
     selectedRoomsMap,
@@ -21,80 +28,92 @@ export default function ExploreBooking() {
     guestName,
     guestEmail,
     guestPhoneNumber,
-    paymentMethod,
     specialRequests,
-    setCheckInDate,
-    setCheckOutDate,
     setGuestName,
     setGuestEmail,
     setGuestPhoneNumber,
-    setPaymentMethod,
     setSpecialRequests,
     submitBooking,
     submitting,
-    clearAllAndGoToSearch,
   } = useExplore();
+  const [roomsOpen, setRoomsOpen] = useState(false);
+  const [showGuestErrors, setShowGuestErrors] = useState(false);
+  const scrollRef = useRef<ScrollView>(null);
+  const primary = isDark ? theme.colors['primary-dark'] : theme.colors.primary;
+  const muted = isDark ? theme.colors['muted-dark'] : theme.colors.muted;
+
+  useEffect(() => {
+    if (!roomsOpen) {
+      return;
+    }
+    const timer = setTimeout(() => {
+      scrollRef.current?.scrollToEnd({ animated: true });
+    }, 80);
+    return () => clearTimeout(timer);
+  }, [roomsOpen]);
 
   if (!hotelDetail) return null;
 
-  const insets = useSafeAreaInsets();
-  const { isDark } = useTheme();
-  const { t } = useTranslation();
-  const primaryColor = isDark ? theme.colors['primary-dark'] : theme.colors.primary;
+  const nights = checkInDate && checkOutDate ? Math.max(0, nightsBetween(checkInDate, checkOutDate)) : 0;
+  const roomTypes = (hotelDetail.roomTypes || []) as RoomType[];
+  const chosen = roomTypes
+    .map((room) => ({ room, qty: selectedRoomsMap[room.id] || 0 }))
+    .filter((row) => row.qty > 0);
+  const total = chosen.reduce((sum, row) => sum + row.qty * (row.room.pricePerNight ?? 0) * nights, 0);
+  const guestReady = guestContactIsComplete(guestName, guestEmail, guestPhoneNumber);
+  const guestState = guestContactFieldState(guestName, guestEmail, guestPhoneNumber);
+  const guestFieldErrors = showGuestErrors
+    ? {
+        guestName: guestState.nameMissing ? t(TRANSLATION_KEYS.BOOKING.GUEST_NAME_REQUIRED) : undefined,
+        guestEmail: guestState.emailMissing
+          ? t(TRANSLATION_KEYS.BOOKING.EMAIL_REQUIRED)
+          : guestState.emailInvalid
+            ? t(TRANSLATION_KEYS.BOOKING.EMAIL_INVALID)
+            : undefined,
+        guestPhoneNumber: guestState.phoneMissing
+          ? t(TRANSLATION_KEYS.BOOKING.PHONE_REQUIRED)
+          : guestState.phoneInvalid
+            ? t(TRANSLATION_KEYS.BOOKING.PHONE_INVALID)
+            : undefined,
+      }
+    : undefined;
+
+  const handleCreateBooking = () => {
+    if (!guestReady) {
+      setShowGuestErrors(true);
+      return;
+    }
+    submitBooking();
+  };
 
   return (
-    <SafeAreaView
-      className="flex-1 bg-background dark:bg-background-dark"
-    >
-      <ScrollView
-        className="flex-1"
-        showsVerticalScrollIndicator={false}
-      >
-        <View className="px-6 pt-4 pb-4">
-          <Text className="text-2xl font-bold font-heading text-text dark:text-text-dark">{t(TRANSLATION_KEYS.BOOKING.COMPLETE_BOOKING)}</Text>
-          <Text className="mt-1 text-sm text-muted dark:text-muted-dark">{hotelDetail.name}</Text>
-        </View>
-
-        <View className="px-6 pb-6">
-          <View className="mb-6">
-            <RoomTypeSelectorUI roomTypes={hotelDetail.roomTypes || []} selectedRoomsMap={selectedRoomsMap} onChange={changeRoomQty} />
-          </View>
-
-          {/* Estimated Total */}
-          <View className="p-4 mb-4 bg-white border rounded-xl dark:bg-surface-dark border-primary/20 dark:border-primary-dark/40">
-            <Text className="text-xs font-semibold tracking-wide uppercase text-primary dark:text-primary-dark">
-              {t(TRANSLATION_KEYS.BOOKING.ESTIMATED_TOTAL)}
+    <SafeAreaView edges={['top', 'left', 'right']} className="flex-1 bg-background dark:bg-background-dark">
+      <GradientAppBar title={t(TRANSLATION_KEYS.BOOKING.COMPLETE_BOOKING)} subtitle={hotelDetail.name} onBack={() => router.back()} />
+      <ScrollView ref={scrollRef} className="flex-1" showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+        <View className="px-4 pt-4 pb-6">
+          <View className="p-4 mb-6 bg-white rounded-3xl dark:bg-surface-dark">
+            <Text className="text-xs font-semibold tracking-wide uppercase text-muted dark:text-muted-dark">
+              {t(TRANSLATION_KEYS.BOOKING.YOUR_STAY)}
             </Text>
-            {checkInDate && checkOutDate ? (
-              (() => {
-                let nights = 0;
-                try {
-                  const start = parseISO(checkInDate);
-                  const end = parseISO(checkOutDate);
-                  nights = Math.max(0, differenceInCalendarDays(end, start));
-                } catch (e) {
-                  nights = 0;
-                }
-
-                const subtotal = (hotelDetail.roomTypes || []).reduce((acc: number, rt: any) => {
-                  const qty = selectedRoomsMap[rt.id] || 0;
-                  const price = rt.pricePerNight ?? 0;
-                  return acc + qty * price * nights;
-                }, 0);
-
-                return (
-                  <View className="mt-2">
-                    <View className="self-start px-3 py-1 rounded-full bg-primary/10 dark:bg-primary-dark/20">
-                      <Text className="text-xs font-semibold text-primary dark:text-primary-dark">{t(TRANSLATION_KEYS.BOOKING.NIGHTS)}: {nights}</Text>
-                    </View>
-                    <Text className="mt-3 text-3xl font-bold font-heading text-text dark:text-text-dark">₹{subtotal}</Text>
-                    <Text className="mt-1 text-sm text-muted dark:text-muted-dark">{t(TRANSLATION_KEYS.BOOKING.ESTIMATED_TOTAL)}</Text>
-                  </View>
-                );
-              })()
-            ) : (
-              <Text className="mt-2 text-sm text-muted dark:text-muted-dark">{t(TRANSLATION_KEYS.BOOKING.ENTER_DATES)}</Text>
-            )}
+            <Text className="mt-2 text-base font-bold text-text dark:text-text-dark">
+              {checkInDate && checkOutDate ? shortRangeLabel(checkInDate, checkOutDate) : t(TRANSLATION_KEYS.BOOKING.NOT_SET)}
+            </Text>
+            <Text className="mt-1 text-sm text-muted dark:text-muted-dark">
+              {t(TRANSLATION_KEYS.BOOKING.NIGHTS)}: {nights}
+            </Text>
+            <View className="h-px my-3 bg-border dark:bg-border-dark" />
+            {chosen.length === 0 ? (
+              <Text className="text-sm text-muted dark:text-muted-dark">{t(TRANSLATION_KEYS.HOTEL_SEARCH.NO_ROOMS)}</Text>
+            ) : chosen.map(({ room, qty }) => (
+              <View key={room.id} className="flex-row items-center justify-between py-1">
+                <Text className="flex-1 text-sm font-semibold text-text dark:text-text-dark">
+                  {displayRoomName(room.roomType)} × {qty}
+                </Text>
+                <Text className="text-sm text-muted dark:text-muted-dark">
+                  {formatMoney(room.pricePerNight ?? 0)} {t(TRANSLATION_KEYS.BOOKING.PER_NIGHT)}
+                </Text>
+              </View>
+            ))}
           </View>
 
           <HotelBookingForm
@@ -110,19 +129,42 @@ export default function ExploreBooking() {
             setSpecialRequests={setSpecialRequests}
             submitting={submitting}
             onSubmit={submitBooking}
+            hideSchedule
+            showSubmit={false}
+            fieldErrors={guestFieldErrors}
           />
 
-          <View className="mt-4" style={{ paddingBottom: Math.max(8, insets.bottom) }}>
-            <TouchableOpacity
-              onPress={clearAllAndGoToSearch}
-              className="flex-row items-center justify-center p-3 border rounded-xl border-border dark:border-border-dark bg-surface dark:bg-surface-dark"
-            >
-              <Ionicons name="close-circle-outline" size={18} color={primaryColor} style={{ marginRight: 8 }} />
-              <Text className="font-semibold text-primary dark:text-primary-dark">{t(TRANSLATION_KEYS.BOOKING.CLEAR_SEARCH)}</Text>
-            </TouchableOpacity>
-          </View>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => setRoomsOpen((open) => !open)}
+            className="flex-row items-center justify-between px-4 py-4 mt-6 bg-white rounded-3xl dark:bg-surface-dark"
+          >
+            <Text className="font-semibold text-text dark:text-text-dark">{t(TRANSLATION_KEYS.BOOKING.ADD_OR_CHANGE_ROOMS)}</Text>
+            <Ionicons name={roomsOpen ? 'chevron-up' : 'chevron-down'} size={18} color={muted} />
+          </Pressable>
+          {roomsOpen ? (
+            <RoomTypeSelectorUI roomTypes={roomTypes} selectedRoomsMap={selectedRoomsMap} onChange={changeRoomQty} />
+          ) : null}
         </View>
       </ScrollView>
+
+      <View className="flex-row items-center px-4 pt-2 border-t border-border dark:border-border-dark bg-surface dark:bg-surface-dark" style={{ paddingBottom: Math.max(insets.bottom, 8) }}>
+        <View className="flex-1 mr-3">
+          <Text className="text-xs text-muted dark:text-muted-dark">{t(TRANSLATION_KEYS.BOOKING.TOTAL_PRICE)}</Text>
+          <Text className="text-lg font-bold text-text dark:text-text-dark" numberOfLines={1}>{formatMoney(total)}</Text>
+        </View>
+        <Pressable
+          accessibilityRole="button"
+          onPress={handleCreateBooking}
+          disabled={submitting}
+          className="items-center justify-center px-5 rounded-full"
+          style={{ backgroundColor: submitting || !guestReady ? muted : primary, minHeight: 44 }}
+        >
+          <Text className="text-base font-bold text-white">
+            {submitting ? t(TRANSLATION_KEYS.BOOKING.CREATING_BOOKING) : t(TRANSLATION_KEYS.BOOKING.CREATE_BOOKING)}
+          </Text>
+        </Pressable>
+      </View>
     </SafeAreaView>
   );
 }

@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, FlatList, ActivityIndicator, Pressable } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { View, Text, FlatList, ActivityIndicator, Pressable, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -10,11 +10,37 @@ import { useDashboardLogic } from '../../../hooks/useDashboardLogic';
 import theme from '../../../constants/theme';
 import { TRANSLATION_KEYS } from '../../../constants/translationKeys';
 
+type BookingListFilter = 'all' | 'unpaid' | 'confirmed' | 'pending' | 'cancelled';
+
+const FILTERS: { id: BookingListFilter; labelKey: string }[] = [
+  { id: 'all', labelKey: TRANSLATION_KEYS.BOOKING.FILTER_ALL },
+  { id: 'unpaid', labelKey: TRANSLATION_KEYS.BOOKING.FILTER_UNPAID },
+  { id: 'confirmed', labelKey: TRANSLATION_KEYS.BOOKING.FILTER_CONFIRMED },
+  { id: 'pending', labelKey: TRANSLATION_KEYS.BOOKING.FILTER_PENDING },
+  { id: 'cancelled', labelKey: TRANSLATION_KEYS.BOOKING.FILTER_CANCELLED },
+];
+
+function matchesBookingFilter(booking: { status?: string; paymentStatus?: string }, filter: BookingListFilter): boolean {
+  const status = String(booking.status || '').toUpperCase();
+  const payment = String(booking.paymentStatus || '').toUpperCase();
+  if (filter === 'unpaid') return payment === 'UNPAID';
+  if (filter === 'confirmed') return status === 'CONFIRMED';
+  if (filter === 'pending') return status === 'PENDING';
+  if (filter === 'cancelled') return status === 'CANCELLED';
+  return true;
+}
+
 export default function UserBookingsPage() {
   const router = useRouter();
   const { isDark } = useTheme();
   const { t } = useTranslation();
   const { bookings, loading, onRefresh, onPressBooking } = useDashboardLogic();
+  const [filter, setFilter] = useState<BookingListFilter>('all');
+  const primaryColor = isDark ? theme.colors['primary-dark'] : theme.colors.primary;
+  const visibleBookings = useMemo(
+    () => bookings.filter((booking) => matchesBookingFilter(booking, filter)),
+    [bookings, filter],
+  );
 
   return (
     <SafeAreaView edges={["top", "bottom"]} className="flex-1 bg-background dark:bg-background-dark">
@@ -39,6 +65,37 @@ export default function UserBookingsPage() {
           </View>
         </View>
 
+        {bookings.length > 0 ? (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={{ flexGrow: 0, alignSelf: 'flex-start', marginBottom: 16 }}
+            contentContainerStyle={{ alignItems: 'center' }}
+          >
+            {FILTERS.map((item) => {
+              const selected = filter === item.id;
+              return (
+                <Pressable
+                  key={item.id}
+                  onPress={() => setFilter(item.id)}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected }}
+                  className="px-4 py-2 mr-2 rounded-full"
+                  style={{
+                    backgroundColor: selected ? primaryColor : 'transparent',
+                    borderWidth: 1,
+                    borderColor: primaryColor,
+                  }}
+                >
+                  <Text style={{ color: selected ? '#fff' : primaryColor }} className="text-sm font-semibold">
+                    {t(item.labelKey)}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+        ) : null}
+
         {loading ? (
           <View className="items-center justify-center flex-1 mt-6">
             <ActivityIndicator size="large" color={theme.colors.primary} />
@@ -62,21 +119,31 @@ export default function UserBookingsPage() {
           </View>
         ) : (
           <View className="flex-1">
+            {visibleBookings.length === 0 ? (
+              <View className="items-center p-6 py-12 mt-2 bg-white border rounded-xl dark:bg-surface-dark border-border dark:border-border-dark">
+                <Text className="text-sm text-center text-muted dark:text-muted-dark">
+                  {t(TRANSLATION_KEYS.BOOKING.FILTER_EMPTY)}
+                </Text>
+              </View>
+            ) : (
             <FlatList
-              data={bookings}
+              data={visibleBookings}
               keyExtractor={(item) => item.id}
               renderItem={({ item }) => (
-                <BookingCard 
-                  booking={item} 
-                  onPress={onPressBooking} 
+                <BookingCard
+                  booking={item}
+                  onPress={onPressBooking}
+                  showGenerateQr
+                  showRooms={false}
                 />
               )}
               scrollEnabled={true}
               showsVerticalScrollIndicator={false}
-              contentContainerStyle={{ paddingBottom: 20 }}
+              contentContainerStyle={{ paddingBottom: 12 }}
               onRefresh={onRefresh}
               refreshing={loading}
             />
+            )}
           </View>
         )}
       </View>

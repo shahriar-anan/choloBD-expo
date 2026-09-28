@@ -38,7 +38,7 @@ export default function ExploreBDBanner({
     <TouchableOpacity
       activeOpacity={0.92}
       onPress={handlePress}
-      className="mx-4 my-5"
+      className="mx-4 mt-5 mb-3"
       style={{ borderRadius: 20, overflow: 'hidden', height: 165, ...theme.elevation.md }}
     >
       {/* Background Image */}

@@ -1,6 +1,15 @@
 import React from 'react';
-import { Stack } from 'expo-router';
+import { Stack, usePathname } from 'expo-router';
+import { useDashboardBookingTabBar } from '../../../hooks/useHideTabBar';
 
 export default function DashboardLayout() {
-  return <Stack screenOptions={{ headerShown: false }} />;
+  const pathname = usePathname();
+  useDashboardBookingTabBar(pathname);
+  return (
+    <Stack initialRouteName="index" screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="index" />
+      <Stack.Screen name="notifications" />
+      <Stack.Screen name="[bookingId]" />
+    </Stack>
+  );
 }

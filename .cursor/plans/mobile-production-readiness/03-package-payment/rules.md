@@ -1,26 +1,34 @@
-# Rules — increment 03 (package payment)
+# Rules — increment 03 (payment types)
 
 Shared: [_shared/global-rules.md](../_shared/global-rules.md)
 
-## Payment initialize
+## Catalog packages
+
+Do not add a traveler purchase or pay flow for catalog tour packages in this increment.
+
+- No pay-after-purchase on the current package booking screens.
+- No `POST /api/bookings/package-bookings/:tourPackageId/purchase` from a new screen.
+- A personal trip plan does not buy a catalog package. Increment 07 pays `TRIP_PACKAGE` only.
+
+Viewing and buying a catalog package happens only in a later trip-plan segment. Do not invent that screen here.
+
+## Payment initialize (hotel, and later products)
 
 `POST /api/payments/initialize` with:
 
-- `serviceType: PACKAGE_BOOKING`
-- `serviceTypeId` = package booking id
+- `serviceType`
+- `serviceTypeId` = booking id
 - `bookingId` = same id
 - No `userId` for auth
 
+`PACKAGE_BOOKING` is allowed on the type union. No screen in this increment sends it.
+
 ## ServiceType union
 
-Extend `src/types/payments.ts` to include all types later increments need:
+Extend `src/types/payments.ts` to:
 
 `HOTEL_BOOKING` | `PACKAGE_BOOKING` | `TRIP_PACKAGE` | `TRANSPORT_SERVICE` | `ACTIVITY_BOOKING` | `GUIDE_SERVICE` | `WALLET_TOP_UP`
 
 ## Browser flow
 
 Only `usePaymentLogic`: open gateway URL, then `GET /api/payments/transaction/:transactionId`.
-
-## Product boundary
-
-Catalog package checkout creates `PackageBooking` then pays with `PACKAGE_BOOKING`. Personal plans use increment 07 (`TRIP_PACKAGE`), not this flow.

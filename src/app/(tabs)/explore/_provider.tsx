@@ -35,6 +35,13 @@ interface ExploreContextValue {
   submitBooking: () => Promise<any>;
   clearAllAndGoToSearch: () => void;
   clearExploreState: () => void;
+  openGuestDetails: (input: {
+    hotelId: string;
+    roomTypeId: string;
+    quantity: number;
+    checkIn: string;
+    checkOut: string;
+  }) => Promise<void>;
 }
 
 const ExploreContext = createContext<ExploreContextValue | null>(null);
@@ -125,6 +132,20 @@ export function ExploreProvider({ children }: { children: React.ReactNode }) {
     router.push('/(tabs)/explore');
   };
 
+  const openGuestDetails = async (input: {
+    hotelId: string;
+    roomTypeId: string;
+    quantity: number;
+    checkIn: string;
+    checkOut: string;
+  }) => {
+    setCheckInDate(input.checkIn);
+    setCheckOutDate(input.checkOut);
+    setSelectedRoomsMap({ [input.roomTypeId]: input.quantity });
+    await fetchHotelDetail(input.hotelId);
+    router.push('/(tabs)/explore/booking');
+  };
+
   const clearExploreState = () => {
     try {
       clearHotels();
@@ -173,6 +194,7 @@ export function ExploreProvider({ children }: { children: React.ReactNode }) {
         submitBooking,
         clearAllAndGoToSearch,
         clearExploreState,
+        openGuestDetails,
       }}
     >
       {children}

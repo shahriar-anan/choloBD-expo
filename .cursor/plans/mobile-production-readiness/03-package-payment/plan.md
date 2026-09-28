@@ -1,14 +1,24 @@
-# 03 — Package payment
+# 03 — Payment types only (catalog package buy removed)
 
 **Folder:** `03-package-payment` · **Rules:** [rules.md](rules.md) · **Tests:** [tests.md](tests.md)
 
 Status: Not started. Depends on increment 02. UI starts only after Functional typechecks.
 
-Hotel pay already opens SSLCommerz from `usePaymentLogic`. Catalog package purchase creates a `PackageBooking` and does not start payment. This phase pays that booking with `PACKAGE_BOOKING` and widens the client `ServiceType` union so later phases can reuse the same hook.
+Catalog tour packages are **not** bought from the current package purchase screens, and they are **not** bought by checking out a personal trip plan. The only place a traveler will view and buy a catalog package is a trip-plan segment that will be specified later. Do not design or build that segment in this increment.
+
+## Removed from this increment
+
+Do not add pay-after-purchase on `src/app/(tabs)/explore/tour-booking.tsx` or any other screen that calls `POST /api/bookings/package-bookings/:tourPackageId/purchase`.
+
+Do not add a pay button on `src/app/(tabs)/dashboard/package-bookings/[bookingId].tsx`.
+
+Do not send `PACKAGE_BOOKING` from the personal trip plan (increment 07). A personal plan checks out as `TripBooking` + `TRIP_PACKAGE` only.
+
+Leave `purchasePackage` in place if something else already calls it. Do not add a new traveler path that creates a `PackageBooking`.
 
 ## Functional
 
-### Payment types
+Hotel pay already opens SSLCommerz from `usePaymentLogic`. This phase only widens the client payment types so increments 04–07 can reuse that hook.
 
 In `src/types/payments.ts`, set `ServiceType` to:
 
@@ -24,28 +34,18 @@ Do not send `userId` for authorization. Optional `phone`, `email`, `userName`, a
 
 `usePaymentLogic` stays the only gateway starter. It opens `gatewayPageURL` and then reads `GET /api/payments/transaction/:transactionId`. No second browser helper.
 
-### Package purchase then pay
-
-`src/services/api/packageBookings.ts` `purchasePackage` stays `POST /api/bookings/package-bookings/:tourPackageId/purchase` with optional `quantity` (1–100), `specialRequests`, `notes`, `startDate`, `endDate`, and `participantCount`.
-
-`src/hooks/usePackageBookingLogic.tsx` (or `usePaymentLogic` called from the package flow) after a successful purchase:
-
-1. Read the new booking id from the purchase response.
-2. Call `startPayment({ serviceType: "PACKAGE_BOOKING", serviceTypeId: bookingId, bookingId })`.
-3. Return both the booking and the payment result. A failed or dismissed browser session leaves the booking `UNPAID` so the user can retry from booking detail.
-
-Hotel call sites in `src/app/(tabs)/explore/payment.tsx` and `src/app/(tabs)/dashboard/payment.tsx` must pass `bookingId` as well as `serviceTypeId` when they are updated in the UI section. The functional change is the type and the hook accepting that field. Do not switch hotel `serviceType` away from `HOTEL_BOOKING`.
+`PACKAGE_BOOKING` stays in the union for the later trip-plan segment. No screen in this increment calls it.
 
 ### Exit
 
-`npx tsc --noEmit` passes. Existing hotel payment call sites still compile. If the new `bookingId` field is required, update those two call sites in the UI section immediately after, still before any new package screen work.
+`npx tsc --noEmit` passes. Existing hotel payment call sites still compile. If the new `bookingId` field is required, update `src/app/(tabs)/explore/payment.tsx` and `src/app/(tabs)/dashboard/payment.tsx` to pass `bookingId` as well as `serviceTypeId`. Hotel `serviceType` stays `HOTEL_BOOKING`.
 
 ## UI
 
-Only after the functional exit.
+Only the two hotel payment call sites above, and only to pass `bookingId`.
 
-- Package booking confirmation, `src/app/(tabs)/explore/tour-booking.tsx` or the screen that submits purchase: after purchase, offer pay and run the existing payment screen or call `usePaymentLogic` in place. Do not build a new WebView.
-- `src/app/(tabs)/dashboard/package-bookings/[bookingId].tsx`: if `paymentStatus` is `UNPAID` and status is not `CANCELLED`, show pay. Route into `src/app/(tabs)/dashboard/payment.tsx` with `serviceType=PACKAGE_BOOKING` and the booking id, or call the hook directly.
-- `src/app/(tabs)/explore/payment.tsx` and `src/app/(tabs)/dashboard/payment.tsx`: pass `bookingId` together with `serviceTypeId`.
+No catalog package browse, purchase, or pay screen. That UI is a later trip-plan segment, specified when the product shape is ready.
 
-Device case: D-03 in [tests.md](tests.md). Re-run D-00 if hotel pay was touched.
+## Later (not this increment)
+
+Catalog packages are viewed and bought only inside the trip plan module, on the segment that will be added later. Until that spec exists, travelers have no new way to purchase a catalog package.

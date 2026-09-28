@@ -22,9 +22,9 @@ Run after each slice’s Functional work before that slice’s UI.
 
 - Expected: `POST /api/bookmarks` (`bookmarkType: HOTEL`), list, delete.
 
-### D-08d Notifications
+### D-08d Notification deep links added after 03b
 
-- After a booking event from earlier increments: `GET /api/notifications`, `PATCH .../read`.
+- The inbox and badge are increment 03b. This case only checks later types: an activity, guide, transport, or trip notification opens that booking from the same notifications page.
 
 ### D-08e Review a tour spot
 

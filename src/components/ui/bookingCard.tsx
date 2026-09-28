@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, Text, TouchableOpacity, Image, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../store/store';
@@ -11,6 +12,8 @@ import { TRANSLATION_KEYS } from '../../constants/translationKeys';
 interface BookingCardProps {
   booking: any;
   onPress?: (id: string) => void;
+  showGenerateQr?: boolean;
+  showRooms?: boolean;
 }
 
 // Helper function to format dates in a readable way
@@ -24,9 +27,11 @@ const formatDate = (dateString: string): string => {
   });
 };
 
-export function BookingCard({ booking, onPress }: BookingCardProps) {
+export function BookingCard({ booking, onPress, showGenerateQr = false, showRooms = true }: BookingCardProps) {
+  const router = useRouter();
   const { isDark } = useTheme();
   const { t } = useTranslation();
+  const primaryColor = isDark ? theme.colors['primary-dark'] : theme.colors.primary;
   const auth = useSelector((s: RootState) => s.auth);
   const muteIconColor = isDark ? '#9ca3af' : '#666';
   
@@ -35,6 +40,8 @@ export function BookingCard({ booking, onPress }: BookingCardProps) {
   const displayName = isServiceAdmin 
     ? (booking.guestName || booking.guest || 'Guest')
     : (booking.hotel?.name || booking.hotelDetails?.name || booking.hotelName || 'Hotel');
+  const coverUrl = booking.hotel?.images?.[0]?.url || booking.hotelDetails?.images?.[0]?.url;
+  const showThumb = !isServiceAdmin || Boolean(coverUrl);
 
   const getStatusColor = (status?: string) => {
     switch (status?.toLowerCase()) {
@@ -65,9 +72,25 @@ export function BookingCard({ booking, onPress }: BookingCardProps) {
   return (
     <TouchableOpacity onPress={() => onPress && onPress(booking.id)} activeOpacity={0.8}>
       <View className="p-4 mb-3 bg-white border shadow rounded-xl border-border dark:bg-surface-dark dark:border-border-dark">
-        {/* Header: Guest name and status badges */}
-        <View className="flex-row items-start justify-between">
-          <View style={{ flex: 1 }}>
+        {/* Header: cover, name, and status badges */}
+        <View className="flex-row items-start">
+          {showThumb ? (
+            coverUrl ? (
+              <Image
+                source={{ uri: coverUrl }}
+                accessibilityLabel={displayName}
+                style={{ width: 96, height: 96, borderRadius: 12 }}
+              />
+            ) : (
+              <View
+                className="items-center justify-center bg-background dark:bg-background-dark"
+                style={{ width: 96, height: 96, borderRadius: 12 }}
+              >
+                <Ionicons name="bed-outline" size={28} color={muteIconColor} />
+              </View>
+            )
+          ) : null}
+          <View style={{ flex: 1, marginLeft: showThumb ? 12 : 0 }}>
             <Text className="text-lg font-bold text-text dark:text-text-dark">
               {displayName}
             </Text>
@@ -88,25 +111,23 @@ export function BookingCard({ booking, onPress }: BookingCardProps) {
                 </View>
               </>
             )}
-          </View>
-
-          {/* Status badges */}
-          <View className="items-end ml-3">
-            <View
-              style={{ backgroundColor: `${getStatusColor(booking.status)}20` }}
-              className="px-3 py-1.5 rounded-lg mb-2"
-            >
-              <Text style={{ color: getStatusColor(booking.status) }} className="text-sm font-bold">
-                {booking.status || 'Unknown'}
-              </Text>
-            </View>
-            <View
-              style={{ backgroundColor: `${getPaymentStatusColor(booking.paymentStatus)}20` }}
-              className="px-3 py-1.5 rounded-lg"
-            >
-              <Text style={{ color: getPaymentStatusColor(booking.paymentStatus) }} className="text-sm font-bold">
-                {booking.paymentStatus || 'Unpaid'}
-              </Text>
+            <View className="flex-row flex-wrap mt-2">
+              <View
+                style={{ backgroundColor: `${getStatusColor(booking.status)}20` }}
+                className="px-3 py-1 mr-2 rounded-lg"
+              >
+                <Text style={{ color: getStatusColor(booking.status) }} className="text-xs font-bold">
+                  {booking.status || 'Unknown'}
+                </Text>
+              </View>
+              <View
+                style={{ backgroundColor: `${getPaymentStatusColor(booking.paymentStatus)}20` }}
+                className="px-3 py-1 rounded-lg"
+              >
+                <Text style={{ color: getPaymentStatusColor(booking.paymentStatus) }} className="text-xs font-bold">
+                  {booking.paymentStatus || 'Unpaid'}
+                </Text>
+              </View>
             </View>
           </View>
         </View>
@@ -127,6 +148,19 @@ export function BookingCard({ booking, onPress }: BookingCardProps) {
                 {booking.confirmationCode || booking.id?.substring(0, 16) || 'N/A'}
               </Text>
             </View>
+            {showGenerateQr ? (
+              <Pressable
+                onPress={() => router.push(`/(tabs)/dashboard/${booking.id}/qr-generate`)}
+                accessibilityRole="button"
+                accessibilityLabel={t(TRANSLATION_KEYS.BOOKING.QR_CODE)}
+                className="flex-row items-center ml-2"
+              >
+                <Ionicons name="qr-code" size={18} color={primaryColor} style={{ marginRight: 6 }} />
+                <Text className="text-sm font-semibold" style={{ color: primaryColor }}>
+                  {t(TRANSLATION_KEYS.BOOKING.QR_CODE)}
+                </Text>
+              </Pressable>
+            ) : null}
           </View>
 
           {/* Check-in and check-out dates */}
@@ -176,7 +210,7 @@ export function BookingCard({ booking, onPress }: BookingCardProps) {
         </View>
 
         {/* Room details if available */}
-        {booking.roomDetails && booking.roomDetails.length > 0 && (
+        {showRooms && booking.roomDetails && booking.roomDetails.length > 0 && (
           <View className="pt-4 mt-4 border-t border-border dark:border-border-dark">
             <View className="flex-row items-center mb-3">
               <Ionicons name="bed" size={16} color={theme.colors.primary} style={{ marginRight: 8 }} />
