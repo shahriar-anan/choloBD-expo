@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { getUserProfile, getMyHotel, getHotelRooms } from '../services/api/users';
+import { getUserProfile, getMyHotel, getOperatorHotel, getHotelRooms } from '../services/api/users';
 
 export function useServiceAdminLogic() {
   const [loading, setLoading] = useState(false);
@@ -19,12 +19,12 @@ export function useServiceAdminLogic() {
     }
   }, []);
 
-  const fetchMyHotel = useCallback(async (hotelId?: string) => {
+  const fetchMyHotel = useCallback(async () => {
     try {
       setLoading(true);
-      if (__DEV__) console.log('[useServiceAdminLogic.fetchMyHotel] Calling getMyHotel...', { hotelId });
-      const result = await getMyHotel(hotelId);
-      if (__DEV__) console.log('[useServiceAdminLogic.fetchMyHotel] Success:', { isArray: Array.isArray(result), result });
+      if (__DEV__) console.log('[useServiceAdminLogic.fetchMyHotel] Calling getMyHotel...');
+      const result = await getMyHotel();
+      if (__DEV__) console.log('[useServiceAdminLogic.fetchMyHotel] Success:', { length: result.length });
       return result;
     } catch (e: any) {
       console.error('[useServiceAdminLogic.fetchMyHotel] ❌ Error:', {
@@ -33,6 +33,19 @@ export function useServiceAdminLogic() {
         data: e?.response?.data,
         fullError: e
       });
+      throw e;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const fetchOperatorHotel = useCallback(async (hotelId: string) => {
+    try {
+      setLoading(true);
+      const result = await getOperatorHotel(hotelId);
+      return result;
+    } catch (e: any) {
+      console.error('[useServiceAdminLogic.fetchOperatorHotel] Error:', e?.message ?? e);
       throw e;
     } finally {
       setLoading(false);
@@ -62,6 +75,7 @@ export function useServiceAdminLogic() {
     loading,
     fetchProfile,
     fetchMyHotel,
+    fetchOperatorHotel,
     fetchHotelRooms,
   };
 }

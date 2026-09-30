@@ -27,6 +27,7 @@ Implement **one increment at a time**. Finish **Functional**, run agent checks i
 7. **Trip checkout (07)** — Personal plan → `TripBooking` + `TRIP_PACKAGE`. That checkout does not buy a catalog package. Catalog view and buy wait for a later trip-plan segment.
 8. **Wallet, search, inbox (08)** — Cross-cutting features; search can start after 01.
 9. **Home hero (09)** — Can start any time. Restyles the homepage photo and the booking tiles only. Transport is shown on the row and does not navigate until increment 06.
+10. **Home feed (10)** — After 09. Fills the page under the launcher with live catalog rows and static promo cards. Does not add search (08), guides (05), or discounts.
 
 Segment booking FKs on personal plans wait until 04 and 06 clients exist (see increment 07 plan).
 
@@ -40,7 +41,7 @@ Segment booking FKs on personal plans wait until 04 and 06 clients exist (see in
 | Hotel search and room choice | `GET /api/hotels` (+ `name`, rating, dates, pagination) and room types on the hotel | Increment 01b checked on device 2026-09-28 (S1–S13, guest details). List perks, strike price, property distance, meal plans, and room-level refund text are not on the API. |
 | Spot lists | `?locationId=` query | `/location/:id` paths |
 | Admin “my tours” | No `by-admin`; catalog `GET /api/tour-builder` | `GET /api/tour-builder/by-admin/:id` |
-| Service-admin hotel | `GET /api/hotels/my` | Legacy v1 my-hotel path |
+| Service-admin hotel | `GET /api/hotels/my` for hotel admin; employee hotel and QR scan still read the wrong user field | Increment 11 wires the operator home. Increment 12 adds the desk day, stay status, complaints, rates, and earnings. Staff and cash desk stay out. |
 | Social login | Session OAuth on web only | Calls to `/api/auth/oauth/callback` |
 | Cancel/refund | Eligibility + cancel on booking APIs | Increment 02 checked on device 2026-09-28. Hotel list and detail call eligibility and cancel. Package cancel is not limited to `PENDING`. |
 | Package pay | `PACKAGE_BOOKING` initialize | Not in increment 03. Catalog view and buy wait for a later trip-plan segment. |
@@ -59,14 +60,17 @@ Refund **policy** lives in the backend; the app calls eligibility and displays `
 | 01 | [01-trip-plan-api](mobile-production-readiness/01-trip-plan-api/) | Trip plan wizard, day segments, QA-ready plan screens | — | **Done** — manual QA passed 2026-09-28. Checkout stays in increment 07. |
 | 01b | [01b-hotel-booking-flow](mobile-production-readiness/01b-hotel-booking-flow/) | Hotel search S1–S13, then existing guest-details handoff | 01 | **Done** — checked on device 2026-09-28. No children, guest cap, map, promo, or package rows in search. |
 | 02 | [02-cancel-refund](mobile-production-readiness/02-cancel-refund/) | Hotel + package cancel/refund | 01 | **Done** — checked on device 2026-09-28. |
-| 03 | [03-package-payment](mobile-production-readiness/03-package-payment/) | Widen payment types. No catalog package buy | 02 | Not started |
+| 03 | [03-package-payment](mobile-production-readiness/03-package-payment/) | Widen payment types. No catalog package buy | 02 | **Functional done** — `ServiceType` union + `bookingId` on initialize (needed by increment 06). Device cases not run |
 | 03b | [03b-dashboard](mobile-production-readiness/03b-dashboard/) | Traveler dashboard home | — (before 04) | **Done** — checked on device 2026-09-28. |
 | 04 | [04-activity-booking](mobile-production-readiness/04-activity-booking/) | Activity book, pay, QR, cancel | 03 | Not started |
 | 05 | [05-guides](mobile-production-readiness/05-guides/) | Guide request, pay after accept, cancel | 03 | Not started |
-| 06 | [06-transport](mobile-production-readiness/06-transport/) | Bus + rental book, pay, cancel | 03 | Not started |
+| 06 | [06-transport](mobile-production-readiness/06-transport/) | Bus ticket flow (holds, stops, passengers, return) + rental | 03 | **Implemented** — `npx tsc --noEmit` passed. Device cases not run |
 | 07 | [07-trip-checkout](mobile-production-readiness/07-trip-checkout/) | Personal plan checkout + `TRIP_PACKAGE` | 01; segment links after 04+06 | Not started |
 | 08 | [08-wallet-search-inbox](mobile-production-readiness/08-wallet-search-inbox/) | Search, wallet, bookmarks, notifications, reviews, complaints | 03 (search after 01) | Not started |
 | 09 | [09-home-hero](mobile-production-readiness/09-home-hero/) | Homepage photo and the four-tile booking launcher | — | UI in place — device cases not run |
+| 10 | [10-home-feed](mobile-production-readiness/10-home-feed/) | Homepage under the launcher: promos, places, holidays, deals, community | 09 | UI in place — device cases not run |
+| 11 | [11-hotel-operator](mobile-production-readiness/11-hotel-operator/) | Hotel admin and hotel employee: fix my-hotel, QR scan, and assignment checks, then wire the existing desk screens | — | **Script green** 2026-09-30 (39/39). Device cases not run |
+| 12 | [12-hotel-desk](mobile-production-readiness/12-hotel-desk/) | Hotel desk: day lists, checkout and no-show, complaints, room rates, earnings, notifications, profile lists, reviews | 11 | **Script green** 2026-09-30 (29/29). Device cases not run |
 
 **Status values:** `Not started` → `Functional done` (services/types + agent checks) → `Done` (UI + device cases checked by a person).
 

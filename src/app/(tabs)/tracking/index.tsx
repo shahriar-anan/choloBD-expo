@@ -15,7 +15,7 @@ import { TRANSLATION_KEYS } from '../../../constants/translationKeys';
 export default function TrackingPage() {
   const router = useRouter();
   const auth = useSelector((s: RootState) => s.auth);
-  const { bookings, loading, onRefresh } = useDashboardLogic();
+  const { bookings, loading, onRefresh, serviceType, operatorProfileLoaded } = useDashboardLogic();
   const { isDark } = useTheme();
   const { t } = useTranslation();
   const { currentLanguage } = useLanguage();
@@ -26,6 +26,8 @@ export default function TrackingPage() {
   }, []);
 
   const isServiceAdmin = (auth.user as any)?.role === 'SERVICE_ADMIN';
+  const isHotelAdmin = isServiceAdmin && serviceType === 'HOTEL_BOOKING';
+  const showPackageBookings = isServiceAdmin && operatorProfileLoaded && !isHotelAdmin;
 
   const handleDetailsPress = (bookingId: string) => {
     router.push(`/(tabs)/dashboard/${bookingId}`);
@@ -80,11 +82,13 @@ export default function TrackingPage() {
             subtitle={t(TRANSLATION_KEYS.TRACKING.CURRENT_BOOKINGS_DESC)}
             onPress={() => router.push('/(tabs)/tracking/hotel-bookings')}
           />
-          <AdminCard
-            title={t(TRANSLATION_KEYS.TRACKING.PACKAGE_BOOKINGS)}
-            subtitle={t(TRANSLATION_KEYS.TRACKING.PACKAGE_BOOKINGS_DESC)}
-            onPress={() => router.push('/(tabs)/tracking/package-bookings')}
-          />
+          {showPackageBookings ? (
+            <AdminCard
+              title={t(TRANSLATION_KEYS.TRACKING.PACKAGE_BOOKINGS)}
+              subtitle={t(TRANSLATION_KEYS.TRACKING.PACKAGE_BOOKINGS_DESC)}
+              onPress={() => router.push('/(tabs)/tracking/package-bookings')}
+            />
+          ) : null}
         </View>
       </ScrollView>
     );

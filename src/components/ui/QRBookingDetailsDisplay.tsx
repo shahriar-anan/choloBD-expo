@@ -17,9 +17,14 @@ const DetailRow: React.FC<{ label: string; value: string; last?: boolean }> = ({
 );
 
 export const QRBookingDetailsDisplay: React.FC<QRBookingDetailsDisplayProps> = ({ booking }) => {
-  const checkInDate = new Date(booking.checkInDate);
+  const guestName =
+    booking.guestName ||
+    [booking.user?.firstName, booking.user?.lastName].filter(Boolean).join(' ') ||
+    booking.user?.userName ||
+    'Guest';
   const checkOutDate = new Date(booking.checkOutDate);
-  const nights = Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24));
+  const checkInDate = new Date(booking.checkInDate);
+  const nights = Math.max(0, Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24)));
 
   return (
     <ScrollView className="flex-1 bg-background dark:bg-background-dark">
@@ -47,13 +52,13 @@ export const QRBookingDetailsDisplay: React.FC<QRBookingDetailsDisplayProps> = (
           <Text className="mb-3 text-xs font-bold tracking-wide uppercase text-muted dark:text-muted-dark">
             Guest
           </Text>
-          <Text className="text-base font-medium text-text dark:text-text-dark">
-            {booking.user.firstName || booking.user.userName} {booking.user.lastName || ''}
-          </Text>
-          <Text className="mt-1 text-sm text-muted dark:text-muted-dark">{booking.user.email}</Text>
-          {booking.user.phoneNumber && (
+          <Text className="text-base font-medium text-text dark:text-text-dark">{guestName}</Text>
+          {booking.user?.email ? (
+            <Text className="mt-1 text-sm text-muted dark:text-muted-dark">{booking.user.email}</Text>
+          ) : null}
+          {booking.user?.phoneNumber ? (
             <Text className="mt-1 text-sm text-muted dark:text-muted-dark">{booking.user.phoneNumber}</Text>
-          )}
+          ) : null}
         </View>
 
         {/* Stay Dates Section */}
@@ -112,6 +117,10 @@ export const QRBookingDetailsDisplay: React.FC<QRBookingDetailsDisplayProps> = (
           <Text className="mb-3 text-xs font-bold tracking-wide uppercase text-muted dark:text-muted-dark">
             Payment
           </Text>
+          <DetailRow
+            label="Payment status"
+            value={booking.paymentStatus || 'N/A'}
+          />
           <DetailRow
             label="Payment Method"
             value={booking.paymentMethod || 'N/A'}

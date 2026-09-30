@@ -69,6 +69,7 @@ export default function ExplorePaymentScreen() {
     const result = await startPayment({
       serviceType: 'HOTEL_BOOKING',
       serviceTypeId: lastBookingResult.id,
+      bookingId: lastBookingResult.id,
     });
     setTxnStatus(result.status);
     if (result.success) {

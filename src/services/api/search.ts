@@ -21,6 +21,11 @@ interface LocationRow {
     locationType?: string;
     country?: string;
     state?: string | null;
+    parentLocation?: {
+        id: string;
+        name: string;
+        locationType?: string;
+    } | null;
 }
 
 const PLACE_TYPES = new Set(['DIVISION', 'DISTRICT']);
@@ -134,6 +139,54 @@ export async function searchHotelDestinations(name: string): Promise<HotelSearch
     }
 
     return [...locationRows, ...hotels, ...tourSpots, ...activitySpots];
+}
+
+function districtDivisionName(row: LocationRow): string {
+    return row.parentLocation?.name || row.state || '';
+}
+
+function districtMatchRank(row: LocationRow, query: string): number {
+    const name = (row.name || '').toLowerCase();
+    const needle = query.toLowerCase();
+    if (name === needle) return 0;
+    if (name.startsWith(needle)) return 1;
+    if (name.includes(needle)) return 2;
+    return 3;
+}
+
+export async function searchTransportPlaces(name: string): Promise<HotelSearchDestination[]> {
+    const query = name.trim();
+    if (!query) {
+        return [];
+    }
+    const api = getApiInstance();
+    const districtResult = await api.get('/api/locations', { params: { locationType: 'DISTRICT' } });
+    const districts = (Array.isArray(districtResult.data?.data) ? districtResult.data.data : []) as LocationRow[];
+    const needle = query.toLowerCase();
+
+    return districts
+        .filter((row) => row.locationType === 'DISTRICT')
+        .filter((row) => {
+            const nameMatch = (row.name || '').toLowerCase().includes(needle);
+            const divisionMatch = districtDivisionName(row).toLowerCase().includes(needle);
+            return nameMatch || divisionMatch;
+        })
+        .sort((left, right) => (
+            districtMatchRank(left, query) - districtMatchRank(right, query)
+            || left.name.localeCompare(right.name)
+        ))
+        .map((row) => ({
+            kind: 'place' as const,
+            id: row.id,
+            name: row.name,
+            subtitle: locationLabel({
+                ...row,
+                state: districtDivisionName(row) || row.state,
+            }),
+            locationId: row.id,
+            locationType: 'DISTRICT',
+            source: 'location' as const,
+        }));
 }
 
 export function hotelListQueryForDestination(destination: HotelSearchDestination): { locationId?: string; divisionId?: string; name?: string } {

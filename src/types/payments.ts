@@ -3,14 +3,18 @@ export type PaymentStatus = 'UNPAID' | 'PAID';
 export type ServiceType =
   | 'HOTEL_BOOKING'
   | 'PACKAGE_BOOKING'
-  | 'WALLET_TOP_UP'
-  | 'TRIP_PACKAGE';
+  | 'TRIP_PACKAGE'
+  | 'TRANSPORT_SERVICE'
+  | 'ACTIVITY_BOOKING'
+  | 'GUIDE_SERVICE'
+  | 'WALLET_TOP_UP';
 
 export type TransactionStatus = 'PENDING' | 'COMPLETED' | 'FAILED' | 'CANCELLED';
 
 export interface InitializePaymentParams {
   serviceType: ServiceType;
   serviceTypeId: string;
+  bookingId: string;
   phone?: string;
   email?: string;
   userName?: string;

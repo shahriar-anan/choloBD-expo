@@ -6,6 +6,9 @@ export function useFetchTourPackages(filters?: TourFilters) {
   const [packages, setPackages] = useState<TourPackage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [reloadToken, setReloadToken] = useState(0);
+
+  const refetch = () => setReloadToken((token) => token + 1);
 
   useEffect(() => {
     let active = true;
@@ -34,7 +37,7 @@ export function useFetchTourPackages(filters?: TourFilters) {
     return () => {
       active = false;
     };
-  }, [JSON.stringify(filters)]);
+  }, [JSON.stringify(filters), reloadToken]);
 
-  return { packages, isLoading, error };
+  return { packages, isLoading, error, refetch };
 }

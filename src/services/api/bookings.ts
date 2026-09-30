@@ -80,6 +80,15 @@ export async function getHotelCancellationEligibility(
   return res.data?.data;
 }
 
+export async function updateHotelStayStatus(
+  bookingId: string,
+  status: 'COMPLETED' | 'NO_SHOW'
+): Promise<any> {
+  const api = getApiInstance();
+  const res = await api.post(`/api/bookings/hotel-rooms/${bookingId}/stay-status`, { status });
+  return res.data?.data ?? null;
+}
+
 export async function cancelHotelBooking(
   bookingId: string,
   reason?: string

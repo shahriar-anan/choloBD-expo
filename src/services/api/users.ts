@@ -7,19 +7,38 @@ export async function getUserProfile(): Promise<any> {
 }
 
 /**
- * Fetch the service admin's assigned hotel via GET /api/hotels/my
+ * Hotels assigned to the signed-in hotel admin or hotel employee.
+ * GET /api/hotels/my always returns an array.
  */
-export async function getMyHotel(hotelId?: string): Promise<any> {
+export async function getMyHotel(): Promise<any[]> {
   const api = getApiInstance();
-
-  if (hotelId) {
-    const res = await api.get(`/api/hotels/${hotelId}`);
-    return res.data?.data ?? null;
-  }
-
   const res = await api.get('/api/hotels/my');
   const data = res.data?.data;
-  return data ?? null;
+  return Array.isArray(data) ? data : [];
+}
+
+export async function getOperatorHotel(hotelId: string): Promise<any> {
+  const api = getApiInstance();
+  const res = await api.get(`/api/hotels/${hotelId}`);
+  return res.data?.data ?? null;
+}
+
+export interface UpdateHotelProfileData {
+  phoneNumber?: string;
+  email?: string;
+  website?: string;
+  checkInTime?: string;
+  checkOutTime?: string;
+  amenities?: string[];
+  policies?: string[];
+  nearbyTourSpots?: string[];
+  nearbyActivitySpots?: string[];
+}
+
+export async function updateMyHotel(hotelId: string, data: UpdateHotelProfileData): Promise<any> {
+  const api = getApiInstance();
+  const res = await api.put(`/api/hotels/${hotelId}`, data);
+  return res.data?.data ?? null;
 }
 
 export async function getHotelRooms(hotelId: string): Promise<any[]> {

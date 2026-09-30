@@ -1,213 +1,86 @@
 import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
-import { Ionicons, Feather } from '@expo/vector-icons';
+import { View, Text, Image, TouchableOpacity } from 'react-native';
+import { Feather } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../hooks/useTheme';
-import { theme } from '../../constants/theme';
-import { TourPackage, TourType } from '../../types/tours';
-
-const TOUR_TYPE_LABELS: Record<TourType, string> = {
-  ADVENTURE: 'Adventure',
-  CULTURAL: 'Cultural',
-  BEACH: 'Beach',
-  CITY_TOUR: 'City Tour',
-  NATURE: 'Nature',
-  RELIGIOUS: 'Religious',
-  HISTORICAL: 'Historical',
-  MIXED: 'Mixed',
-};
-
-const TOUR_TYPE_COLORS: Record<TourType, { bg: string; bgDark: string; icon: string }> = {
-  ADVENTURE: { bg: '#FFF3E0', bgDark: '#3f2c1e', icon: '#F57C00' },
-  CULTURAL: { bg: '#F3E5F5', bgDark: '#312e58', icon: '#7B1FA2' },
-  BEACH: { bg: '#E0F7FA', bgDark: '#1a3540', icon: '#0097A7' },
-  CITY_TOUR: { bg: '#E0F2F1', bgDark: '#1a3530', icon: '#00796B' },
-  NATURE: { bg: '#E8F5E9', bgDark: '#1e3a28', icon: '#388E3C' },
-  RELIGIOUS: { bg: '#E8EAF6', bgDark: '#252b50', icon: '#3949AB' },
-  HISTORICAL: { bg: '#FBE9E7', bgDark: '#3d1f1a', icon: '#BF360C' },
-  MIXED: { bg: '#E3F2FD', bgDark: '#1e3a5f', icon: '#1565C0' },
-};
-
-const TOUR_TYPE_ICONS: Record<TourType, keyof typeof Ionicons.glyphMap> = {
-  ADVENTURE: 'trail-sign',
-  CULTURAL: 'business',
-  BEACH: 'water',
-  CITY_TOUR: 'map',
-  NATURE: 'leaf',
-  RELIGIOUS: 'star',
-  HISTORICAL: 'library',
-  MIXED: 'globe',
-};
+import theme from '../../constants/theme';
+import { TRANSLATION_KEYS } from '../../constants/translationKeys';
+import { TourPackage } from '../../types/tours';
+import { formatBdt } from '../../utils/money';
+import PhotoCard from './PhotoCard';
 
 interface TourPackageCardProps {
   tourPackage: TourPackage;
+  layout?: 'cover' | 'row';
   onPress?: () => void;
 }
 
-export default function TourPackageCard({ tourPackage, onPress }: TourPackageCardProps) {
+export default function TourPackageCard({ tourPackage, layout = 'cover', onPress }: TourPackageCardProps) {
+  const { t } = useTranslation();
   const { isDark } = useTheme();
+  const imageUrl = [...(tourPackage.images ?? [])].sort((a, b) => (a.order ?? 0) - (b.order ?? 0))[0]?.url;
+  const showPrice = typeof tourPackage.totalBudget === 'number' && tourPackage.totalBudget > 0;
+  const price = showPrice ? formatBdt(tourPackage.totalBudget) : undefined;
+  const duration = tourPackage.duration > 0
+    ? t(TRANSLATION_KEYS.HOME.DURATION_DAYS, { count: tourPackage.duration })
+    : undefined;
+  const open = onPress ?? (() => undefined);
 
-  const cardBgColor = isDark ? theme.colors['surface-2-dark'] : theme.colors.surface;
-  const textColorPrimary = isDark ? theme.colors['text-dark'] : theme.colors.text;
-  const textColorMuted = isDark ? theme.colors['muted-dark'] : theme.colors.muted;
-  const primaryColor = isDark ? theme.colors['primary-dark'] : theme.colors.primary;
-  const warningColor = isDark ? theme.colors['warning-dark'] : theme.colors.warning;
-  const borderColor = isDark ? theme.colors['border-dark'] : theme.colors.border;
+  if (layout === 'row') {
+    const text = isDark ? theme.colors['text-dark'] : theme.colors.text;
+    const muted = isDark ? theme.colors['muted-dark'] : theme.colors.muted;
+    const surface = isDark ? theme.colors['surface-dark'] : theme.colors.surface;
+    const meta = [tourPackage.location?.name, duration].filter(Boolean).join(' · ');
 
-  const typeColors = TOUR_TYPE_COLORS[tourPackage.tourType] || TOUR_TYPE_COLORS.MIXED;
-  const headerBg = isDark ? typeColors.bgDark : typeColors.bg;
-  const iconColor = typeColors.icon;
-  const iconName = TOUR_TYPE_ICONS[tourPackage.tourType] || 'globe';
-
-  return (
-    <TouchableOpacity
-      activeOpacity={0.8}
-      onPress={onPress}
-      className="mr-4"
-      style={{ width: 260 }}
-    >
-      <View
+    return (
+      <TouchableOpacity
+        activeOpacity={0.9}
+        onPress={open}
         style={{
-          borderRadius: 20,
+          flexDirection: 'row',
+          backgroundColor: surface,
+          borderRadius: 16,
           overflow: 'hidden',
-          backgroundColor: cardBgColor,
-          borderWidth: 1,
-          borderColor: isDark ? theme.colors['border-dark'] : theme.colors.border,
-          height: 270,
+          marginTop: 10,
           ...theme.elevation.sm,
         }}
       >
-        {/* Coloured Header */}
-        <View
-          style={{
-            height: 120,
-            backgroundColor: headerBg,
-            alignItems: 'center',
-            justifyContent: 'center',
-            position: 'relative',
-          }}
-        >
-          <Ionicons name={iconName} size={52} color={iconColor} style={{ opacity: 0.85 }} />
-
-          {/* Tour Type Badge */}
-          <View
-            style={{
-              position: 'absolute',
-              top: 12,
-              right: 12,
-              backgroundColor: isDark ? theme.colors['surface-dark'] : '#fff',
-              borderRadius: 9999,
-              paddingHorizontal: 10,
-              paddingVertical: 4,
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 1 },
-              shadowOpacity: 0.1,
-              shadowRadius: 3,
-              elevation: 3,
-            }}
-          >
-            <Text style={{ fontSize: 11, fontWeight: '600', color: iconColor }}>
-              {TOUR_TYPE_LABELS[tourPackage.tourType] || tourPackage.tourType}
-            </Text>
+        {imageUrl ? (
+          <Image source={{ uri: imageUrl }} style={{ width: 108, height: 96 }} resizeMode="cover" />
+        ) : (
+          <View style={{ width: 108, height: 96, alignItems: 'center', justifyContent: 'center', backgroundColor: '#1c2430' }}>
+            <Feather name="image" size={22} color="rgba(255,255,255,0.7)" />
           </View>
-
-          {/* Popular Badge */}
-          {tourPackage.isPopular && (
-            <View
-              style={{
-                position: 'absolute',
-                top: 12,
-                left: 12,
-                backgroundColor: warningColor,
-                borderRadius: 9999,
-                paddingHorizontal: 8,
-                paddingVertical: 3,
-              }}
-            >
-              <Text style={{ fontSize: 10, fontWeight: '700', color: '#fff' }}>HOT</Text>
-            </View>
-          )}
-
-          {/* Rating Badge */}
-          {tourPackage.rating !== undefined && tourPackage.rating !== null && (
-            <View
-              style={{
-                position: 'absolute',
-                bottom: 10,
-                left: 12,
-                backgroundColor: isDark ? theme.colors['surface-dark'] : '#fff',
-                borderRadius: 9999,
-                paddingHorizontal: 8,
-                paddingVertical: 3,
-                flexDirection: 'row',
-                alignItems: 'center',
-                gap: 4,
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 1 },
-                shadowOpacity: 0.1,
-                shadowRadius: 3,
-                elevation: 3,
-              }}
-            >
-              <Ionicons name="star" size={12} color={warningColor} />
-              <Text style={{ fontSize: 11, fontWeight: '600', color: textColorPrimary }}>
-                {tourPackage.rating.toFixed(1)}
-              </Text>
-            </View>
-          )}
-        </View>
-
-        {/* Content */}
-        <View style={{ paddingHorizontal: 14, paddingTop: 14, paddingBottom: 14, flex: 1, justifyContent: 'space-between' }}>
-          {/* Title */}
-          <Text
-            style={{ fontSize: 15, fontWeight: '700', color: textColorPrimary, marginBottom: 6 }}
-            numberOfLines={2}
-          >
+        )}
+        <View style={{ flex: 1, paddingHorizontal: 12, paddingVertical: 10, justifyContent: 'center' }}>
+          <Text style={{ color: text, fontSize: 15, fontWeight: '700' }} numberOfLines={1}>
             {tourPackage.packageName}
           </Text>
-
-          {/* Stats Row */}
-          <View style={{ flexDirection: 'row', gap: 10, marginBottom: 10 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-              <Ionicons name="calendar-outline" size={13} color={primaryColor} />
-              <Text style={{ fontSize: 12, color: textColorMuted, fontWeight: '500' }}>
-                {tourPackage.duration}d
-              </Text>
-            </View>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-              <Ionicons name="pricetag-outline" size={13} color={primaryColor} />
-              <Text style={{ fontSize: 12, color: textColorMuted, fontWeight: '500' }}>
-                ৳{(tourPackage.totalBudget / 1000).toFixed(0)}K
-              </Text>
-            </View>
-            {tourPackage.maxGroupSize && (
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                <Ionicons name="people-outline" size={13} color={primaryColor} />
-                <Text style={{ fontSize: 12, color: textColorMuted, fontWeight: '500' }}>
-                  {tourPackage.maxGroupSize}
-                </Text>
-              </View>
-            )}
-          </View>
-
-          {/* Location */}
-          <View
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              gap: 4,
-              paddingTop: 10,
-              borderTopWidth: 1,
-              borderTopColor: borderColor,
-            }}
-          >
-            <Feather name="map-pin" size={12} color={textColorMuted} />
-            <Text style={{ fontSize: 12, color: textColorMuted, flex: 1 }} numberOfLines={1}>
-              {tourPackage.location?.name || '—'}
+          {meta ? (
+            <Text style={{ color: muted, fontSize: 12, marginTop: 4 }} numberOfLines={1}>
+              {meta}
             </Text>
-          </View>
+          ) : null}
+          {price ? (
+            <Text style={{ color: text, fontSize: 13, fontWeight: '700', marginTop: 6 }} numberOfLines={1}>
+              {price}
+            </Text>
+          ) : null}
         </View>
-      </View>
-    </TouchableOpacity>
+      </TouchableOpacity>
+    );
+  }
+
+  return (
+    <PhotoCard
+      imageUrl={imageUrl}
+      width="100%"
+      height={200}
+      title={tourPackage.packageName}
+      detail={price}
+      badge={duration}
+      rating={tourPackage.rating}
+      onPress={open}
+    />
   );
 }

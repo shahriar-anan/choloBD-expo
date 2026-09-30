@@ -19,5 +19,6 @@ Each increment is a folder with three files:
 | [07-trip-checkout](07-trip-checkout/) | Personal plan checkout | `TRIP_PACKAGE` | D-07* |
 | [08-wallet-search-inbox](08-wallet-search-inbox/) | Cross-cutting features | Search, wallet, etc. | D-08* |
 | [09-home-hero](09-home-hero/) | Homepage photo and booking launcher | Overlap tiles on a landscape photo; no dead slots | D-09* |
+| [10-home-feed](10-home-feed/) | Homepage under the launcher | Live rows plus static promos; no fake discounts | D-10* |
 
 Work one increment at a time: **Functional** → agent checks in `tests.md` → **UI** → device cases in `tests.md`.

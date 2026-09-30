@@ -14,31 +14,7 @@ export function useQRScanner() {
       return data.data?.booking ?? null;
     } catch (e: any) {
       const status = e?.response?.status;
-      let errorMsg = e?.response?.data?.message ?? e?.message ?? 'Failed to scan QR code';
-
-      if (status === 401) {
-        if (errorMsg.includes('Invalid QR token')) {
-          errorMsg = 'QR code is invalid or expired. Ask guest for a fresh code.';
-        } else if (errorMsg.includes('does not belong to this hotel')) {
-          errorMsg = 'You are not authorized to check in guests at this hotel.';
-        } else if (errorMsg.includes('not assigned any hotel')) {
-          errorMsg = 'Your user account is not assigned to a hotel. Contact your manager.';
-        }
-      } else if (status === 410) {
-        errorMsg = 'QR code has expired. Ask guest for a fresh code.';
-      } else if (status === 400) {
-        if (errorMsg.includes('cancelled')) {
-          errorMsg = 'This booking has been cancelled and cannot be checked in.';
-        } else if (errorMsg.includes('QR token is required')) {
-          errorMsg = 'Please scan a valid QR code.';
-        }
-      } else if (status === 404) {
-        errorMsg = 'Booking not found in system.';
-      } else if (status === 403) {
-        errorMsg = 'Employee does not have a hotel assigned';
-      } else if (status && status >= 500) {
-        errorMsg = 'Unable to validate QR code. Check your internet connection and try again.';
-      }
+      const errorMsg = e?.response?.data?.message || e?.message || 'Failed to scan QR code';
 
       if (__DEV__) console.error('[useQRScanner] Error', status, errorMsg);
       setError(errorMsg);

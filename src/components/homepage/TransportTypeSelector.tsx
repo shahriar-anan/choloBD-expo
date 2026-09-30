@@ -16,6 +16,12 @@ interface TransportOption {
 
 const TRANSPORT_OPTIONS: TransportOption[] = [
   {
+    id: 'bus-rental',
+    label: 'BUS_RENTAL',
+    icon: 'truck',
+    route: '/(tabs)/explore/transport-search',
+  },
+  {
     id: 'trip-plan',
     label: 'TRIP_PLAN',
     icon: 'calendar',

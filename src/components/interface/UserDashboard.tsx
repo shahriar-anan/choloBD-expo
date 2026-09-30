@@ -9,14 +9,15 @@ import { theme } from '../../constants/theme';
 import { TRANSLATION_KEYS } from '../../constants/translationKeys';
 import { ProfileAvatar } from '../ui/profileAvatar';
 import { BookingCard } from '../ui/bookingCard';
-import { TravelerWalletStrip } from '../../hooks/useDashboardLogic';
+import { TransportBookingCard } from '../transport/TransportBookingCard';
+import { RecentDashboardItem, TravelerWalletStrip } from '../../hooks/useDashboardLogic';
 
 interface UserDashboardProps {
   userName?: string;
   email?: string;
   imageUrl?: string;
   userStatus?: string;
-  recentBooking?: any;
+  recentBookings?: RecentDashboardItem[];
   wallet: TravelerWalletStrip | null;
   unreadCount: number | null;
   onLogout: () => void;
@@ -44,7 +45,7 @@ function statusColor(status: string | undefined, isDark: boolean): string {
 
 interface DashboardLinkRowProps {
   title: string;
-  iconName: 'bed' | 'map' | 'compass';
+  iconName: 'bed' | 'map' | 'compass' | 'bus';
   onPress: () => void;
   showDivider: boolean;
 }
@@ -90,7 +91,7 @@ export function UserDashboard({
   email,
   imageUrl,
   userStatus,
-  recentBooking,
+  recentBookings = [],
   wallet,
   unreadCount,
   onLogout,
@@ -210,6 +211,12 @@ export function UserDashboard({
             showDivider
           />
           <DashboardLinkRow
+            title={t(TRANSLATION_KEYS.DASHBOARD.USER_CARDS.MY_TRANSPORT_BOOKINGS)}
+            iconName="bus"
+            onPress={() => router.push('/(tabs)/dashboard/transport-bookings')}
+            showDivider
+          />
+          <DashboardLinkRow
             title={t(TRANSLATION_KEYS.DASHBOARD.USER_CARDS.TRIP_PLANNER)}
             iconName="compass"
             onPress={() => router.push('/(tabs)/trip-planner')}
@@ -221,13 +228,29 @@ export function UserDashboard({
           <Text className="mb-3 text-lg font-bold font-heading text-text dark:text-text-dark">
             {t(TRANSLATION_KEYS.DASHBOARD.RECENT_BOOKINGS)}
           </Text>
-          {recentBooking ? (
-            <BookingCard
-              booking={recentBooking}
-              onPress={onPressBooking}
-              showGenerateQr
-              showRooms={false}
-            />
+          {recentBookings.length > 0 ? (
+            recentBookings.map((item) =>
+              item.kind === 'hotel' ? (
+                <BookingCard
+                  key={`hotel-${item.booking.id}`}
+                  booking={item.booking}
+                  onPress={onPressBooking}
+                  showGenerateQr
+                  showRooms={false}
+                />
+              ) : (
+                <TransportBookingCard
+                  key={`transport-${item.booking.id}`}
+                  booking={item.booking}
+                  onPress={() =>
+                    router.push({
+                      pathname: '/(tabs)/dashboard/transport-bookings/[bookingId]',
+                      params: { bookingId: item.booking.id },
+                    })
+                  }
+                />
+              )
+            )
           ) : (
             <Text className="text-sm text-muted dark:text-muted-dark">
               {t(TRANSLATION_KEYS.DASHBOARD.NO_BOOKINGS)}

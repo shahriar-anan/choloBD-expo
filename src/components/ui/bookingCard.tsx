@@ -14,6 +14,8 @@ interface BookingCardProps {
   onPress?: (id: string) => void;
   showGenerateQr?: boolean;
   showRooms?: boolean;
+  deskView?: boolean;
+  footer?: React.ReactNode;
 }
 
 // Helper function to format dates in a readable way
@@ -27,7 +29,7 @@ const formatDate = (dateString: string): string => {
   });
 };
 
-export function BookingCard({ booking, onPress, showGenerateQr = false, showRooms = true }: BookingCardProps) {
+export function BookingCard({ booking, onPress, showGenerateQr = false, showRooms = true, deskView, footer }: BookingCardProps) {
   const router = useRouter();
   const { isDark } = useTheme();
   const { t } = useTranslation();
@@ -36,12 +38,15 @@ export function BookingCard({ booking, onPress, showGenerateQr = false, showRoom
   const muteIconColor = isDark ? '#9ca3af' : '#666';
   
   // Determine what name to display based on user role
-  const isServiceAdmin = auth.user?.role === 'SERVICE_ADMIN';
+  const isServiceAdmin = deskView ?? auth.user?.role === 'SERVICE_ADMIN';
+  const guestName = booking.guestName || [booking.user?.firstName, booking.user?.lastName].filter(Boolean).join(' ') || booking.user?.userName || booking.guest || 'Guest';
+  const guestEmail = booking.guestEmail || booking.user?.email || '';
+  const guestPhone = booking.guestPhoneNumber || booking.user?.phoneNumber || '';
   const displayName = isServiceAdmin 
-    ? (booking.guestName || booking.guest || 'Guest')
+    ? guestName
     : (booking.hotel?.name || booking.hotelDetails?.name || booking.hotelName || 'Hotel');
   const coverUrl = booking.hotel?.images?.[0]?.url || booking.hotelDetails?.images?.[0]?.url;
-  const showThumb = !isServiceAdmin || Boolean(coverUrl);
+  const showThumb = !isServiceAdmin;
 
   const getStatusColor = (status?: string) => {
     switch (status?.toLowerCase()) {
@@ -69,8 +74,7 @@ export function BookingCard({ booking, onPress, showGenerateQr = false, showRoom
     }
   };
 
-  return (
-    <TouchableOpacity onPress={() => onPress && onPress(booking.id)} activeOpacity={0.8}>
+  const card = (
       <View className="p-4 mb-3 bg-white border shadow rounded-xl border-border dark:bg-surface-dark dark:border-border-dark">
         {/* Header: cover, name, and status badges */}
         <View className="flex-row items-start">
@@ -95,22 +99,22 @@ export function BookingCard({ booking, onPress, showGenerateQr = false, showRoom
               {displayName}
             </Text>
             {/* Show guest contact info only for SERVICE_ADMIN, hide for regular users */}
-            {isServiceAdmin && (
-              <>
-                <View className="flex-row items-center mt-2">
-                  <Ionicons name="mail" size={14} color={muteIconColor} style={{ marginRight: 6 }} />
-                  <Text className="flex-1 text-sm text-muted dark:text-muted-dark">
-                    {booking.guestEmail || 'N/A'}
-                  </Text>
-                </View>
-                <View className="flex-row items-center mt-1.5">
-                  <Ionicons name="call" size={14} color={muteIconColor} style={{ marginRight: 6 }} />
-                  <Text className="text-sm text-muted dark:text-muted-dark">
-                    {booking.guestPhoneNumber || 'N/A'}
-                  </Text>
-                </View>
-              </>
-            )}
+            {isServiceAdmin && guestEmail ? (
+              <View className="flex-row items-center mt-2">
+                <Ionicons name="mail" size={14} color={muteIconColor} style={{ marginRight: 6 }} />
+                <Text className="flex-1 text-sm text-muted dark:text-muted-dark">
+                  {guestEmail}
+                </Text>
+              </View>
+            ) : null}
+            {isServiceAdmin && guestPhone ? (
+              <View className="flex-row items-center mt-1.5">
+                <Ionicons name="call" size={14} color={muteIconColor} style={{ marginRight: 6 }} />
+                <Text className="text-sm text-muted dark:text-muted-dark">
+                  {guestPhone}
+                </Text>
+              </View>
+            ) : null}
             <View className="flex-row flex-wrap mt-2">
               <View
                 style={{ backgroundColor: `${getStatusColor(booking.status)}20` }}
@@ -192,7 +196,7 @@ export function BookingCard({ booking, onPress, showGenerateQr = false, showRoom
                   {t(TRANSLATION_KEYS.BOOKING.TOTAL_PRICE)}
                 </Text>
                 <Text className="text-base font-bold text-text dark:text-text-dark">
-                  ₹{booking.totalPrice ?? 'N/A'}
+                  ৳{booking.totalPrice ?? 'N/A'}
                 </Text>
               </View>
             </View>
@@ -225,14 +229,28 @@ export function BookingCard({ booking, onPress, showGenerateQr = false, showRoom
                     {t(TRANSLATION_KEYS.BOOKING.ROOM_NUMBER)} {room.hotelRoom?.roomNumber || '?'}
                   </Text>
                   <Text className="text-base font-bold text-success dark:text-success-dark">
-                    ₹{room.pricePerNight}{t(TRANSLATION_KEYS.BOOKING.PRICE_PER_NIGHT)}
+                    ৳{room.pricePerNight}{t(TRANSLATION_KEYS.BOOKING.PRICE_PER_NIGHT)}
                   </Text>
                 </View>
               </View>
             ))}
           </View>
         )}
+        {footer ? (
+          <View className="pt-3 mt-3 border-t border-border dark:border-border-dark">
+            {footer}
+          </View>
+        ) : null}
       </View>
+  );
+
+  if (!onPress) {
+    return card;
+  }
+
+  return (
+    <TouchableOpacity onPress={() => onPress(booking.id)} activeOpacity={0.8}>
+      {card}
     </TouchableOpacity>
   );
 }

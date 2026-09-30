@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
+import { getMyHotel } from '../services/api/users';
 import { getHotelBookings } from '../services/api/bookings';
-import { useServiceAdminLogic } from './useServiceAdminLogic';
 
 export interface Booking {
   id: string;
@@ -26,8 +26,16 @@ export interface PaginationInfo {
   pages: number;
 }
 
+interface AssignedHotel {
+  id: string;
+  name?: string;
+}
+
 interface UseCurrentBookingsFetchReturn {
   bookings: Booking[];
+  hotels: AssignedHotel[];
+  hotelId: string | null;
+  selectHotel: (nextHotelId: string) => void;
   pagination: PaginationInfo | null;
   loading: boolean;
   error: string | null;
@@ -37,13 +45,12 @@ interface UseCurrentBookingsFetchReturn {
 }
 
 export function useCurrentBookingsFetch(limit = 20): UseCurrentBookingsFetchReturn {
-  const { fetchProfile } = useServiceAdminLogic();
-  
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [pagination, setPagination] = useState<PaginationInfo | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [hotels, setHotels] = useState<AssignedHotel[]>([]);
   const [hotelId, setHotelId] = useState<string | null>(null);
 
   // Fetch bookings from API
@@ -73,14 +80,19 @@ export function useCurrentBookingsFetch(limit = 20): UseCurrentBookingsFetchRetu
       try {
         setLoading(true);
         setError(null);
-        const profile = await fetchProfile();
+        const hotels = await getMyHotel();
         if (!mounted) return;
-        const retrievedHotelId = profile?.serviceEntityId;
+        const assigned = (hotels || []).filter((hotel) => hotel?.id).map((hotel) => ({
+          id: hotel.id,
+          name: hotel.name,
+        }));
+        const retrievedHotelId = assigned[0]?.id;
         if (!retrievedHotelId) {
           setError('No hotel assigned to your account');
           setLoading(false);
           return;
         }
+        setHotels(assigned);
         setHotelId(retrievedHotelId);
         await fetchBookings(retrievedHotelId, 1);
       } catch (e) {
@@ -97,7 +109,7 @@ export function useCurrentBookingsFetch(limit = 20): UseCurrentBookingsFetchRetu
     return () => {
       mounted = false;
     };
-  }, [fetchProfile, fetchBookings]);
+  }, [fetchBookings]);
 
   // Refetch when page changes
   useEffect(() => {
@@ -112,8 +124,16 @@ export function useCurrentBookingsFetch(limit = 20): UseCurrentBookingsFetchRetu
     }
   }, [hotelId, currentPage, fetchBookings]);
 
+  const selectHotel = useCallback((nextHotelId: string) => {
+    setCurrentPage(1);
+    setHotelId(nextHotelId);
+  }, []);
+
   return {
     bookings,
+    hotels,
+    hotelId,
+    selectHotel,
     pagination,
     loading,
     error,

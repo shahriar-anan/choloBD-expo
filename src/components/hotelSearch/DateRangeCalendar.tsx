@@ -11,10 +11,12 @@ export function DateRangeCalendar({
     checkIn,
     checkOut,
     onChange,
+    singleDate = false,
 }: {
     checkIn: string | null;
     checkOut: string | null;
     onChange: (checkIn: string, checkOut: string | null) => void;
+    singleDate?: boolean;
 }) {
     const { isDark } = useTheme();
     const primary = isDark ? theme.colors['primary-dark'] : theme.colors.primary;
@@ -30,6 +32,10 @@ export function DateRangeCalendar({
             return;
         }
         const iso = format(day, 'yyyy-MM-dd');
+        if (singleDate) {
+            onChange(iso, null);
+            return;
+        }
         if (!start || (start && end)) {
             onChange(iso, null);
             return;

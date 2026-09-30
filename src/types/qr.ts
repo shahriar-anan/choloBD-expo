@@ -27,6 +27,8 @@ export interface QRBookingDetail {
   checkOutDate: string;
   totalPrice: number;
   paymentMethod: string;
+  paymentStatus?: string;
+  guestName?: string | null;
   specialRequests?: string;
   hotel: {
     id: string;
@@ -40,14 +42,14 @@ export interface QRBookingDetail {
       country?: string;
     };
   };
-  user: {
+  user?: {
     id: string;
     userName: string;
     firstName?: string;
     lastName?: string;
     email: string;
     phoneNumber?: string;
-  };
+  } | null;
   roomDetails: Array<{
     hotelRoom: {
       id: string;

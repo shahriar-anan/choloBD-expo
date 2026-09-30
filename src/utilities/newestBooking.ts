@@ -2,6 +2,7 @@ export interface NewestBookingFields {
   createdAt?: string | null;
   bookedAt?: string | null;
   checkInDate?: string | null;
+  departureDateTime?: string | null;
 }
 
 function parseTime(value?: string | null): number | null {
@@ -12,7 +13,7 @@ function parseTime(value?: string | null): number | null {
   return Number.isNaN(time) ? null : time;
 }
 
-function bookingSortTime(booking: NewestBookingFields): number {
+export function bookingSortTime(booking: NewestBookingFields): number {
   const created = parseTime(booking.createdAt);
   if (created !== null) {
     return created;
@@ -20,6 +21,10 @@ function bookingSortTime(booking: NewestBookingFields): number {
   const booked = parseTime(booking.bookedAt);
   if (booked !== null) {
     return booked;
+  }
+  const departure = parseTime(booking.departureDateTime);
+  if (departure !== null) {
+    return departure;
   }
   return parseTime(booking.checkInDate) ?? 0;
 }

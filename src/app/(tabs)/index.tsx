@@ -3,26 +3,27 @@ import { View, ScrollView, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useDispatch, useSelector } from 'react-redux';
 import { useRouter } from 'expo-router';
-import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../hooks/useTheme';
 import { AppDispatch, RootState } from '../../store/store';
 import { logoutUser } from '../../store/slices/authSlice';
-import { TRANSLATION_KEYS } from '../../constants/translationKeys';
 import {
   HomeHeader,
   HeroBackground,
   QuickActionGrid,
-  ExploreBDBanner,
+  HomePromoCarousel,
+  PopularPlacesSection,
   TourPackagesSection,
-  SuggestedToursSection,
+  HomeDealsSection,
+  HomeCommunityRow,
 } from '../../components/homepage';
+import { useFetchTourPackages } from '../../hooks/useFetchTourPackages';
 
 export default function HomePage() {
   const dispatch = useDispatch<AppDispatch>();
   const router = useRouter();
   const auth = useSelector((s: RootState) => s.auth);
   const { isDark } = useTheme();
-  const { t } = useTranslation();
+  const holidays = useFetchTourPackages({ isActive: true, isPopular: true });
 
   const handleLogout = async () => {
     await dispatch(logoutUser());
@@ -87,23 +88,21 @@ export default function HomePage() {
         {/* 2. Quick Action Grid */}
         <QuickActionGrid onNavigate={(actionId) => console.log('Quick action pressed:', actionId)} />
 
-        {/* 3. Explore BD Banner */}
-        <ExploreBDBanner />
-
-        {/* 3b. Community Banner */}
-        <ExploreBDBanner
-          href="/(tabs)/community"
-          imageUri="https://images.unsplash.com/photo-1529139574466-a303027c1d8b?w=900&h=400&fit=crop"
-          label={t(TRANSLATION_KEYS.HOME.COMMUNITY_BANNER.LABEL)}
-          title={t(TRANSLATION_KEYS.HOME.COMMUNITY_BANNER.TITLE)}
-          subtitle={t(TRANSLATION_KEYS.HOME.COMMUNITY_BANNER.SUBTITLE)}
+        <HomePromoCarousel />
+        <PopularPlacesSection />
+        <TourPackagesSection
+          packages={holidays.packages}
+          isLoading={holidays.isLoading}
+          error={holidays.error}
+          onRetry={holidays.refetch}
         />
-
-        {/* 4. Tour Packages */}
-        <TourPackagesSection />
-
-        {/* 4. Hot Deals / Suggested Tours */}
-        <SuggestedToursSection />
+        <HomeDealsSection
+          packages={holidays.packages}
+          packagesLoading={holidays.isLoading}
+          packagesError={holidays.error}
+          onRetryPackages={holidays.refetch}
+        />
+        <HomeCommunityRow />
 
         {/* Bottom Spacing */}
         <View className="h-10" />

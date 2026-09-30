@@ -10,6 +10,7 @@ export interface TourSpot {
   id: string;
   name: string;
   description?: string;
+  locationId?: string;
   locationName: string;
   tourType: string;
   rating?: number;
@@ -103,16 +104,7 @@ export async function getTourSpots(filters?: TourSpotFilters): Promise<TourSpot[
     } : 'NO DATA'
   });
   
-  const mapped = data.map((spot: any) => ({
-    id: spot.id,
-    name: spot.name,
-    description: spot.description,
-    locationName: spot.location?.name || 'Unknown Location',
-    tourType: spot.tourType || 'MIXED',
-    rating: spot.rating,
-    imageUrl: spot.images?.[0]?.url || undefined,
-    isPopular: spot.isPopular || false,
-  }));
+  const mapped = data.map(mapTourSpotRow);
 
   console.log('[getTourSpots] ✨ Mapped spots:', {
     count: mapped.length,
@@ -120,6 +112,39 @@ export async function getTourSpots(filters?: TourSpotFilters): Promise<TourSpot[
   });
 
   return mapped;
+}
+
+function mapTourSpotRow(spot: any): TourSpot {
+  return {
+    id: spot.id,
+    name: spot.name,
+    description: spot.description,
+    locationId: spot.location?.id,
+    locationName: spot.location?.name || 'Unknown Location',
+    tourType: spot.tourType || 'MIXED',
+    rating: spot.rating,
+    imageUrl: spot.images?.[0]?.url || undefined,
+    isPopular: spot.isPopular || false,
+  };
+}
+
+/**
+ * GET /api/tour-spots/popular
+ */
+export async function getPopularTourSpots(limit = 24): Promise<TourSpot[]> {
+  const api = getApiInstance();
+  try {
+    const response = await api.get('/api/tour-spots/popular', { params: { limit } });
+    const data = unwrapList<any>(response.data?.data);
+    return data.map(mapTourSpotRow);
+  } catch (error: unknown) {
+    throw new Error(readApiMessage(error));
+  }
+}
+
+function readApiMessage(error: unknown): string {
+  const err = error as { response?: { data?: { message?: string } }; message?: string };
+  return err.response?.data?.message || err.message || 'Request failed';
 }
 
 /**

@@ -31,7 +31,7 @@ function applyTabBarStyle(navigation: TabBarNavigation, style: ViewStyle): void 
 }
 
 export function isHotelBookingChild(pathname: string): boolean {
-    if (pathname.includes('hotel-search')) {
+    if (pathname.includes('hotel-search') || pathname.includes('transport-search')) {
         return false;
     }
     return pathname.endsWith('/booking')
@@ -41,6 +41,16 @@ export function isHotelBookingChild(pathname: string): boolean {
         || pathname.includes('hotel-results')
         || pathname.includes('hotel-stay')
         || pathname.includes('hotel-room-types')
+        || pathname.includes('transport-from')
+        || pathname.includes('transport-to')
+        || pathname.includes('transport-date')
+        || pathname.includes('transport-type')
+        || pathname.includes('transport-results')
+        || pathname.includes('transport-trip')
+        || pathname.includes('transport-rental')
+        || pathname.includes('transport-stops')
+        || pathname.includes('transport-passengers')
+        || pathname.includes('transport-payment')
         || pathname.endsWith('/payment');
 }
 
@@ -49,11 +59,15 @@ const dashboardReservedSegments = new Set([
     'notifications',
     'payment',
     'package-bookings',
+    'transport-bookings',
     'service-admin',
 ]);
 
 export function isDashboardBookingChromeHidden(pathname: string): boolean {
     if (pathname.includes('user-bookings')) {
+        return true;
+    }
+    if (/\/dashboard\/transport-bookings\/[^/]+/.test(pathname)) {
         return true;
     }
     const match = pathname.match(/\/dashboard\/([^/]+)\/?$/);

@@ -128,6 +128,7 @@ export interface TourPackage {
   rating?: number;
   isActive: boolean;
   isPopular: boolean;
+  images?: Array<{ url: string; order?: number }>;
   daySegments: TourDaySegment[];
   createdAt?: string;
   updatedAt?: string;

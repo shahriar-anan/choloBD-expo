@@ -2,7 +2,7 @@
 
 **Folder:** `03-package-payment` · **Rules:** [rules.md](rules.md) · **Tests:** [tests.md](tests.md)
 
-Status: Not started. Depends on increment 02. UI starts only after Functional typechecks.
+Status: Functional done (types + hotel `bookingId` on initialize). Device cases D-03 / D-03b not run. Catalog package buy stays out.
 
 Catalog tour packages are **not** bought from the current package purchase screens, and they are **not** bought by checking out a personal trip plan. The only place a traveler will view and buy a catalog package is a trip-plan segment that will be specified later. Do not design or build that segment in this increment.
 

@@ -19,11 +19,12 @@ import { TourSpotFilters as Filters } from '../../../services/api/tourSpots';
 
 export default function TourSpotsListPage() {
   const router = useRouter();
-  const { fromHome } = useLocalSearchParams<{ fromHome?: string }>();
+  const { fromHome, locationId: locationIdParam } = useLocalSearchParams<{ fromHome?: string; locationId?: string }>();
+  const locationId = typeof locationIdParam === 'string' ? locationIdParam : undefined;
   const { isDark } = useTheme();
   const { t } = useTranslation();
   
-  const [filters, setFilters] = useState<Filters>({});
+  const [filters, setFilters] = useState<Filters>(locationId ? { locationId } : {});
   const [refreshKey, setRefreshKey] = useState(0);
   
   const { spots, isLoading, error } = useFetchTourSpots(filters);

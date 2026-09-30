@@ -10,12 +10,39 @@ import { QRBookingDetailsDisplay } from '../../../../components/ui/QRBookingDeta
 import { useQRScanner } from '../../../../hooks/useQRScanner';
 import { useTheme } from '../../../../hooks/useTheme';
 import type { QRBookingDetail } from '../../../../types/qr';
+import { updateHotelStayStatus } from '../../../../services/api/bookings';
+import { canRecordStay } from '../../../../utilities/hotelDesk';
 
 export default function QRScannerPage() {
   const router = useRouter();
   const { isDark } = useTheme();
   const { scanQRCode, loading, error, clearError } = useQRScanner();
   const [scannedBooking, setScannedBooking] = useState<QRBookingDetail | null>(null);
+  const [stayBusy, setStayBusy] = useState(false);
+
+  const recordStay = (status: 'COMPLETED' | 'NO_SHOW') => {
+    if (!scannedBooking?.id) return;
+    const label = status === 'COMPLETED' ? 'Check out' : 'No-show';
+    Alert.alert(label, 'The scan itself does not change the stay. This button does.', [
+      { text: 'Back', style: 'cancel' },
+      {
+        text: label,
+        onPress: () => {
+          void (async () => {
+            try {
+              setStayBusy(true);
+              const updated = await updateHotelStayStatus(scannedBooking.id, status);
+              setScannedBooking((current) => current ? { ...current, ...updated, status } : current);
+            } catch (stayError: any) {
+              Alert.alert(label, stayError?.response?.data?.message || 'Could not update this stay.');
+            } finally {
+              setStayBusy(false);
+            }
+          })();
+        },
+      },
+    ]);
+  };
 
   const handleQRScan = async (qrToken: string) => {
     try {
@@ -48,6 +75,16 @@ export default function QRScannerPage() {
       {scannedBooking ? (
         <View className="flex-1">
           <QRBookingDetailsDisplay booking={scannedBooking} />
+          {canRecordStay(scannedBooking) ? (
+            <View className="flex-row gap-2 px-6">
+              <Pressable onPress={() => recordStay('COMPLETED')} disabled={stayBusy} className="flex-1 px-3 py-3 border rounded-lg border-border dark:border-border-dark">
+                <Text className="font-semibold text-center text-text dark:text-text-dark">Check out</Text>
+              </Pressable>
+              <Pressable onPress={() => recordStay('NO_SHOW')} disabled={stayBusy} className="flex-1 px-3 py-3 border rounded-lg border-border dark:border-border-dark">
+                <Text className="font-semibold text-center text-text dark:text-text-dark">No-show</Text>
+              </Pressable>
+            </View>
+          ) : null}
           <View className="p-6 border-t border-border dark:border-border-dark">
             <Pressable
               onPress={resetScan}

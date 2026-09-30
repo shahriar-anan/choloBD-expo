@@ -70,7 +70,11 @@ export default function DashboardPaymentScreen() {
     setPayMethod('card');
     setPointsError(null);
     setScreenState('processing');
-    const result = await startPayment({ serviceType, serviceTypeId: bookingId });
+    const result = await startPayment({
+      serviceType,
+      serviceTypeId: bookingId,
+      bookingId,
+    });
     if (result.success) {
       setScreenState('success');
     } else {

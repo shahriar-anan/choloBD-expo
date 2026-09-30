@@ -3,9 +3,11 @@
  * Custom hook for accessing auth state and checking admin status
  */
 
+import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store/store';
 import { AuthUser, UserRole } from '../types/auth';
+import { getUserProfile } from '../services/api/users';
 
 /**
  * Check if user has admin role (includes SERVICE_ADMIN)
@@ -43,8 +45,35 @@ export interface AuthWithAdminStatus {
  */
 export function useAuthWithAdminCheck(): AuthWithAdminStatus {
   const auth = useSelector((state: RootState) => state.auth);
+  const role = auth.user?.role;
+  const userId = auth.user?.id;
+  const [blocksTourAdmin, setBlocksTourAdmin] = useState(role === 'SERVICE_ADMIN');
 
-  if (__DEV__) console.log('[useAuthWithAdminCheck] Hook called, user role:', auth.user?.role, 'isAdmin:', isMasterAdminUser(auth.user));
+  useEffect(() => {
+    if (role !== 'SERVICE_ADMIN' || !userId) {
+      setBlocksTourAdmin(false);
+      return;
+    }
+
+    let cancelled = false;
+    setBlocksTourAdmin(true);
+    getUserProfile()
+      .then((profile) => {
+        if (cancelled) return;
+        setBlocksTourAdmin(profile?.serviceType === 'HOTEL_BOOKING');
+      })
+      .catch(() => {
+        if (!cancelled) setBlocksTourAdmin(true);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [role, userId]);
+
+  const isAdmin = isMasterAdminUser(auth.user) && !blocksTourAdmin;
+
+  if (__DEV__) console.log('[useAuthWithAdminCheck] Hook called, user role:', role, 'isAdmin:', isAdmin);
 
   return {
     user: auth.user,
@@ -52,9 +81,9 @@ export function useAuthWithAdminCheck(): AuthWithAdminStatus {
     isLoading: auth.isLoading,
     isInitializing: auth.isInitializing,
     error: auth.error,
-    isAdmin: isMasterAdminUser(auth.user),
+    isAdmin,
     isMasterAdmin: isMasterAdmin(auth.user),
-    userRole: auth.user?.role ?? null,
+    userRole: role ?? null,
   };
 }
 

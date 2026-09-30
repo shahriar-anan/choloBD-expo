@@ -45,7 +45,7 @@ export default function FeaturesGrid() {
         description: t(TRANSLATION_KEYS.HOME.FEATURES.RIDE_TICKETS_DESC),
         icon: 'truck',
         variant: 'accent' as const,
-        route: '/explore',
+        route: '/(tabs)/explore/transport-search',
       },
       {
         id: 'find-buddies',

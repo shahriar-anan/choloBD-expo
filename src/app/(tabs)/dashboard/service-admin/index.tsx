@@ -2,10 +2,12 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, FlatList, ScrollView, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { AdminCard } from '../../../../components/ui/adminCard';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../../../store/store';
 import { useServiceAdminLogic } from '../../../../hooks/useServiceAdminLogic';
+import { TRANSLATION_KEYS } from '../../../../constants/translationKeys';
 import theme from '../../../../constants/theme';
 import { useTheme } from '../../../../hooks/useTheme';
 
@@ -13,7 +15,8 @@ export default function ServiceAdminIndex() {
   const router = useRouter();
   const auth = useSelector((s: RootState) => s.auth);
   const { isDark } = useTheme();
-  const { fetchProfile, fetchMyHotel } = useServiceAdminLogic();
+  const { fetchMyHotel } = useServiceAdminLogic();
+  const { t } = useTranslation();
   const [hotels, setHotels] = useState<any[]>([]);
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -30,53 +33,15 @@ export default function ServiceAdminIndex() {
           return;
         }
 
-        // Step 1: Fetch profile (for debugging)
-        console.log('[ServiceAdminIndex] 🔄 Fetching profile...');
-        const profile = await fetchProfile();
-        console.log('[ServiceAdminIndex] ✅ Profile received:', {
-          serviceType: profile?.serviceType,
-          serviceEntityId: profile?.serviceEntityId,
-          userId: profile?.id,
-          fullProfile: profile
-        });
-
-        // Step 2: Try to fetch hotels regardless of profile status
-        console.log('[ServiceAdminIndex] Fetching hotels from GET /api/hotels/my (JWT-based)...');
         const res = await fetchMyHotel();
-        console.log('[ServiceAdminIndex] ✅ Hotels API response:', {
-          isArray: Array.isArray(res),
-          length: Array.isArray(res) ? res.length : 'N/A',
-          data: res
-        });
-        
-        if (!res) {
-          console.log('[ServiceAdminIndex] ⚠️ Response is null/undefined');
-          
-          // Check profile for debugging
-          if (!profile || !profile.serviceType) {
-            setMessage('❌ Service admin not properly configured. Contact support with ID: ' + auth.user.id);
-          } else {
-            setMessage('Hotel response is empty');
-          }
-          setHotels([]);
-          return;
-        }
+        const hotelsList = Array.isArray(res) ? res : [];
 
-        // Handle both array (SERVICE_ADMIN) and single object (EMPLOYEE) responses
-        const hotelsList = Array.isArray(res) ? res : (res ? [res] : []);
-        console.log('[ServiceAdminIndex] 📊 Processed hotels list:', {
-          count: hotelsList.length,
-          hotels: hotelsList.map((h: any) => ({ id: h.id, name: h.name }))
-        });
-        
         if (hotelsList.length === 0) {
-          console.log('[ServiceAdminIndex] ⚠️ No hotels in response');
-          setMessage('No hotels assigned. Profile serviceType: ' + (profile?.serviceType || 'null'));
+          setMessage(null);
           setHotels([]);
           return;
         }
 
-        console.log('[ServiceAdminIndex] ✅ Setting', hotelsList.length, 'hotels to state');
         setHotels(hotelsList);
         setMessage(null);
       } catch (e: any) {
@@ -86,12 +51,10 @@ export default function ServiceAdminIndex() {
           data: e?.response?.data,
           fullError: e
         });
-        if (e?.response?.status === 404) {
-          setMessage('❌ Hotels endpoint not found or no hotels assigned');
-        } else if (e?.response?.status === 401) {
-          setMessage('❌ Authentication failed - please re-login');
+        if (e?.response?.status === 401) {
+          setMessage(t(TRANSLATION_KEYS.DASHBOARD.SERVICE_ADMIN.AUTH_FAILED));
         } else {
-          setMessage(`❌ Failed to load hotel: ${e?.response?.data?.message || e.message}`);
+          setMessage(t(TRANSLATION_KEYS.DASHBOARD.SERVICE_ADMIN.LOAD_HOTEL_FAILED));
         }
         setHotels([]);
       } finally {
@@ -100,19 +63,19 @@ export default function ServiceAdminIndex() {
       }
     };
     load();
-  }, [auth.user?.id, fetchMyHotel]);
+  }, [auth.user?.id, fetchMyHotel, t]);
 
   return (
     <SafeAreaView edges={["top", "bottom"]} className="flex-1 bg-background dark:bg-background-dark">
       <ScrollView showsVerticalScrollIndicator={false} className="flex-1">
         <View className="px-6 pt-6 pb-8">
-          <Text className="text-2xl font-bold text-text dark:text-text-dark">My Hotels</Text>
-          <Text className="text-sm text-muted dark:text-muted-dark mt-1">Tap a hotel to view details and manage bookings</Text>
+          <Text className="text-2xl font-bold text-text dark:text-text-dark">{t(TRANSLATION_KEYS.DASHBOARD.SERVICE_ADMIN.HOTELS_TITLE)}</Text>
+          <Text className="text-sm text-muted dark:text-muted-dark mt-1">{t(TRANSLATION_KEYS.DASHBOARD.SERVICE_ADMIN.HOTELS_SUBTITLE)}</Text>
 
           {loading ? (
             <View className="items-center justify-center py-12">
               <ActivityIndicator size="large" color={theme.colors.primary} />
-              <Text className="mt-3 text-sm text-muted dark:text-muted-dark">Loading hotels...</Text>
+              <Text className="mt-3 text-sm text-muted dark:text-muted-dark">{t(TRANSLATION_KEYS.DASHBOARD.SERVICE_ADMIN.LOADING_HOTELS)}</Text>
             </View>
           ) : message ? (
             <View className="p-4 mt-6 rounded-xl bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800">
@@ -120,15 +83,15 @@ export default function ServiceAdminIndex() {
             </View>
           ) : hotels.length === 0 ? (
             <View className="items-center justify-center py-12">
-              <Text className="text-lg font-semibold text-text dark:text-text-dark">No hotels found</Text>
-              <Text className="mt-2 text-sm text-muted dark:text-muted-dark">Your hotel list is empty</Text>
+              <Text className="text-lg font-semibold text-text dark:text-text-dark">{t(TRANSLATION_KEYS.DASHBOARD.SERVICE_ADMIN.NO_HOTELS_FOUND)}</Text>
+              <Text className="mt-2 text-sm text-muted dark:text-muted-dark">{t(TRANSLATION_KEYS.DASHBOARD.SERVICE_ADMIN.HOTEL_LIST_EMPTY)}</Text>
             </View>
           ) : (
             <View className="mt-6 space-y-3">
               {hotels.map((hotel) => (
                 <AdminCard
                   key={hotel.id}
-                  title={hotel.name ?? 'Unnamed Hotel'}
+                  title={hotel.name ?? t(TRANSLATION_KEYS.DASHBOARD.SERVICE_ADMIN.UNNAMED_HOTEL)}
                   subtitle={hotel.location?.name ?? '—'}
                   onPress={() => router.push(`/(tabs)/dashboard/service-admin/hotel-info?hotelId=${hotel.id}`)}
                 />

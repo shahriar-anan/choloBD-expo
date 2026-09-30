@@ -1,5 +1,5 @@
 /**
- * Home booking launcher. Tiles overlap the hero photo. Transport is shown and does not navigate.
+ * Home booking launcher. Tiles overlap the hero photo. Transport opens bus and rental booking.
  */
 
 import React, { useMemo } from 'react';
@@ -51,7 +51,7 @@ export default function QuickActionGrid({ onNavigate }: QuickActionGridProps) {
         id: 'transport',
         translationKey: TRANSLATION_KEYS.HOME.QUICK_ACTIONS.TRANSPORT,
         icon: 'bus-side',
-        route: null,
+        route: '/(tabs)/explore/transport-search?fromHome=true',
       },
     ],
     []
