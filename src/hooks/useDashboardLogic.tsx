@@ -8,7 +8,15 @@ import { getOwnWallet, OwnWallet } from '../services/api/wallet';
 import { getUnreadNotificationCount } from '../services/api/notifications';
 import { getUserProfile } from '../services/api/users';
 import { loadTravelerBookingSources } from '../services/api/travelerBookings';
+import { buildTravelerDashboardHub, TravelerDashboardHub } from '../utilities/dashboardHub';
 import { buildRecentBookingItems, RecentBookingView } from '../utilities/recentBookingItems';
+
+const emptyHub: TravelerDashboardHub = {
+  upNext: null,
+  attentionItems: [],
+  hotelActiveCount: 0,
+  transportActiveCount: 0,
+};
 
 export interface TravelerWalletStrip {
   balance: number;
@@ -22,6 +30,7 @@ export function useDashboardLogic() {
 
   const [bookings, setBookings] = useState<any[]>([]);
   const [recentBookingItems, setRecentBookingItems] = useState<RecentBookingView[]>([]);
+  const [hub, setHub] = useState<TravelerDashboardHub>(emptyHub);
   const [loading, setLoading] = useState(false);
   const [wallet, setWallet] = useState<TravelerWalletStrip | null>(null);
   const [unreadCount, setUnreadCount] = useState<number | null>(null);
@@ -36,6 +45,7 @@ export function useDashboardLogic() {
     if (!userId) {
       setBookings([]);
       setRecentBookingItems([]);
+      setHub(emptyHub);
       return;
     }
 
@@ -44,6 +54,7 @@ export function useDashboardLogic() {
       const sources = await loadTravelerBookingSources(userId);
       setBookings(sources.hotels);
       setRecentBookingItems(buildRecentBookingItems(sources, 5));
+      setHub(buildTravelerDashboardHub(sources.hotels, sources.transports));
     } catch (e: any) {
       console.error('[useDashboardLogic] fetchBookings error', e?.message ?? e);
       Alert.alert('Error', 'Could not load bookings');
@@ -133,6 +144,10 @@ export function useDashboardLogic() {
     auth,
     bookings,
     recentBookingItems,
+    upNext: hub.upNext,
+    attentionItems: hub.attentionItems,
+    hotelActiveCount: hub.hotelActiveCount,
+    transportActiveCount: hub.transportActiveCount,
     wallet,
     unreadCount,
     profileImageUrl,

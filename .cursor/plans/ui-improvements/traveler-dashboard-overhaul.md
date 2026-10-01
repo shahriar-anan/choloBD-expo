@@ -1,6 +1,6 @@
 # Traveler dashboard overhaul
 
-Status: Planned. Mobile app (`choloBD-expo`) only. Not on this branch.
+Status: Implemented (awaiting manual QA). Mobile app (`choloBD-expo`) only.
 
 Screen: traveler dashboard only, `src/components/interface/UserDashboard.tsx`, data from `src/hooks/useDashboardLogic.tsx` and `loadTravelerBookingSources`. Hotel operator and other service-admin dashboards stay as they are.
 

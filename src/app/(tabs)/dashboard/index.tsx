@@ -10,6 +10,10 @@ export default function DashboardPage() {
   const {
     auth,
     recentBookingItems,
+    upNext,
+    attentionItems,
+    hotelActiveCount,
+    transportActiveCount,
     wallet,
     unreadCount,
     profileImageUrl,
@@ -92,8 +96,11 @@ export default function DashboardPage() {
       userName={auth.user?.userName}
       email={auth.user?.email}
       imageUrl={profileImageUrl || auth.user?.imageUrl}
-      userStatus={profileStatus || auth.user?.userStatus}
       recentBookingItems={recentBookingItems}
+      upNext={upNext}
+      attentionItems={attentionItems}
+      hotelActiveCount={hotelActiveCount}
+      transportActiveCount={transportActiveCount}
       wallet={wallet}
       unreadCount={unreadCount}
       onLogout={handleLogout}
