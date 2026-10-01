@@ -8,20 +8,20 @@ import { useTheme } from '../../hooks/useTheme';
 import { theme } from '../../constants/theme';
 import { TRANSLATION_KEYS } from '../../constants/translationKeys';
 import { ProfileAvatar } from '../ui/profileAvatar';
-import { BookingCard } from '../ui/bookingCard';
-import { TransportBookingCard } from '../transport/TransportBookingCard';
-import { RecentDashboardItem, TravelerWalletStrip } from '../../hooks/useDashboardLogic';
+import { RecentBookingCard } from '../ui/recentBookingCard';
+import { TravelerWalletStrip } from '../../hooks/useDashboardLogic';
+import { RecentBookingView } from '../../utilities/recentBookingItems';
 
 interface UserDashboardProps {
   userName?: string;
   email?: string;
   imageUrl?: string;
   userStatus?: string;
-  recentBookings?: RecentDashboardItem[];
+  recentBookingItems?: RecentBookingView[];
   wallet: TravelerWalletStrip | null;
   unreadCount: number | null;
   onLogout: () => void;
-  onPressBooking: (bookingId: string) => void;
+  onPressRecentBooking: (item: RecentBookingView) => void;
 }
 
 function formatUnreadBadge(count: number): string {
@@ -45,7 +45,7 @@ function statusColor(status: string | undefined, isDark: boolean): string {
 
 interface DashboardLinkRowProps {
   title: string;
-  iconName: 'bed' | 'map' | 'compass' | 'bus';
+  iconName: 'bed' | 'compass' | 'bus';
   onPress: () => void;
   showDivider: boolean;
 }
@@ -91,19 +91,23 @@ export function UserDashboard({
   email,
   imageUrl,
   userStatus,
-  recentBookings = [],
+  recentBookingItems = [],
   wallet,
   unreadCount,
   onLogout,
-  onPressBooking,
+  onPressRecentBooking,
 }: UserDashboardProps) {
   const router = useRouter();
   const { isDark } = useTheme();
   const { t } = useTranslation();
   const textColor = isDark ? theme.colors['text-dark'] : theme.colors.text;
   const primaryColor = isDark ? theme.colors['primary-dark'] : theme.colors.primary;
+  const mutedColor = isDark ? theme.colors['muted-dark'] : theme.colors.muted;
   const onPrimaryColor = isDark ? theme.colors['onPrimary-dark'] : theme.colors['onPrimary'];
   const badge = unreadCount !== null && unreadCount > 0 ? formatUnreadBadge(unreadCount) : null;
+  const previewBooking = recentBookingItems[0];
+  const previewCanOpen =
+    previewBooking?.kind === 'hotel' || previewBooking?.kind === 'transport';
 
   const statusKey = (userStatus?.toUpperCase() || 'ACTIVE') as keyof typeof TRANSLATION_KEYS.DASHBOARD.STATUSES;
   const statusTranslation = TRANSLATION_KEYS.DASHBOARD.STATUSES[statusKey];
@@ -205,12 +209,6 @@ export function UserDashboard({
             showDivider
           />
           <DashboardLinkRow
-            title={t(TRANSLATION_KEYS.DASHBOARD.USER_CARDS.MY_PACKAGE_BOOKINGS)}
-            iconName="map"
-            onPress={() => router.push('/(tabs)/dashboard/package-bookings')}
-            showDivider
-          />
-          <DashboardLinkRow
             title={t(TRANSLATION_KEYS.DASHBOARD.USER_CARDS.MY_TRANSPORT_BOOKINGS)}
             iconName="bus"
             onPress={() => router.push('/(tabs)/dashboard/transport-bookings')}
@@ -225,32 +223,23 @@ export function UserDashboard({
         </View>
 
         <View className="px-6 pt-6 pb-8">
-          <Text className="mb-3 text-lg font-bold font-heading text-text dark:text-text-dark">
-            {t(TRANSLATION_KEYS.DASHBOARD.RECENT_BOOKINGS)}
-          </Text>
-          {recentBookings.length > 0 ? (
-            recentBookings.map((item) =>
-              item.kind === 'hotel' ? (
-                <BookingCard
-                  key={`hotel-${item.booking.id}`}
-                  booking={item.booking}
-                  onPress={onPressBooking}
-                  showGenerateQr
-                  showRooms={false}
-                />
-              ) : (
-                <TransportBookingCard
-                  key={`transport-${item.booking.id}`}
-                  booking={item.booking}
-                  onPress={() =>
-                    router.push({
-                      pathname: '/(tabs)/dashboard/transport-bookings/[bookingId]',
-                      params: { bookingId: item.booking.id },
-                    })
-                  }
-                />
-              )
-            )
+          <Pressable
+            onPress={() => router.push('/(tabs)/dashboard/recent-bookings')}
+            accessibilityRole="button"
+            accessibilityLabel={t(TRANSLATION_KEYS.DASHBOARD.RECENT_BOOKINGS)}
+            className="flex-row items-center mb-3"
+          >
+            <Text className="text-lg font-bold font-heading text-text dark:text-text-dark">
+              {t(TRANSLATION_KEYS.DASHBOARD.RECENT_BOOKINGS)}
+            </Text>
+            <Ionicons name="chevron-forward" size={18} color={mutedColor} style={{ marginLeft: 6 }} />
+          </Pressable>
+          {previewBooking ? (
+            <RecentBookingCard
+              item={previewBooking}
+              compact
+              onPress={previewCanOpen ? onPressRecentBooking : undefined}
+            />
           ) : (
             <Text className="text-sm text-muted dark:text-muted-dark">
               {t(TRANSLATION_KEYS.DASHBOARD.NO_BOOKINGS)}

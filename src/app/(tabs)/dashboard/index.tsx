@@ -9,7 +9,7 @@ import { useDashboardLogic } from '../../../hooks/useDashboardLogic';
 export default function DashboardPage() {
   const {
     auth,
-    recentBookings,
+    recentBookingItems,
     wallet,
     unreadCount,
     profileImageUrl,
@@ -18,7 +18,7 @@ export default function DashboardPage() {
     employeeServiceType,
     operatorProfileLoaded,
     handleLogout,
-    onPressBooking,
+    onPressRecentBooking,
     refreshTravelerHome,
   } = useDashboardLogic();
   const insets = useSafeAreaInsets();
@@ -93,11 +93,11 @@ export default function DashboardPage() {
       email={auth.user?.email}
       imageUrl={profileImageUrl || auth.user?.imageUrl}
       userStatus={profileStatus || auth.user?.userStatus}
-      recentBookings={recentBookings}
+      recentBookingItems={recentBookingItems}
       wallet={wallet}
       unreadCount={unreadCount}
       onLogout={handleLogout}
-      onPressBooking={onPressBooking}
+      onPressRecentBooking={onPressRecentBooking}
     />
   );
 }

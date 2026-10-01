@@ -357,6 +357,14 @@ export const TRANSLATION_KEYS = {
     YOUR_BOOKINGS: 'dashboard.yourBookings',
     RECENT_STAYS: 'dashboard.recentStays',
     RECENT_BOOKINGS: 'dashboard.recentBookings',
+    BOOKING_KINDS: {
+      HOTEL: 'dashboard.bookingKinds.hotel',
+      TICKET: 'dashboard.bookingKinds.ticket',
+      ACTIVITY: 'dashboard.bookingKinds.activity',
+      GUIDE: 'dashboard.bookingKinds.guide',
+      PACKAGE: 'dashboard.bookingKinds.package',
+      TRIP: 'dashboard.bookingKinds.trip',
+    },
     WALLET_COINS: 'dashboard.walletCoins',
     NO_BOOKINGS: 'dashboard.noBookings',
     NOTIFICATIONS: {
@@ -433,8 +441,6 @@ export const TRANSLATION_KEYS = {
     USER_CARDS: {
       MY_BOOKINGS: 'dashboard.userCards.myBookings',
       MY_BOOKINGS_DESC: 'dashboard.userCards.myBookingsDesc',
-      MY_PACKAGE_BOOKINGS: 'dashboard.userCards.myPackageBookings',
-      MY_PACKAGE_BOOKINGS_DESC: 'dashboard.userCards.myPackageBookingsDesc',
       MY_TRANSPORT_BOOKINGS: 'dashboard.userCards.myTransportBookings',
       MY_TRANSPORT_BOOKINGS_DESC: 'dashboard.userCards.myTransportBookingsDesc',
       EXPLORE_HOTELS: 'dashboard.userCards.exploreHotels',

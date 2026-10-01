@@ -9,6 +9,8 @@ export default function DashboardLayout() {
     <Stack initialRouteName="index" screenOptions={{ headerShown: false }}>
       <Stack.Screen name="index" />
       <Stack.Screen name="notifications" />
+      <Stack.Screen name="user-bookings" />
+      <Stack.Screen name="recent-bookings" />
       <Stack.Screen name="[bookingId]" />
     </Stack>
   );

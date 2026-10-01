@@ -46,8 +46,8 @@ export function useNotificationInbox() {
       router.push(`/(tabs)/dashboard/${item.relatedEntityId}`);
       return;
     }
-    if (item.relatedEntityType === 'PACKAGE_BOOKING' && item.relatedEntityId) {
-      router.push(`/(tabs)/dashboard/package-bookings/${item.relatedEntityId}`);
+    if (item.relatedEntityType === 'PACKAGE_BOOKING') {
+      router.push('/(tabs)/dashboard');
     }
   }, [router]);
 

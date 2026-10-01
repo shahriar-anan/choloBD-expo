@@ -1,20 +1,14 @@
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Alert } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '../store/store';
 import { logoutUser } from '../store/slices/authSlice';
 import { useRouter } from 'expo-router';
-import { useBookingLogic } from './useBookingLogic';
 import { getOwnWallet, OwnWallet } from '../services/api/wallet';
 import { getUnreadNotificationCount } from '../services/api/notifications';
 import { getUserProfile } from '../services/api/users';
-import { bookingSortTime } from '../utilities/newestBooking';
-import { getTransportBookings } from '../services/api/transportBookings';
-import { TransportBooking } from '../types/transports';
-
-export type RecentDashboardItem =
-  | { kind: 'hotel'; booking: any }
-  | { kind: 'transport'; booking: TransportBooking };
+import { loadTravelerBookingSources } from '../services/api/travelerBookings';
+import { buildRecentBookingItems, RecentBookingView } from '../utilities/recentBookingItems';
 
 export interface TravelerWalletStrip {
   balance: number;
@@ -27,7 +21,7 @@ export function useDashboardLogic() {
   const router = useRouter();
 
   const [bookings, setBookings] = useState<any[]>([]);
-  const [transportBookings, setTransportBookings] = useState<TransportBooking[]>([]);
+  const [recentBookingItems, setRecentBookingItems] = useState<RecentBookingView[]>([]);
   const [loading, setLoading] = useState(false);
   const [wallet, setWallet] = useState<TravelerWalletStrip | null>(null);
   const [unreadCount, setUnreadCount] = useState<number | null>(null);
@@ -36,25 +30,27 @@ export function useDashboardLogic() {
   const [serviceType, setServiceType] = useState<string | null>(null);
   const [employeeServiceType, setEmployeeServiceType] = useState<string | null>(null);
   const [operatorProfileLoaded, setOperatorProfileLoaded] = useState(false);
-  const { fetchUserBookings } = useBookingLogic();
 
   const fetchBookings = useCallback(async () => {
+    const userId = auth.user?.id;
+    if (!userId) {
+      setBookings([]);
+      setRecentBookingItems([]);
+      return;
+    }
+
     setLoading(true);
     try {
-      const [payload, transportPage] = await Promise.all([
-        fetchUserBookings(1, 20),
-        getTransportBookings({ page: 1, limit: 20 }).catch(() => null),
-      ]);
-      const data = payload?.data ?? [];
-      setBookings(Array.isArray(data) ? data : []);
-      setTransportBookings(transportPage?.results ?? []);
+      const sources = await loadTravelerBookingSources(userId);
+      setBookings(sources.hotels);
+      setRecentBookingItems(buildRecentBookingItems(sources, 5));
     } catch (e: any) {
       console.error('[useDashboardLogic] fetchBookings error', e?.message ?? e);
       Alert.alert('Error', 'Could not load bookings');
     } finally {
       setLoading(false);
     }
-  }, [fetchUserBookings]);
+  }, [auth.user?.id]);
 
   const loadWallet = useCallback(async () => {
     try {
@@ -107,19 +103,6 @@ export function useDashboardLogic() {
     loadProfile();
   }, [loadProfile]);
 
-  const recentBookings = useMemo(() => {
-    const isCancelled = (status?: string | null) => String(status || '').toUpperCase() === 'CANCELLED';
-    const hotels: RecentDashboardItem[] = bookings
-      .filter((booking) => !isCancelled(booking.status))
-      .map((booking) => ({ kind: 'hotel' as const, booking }));
-    const transports: RecentDashboardItem[] = transportBookings
-      .filter((booking) => !isCancelled(booking.status))
-      .map((booking) => ({ kind: 'transport' as const, booking }));
-    return [...hotels, ...transports]
-      .sort((left, right) => bookingSortTime(right.booking) - bookingSortTime(left.booking))
-      .slice(0, 2);
-  }, [bookings, transportBookings]);
-
   const handleLogout = async () => {
     try {
       await dispatch(logoutUser());
@@ -133,10 +116,23 @@ export function useDashboardLogic() {
     router.push(`/(tabs)/dashboard/${bookingId}`);
   };
 
+  const onPressRecentBooking = (item: RecentBookingView) => {
+    if (item.kind === 'hotel') {
+      router.push(`/(tabs)/dashboard/${item.id}`);
+      return;
+    }
+    if (item.kind === 'transport') {
+      router.push({
+        pathname: '/(tabs)/dashboard/transport-bookings/[bookingId]',
+        params: { bookingId: item.id },
+      });
+    }
+  };
+
   return {
     auth,
     bookings,
-    recentBookings,
+    recentBookingItems,
     wallet,
     unreadCount,
     profileImageUrl,
@@ -147,6 +143,7 @@ export function useDashboardLogic() {
     loading,
     handleLogout,
     onPressBooking,
+    onPressRecentBooking,
     onRefresh: fetchBookings,
     refreshTravelerHome,
   };

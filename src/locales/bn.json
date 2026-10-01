@@ -362,6 +362,14 @@
     "yourBookings": "আপনার বুকিং",
     "recentStays": "সাম্প্রতিক থাকার ব্যবস্থা",
     "recentBookings": "সাম্প্রতিক বুকিং",
+    "bookingKinds": {
+      "hotel": "হোটেল",
+      "ticket": "টিকিট",
+      "activity": "অ্যাক্টিভিটি",
+      "guide": "গাইড",
+      "package": "প্যাকেজ",
+      "trip": "ট্রিপ"
+    },
     "walletCoins": "Wallet coins",
     "noBookings": "এখনও কোন বুকিং নেই",
     "notifications": {
@@ -436,12 +444,10 @@
       "unnamedHotel": "নামবিহীন হোটেল"
     },
     "userCards": {
-      "myBookings": "আমার বুকিং",
+      "myBookings": "হোটেল বুকিং",
       "myBookingsDesc": "আপনার হোটেল রিজারভেশন দেখুন",
-      "myPackageBookings": "আমার প্যাকেজ বুকিং",
-      "myPackageBookingsDesc": "আপনার ট্যুর বুকিং দেখুন এবং পরিচালনা করুন",
-      "myTransportBookings": "আমার পরিবহন বুকিং",
-      "myTransportBookingsDesc": "বাস ও গাড়ি ভাড়ার বুকিং দেখুন",
+      "myTransportBookings": "টিকিট",
+      "myTransportBookingsDesc": "বাসের টিকিট ও গাড়ি ভাড়া",
       "exploreHotels": "হোটেল অন্বেষণ",
       "exploreHotelsDesc": "আপনার পরবর্তী থাকার জায়গা খুঁজুন এবং বুক করুন",
       "tripPlanner": "ভ্রমণ পরিকল্পনাকারী",
@@ -629,7 +635,7 @@
     "fare": "ভাড়া"
   },
   "transportBooking": {
-    "myBookings": "পরিবহন বুকিং",
+    "myBookings": "টিকিট",
     "myBookingsDesc": "বাসের টিকিট ও গাড়ি ভাড়া",
     "noBookings": "কোন পরিবহন বুকিং নেই",
     "noBookingsDesc": "হোম বা এক্সপ্লোর থেকে বাস বা ভাড়া বুক করুন",
@@ -813,7 +819,7 @@
     "confirmPurchase": "ক্রয় নিশ্চিত করুন",
     "processing": "প্রক্রিয়াকরণ",
     "cancelBooking": "বুকিং বাতিল করুন",
-    "viewMyBookings": "আমার বুকিং দেখুন",
+    "viewMyBookings": "ড্যাশবোর্ডে যান",
     "browseTours": "ট্যুর ব্রাউজ করুন",
     "bookingSuccess": "বুকিং সফল!",
     "bookingSuccessDesc": "আপনার ট্যুর সফলভাবে বুক করা হয়েছে। আপনি শীঘ্রই একটি নিশ্চিতকরণ ইমেল পাবেন।",

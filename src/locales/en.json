@@ -362,6 +362,14 @@
     "yourBookings": "Your bookings",
     "recentStays": "Recent Stays",
     "recentBookings": "Recent bookings",
+    "bookingKinds": {
+      "hotel": "Hotel",
+      "ticket": "Ticket",
+      "activity": "Activity",
+      "guide": "Guide",
+      "package": "Package",
+      "trip": "Trip"
+    },
     "walletCoins": "Wallet coins",
     "noBookings": "No bookings yet",
     "notifications": {
@@ -436,12 +444,10 @@
       "unnamedHotel": "Unnamed Hotel"
     },
     "userCards": {
-      "myBookings": "My Bookings",
+      "myBookings": "Hotel Bookings",
       "myBookingsDesc": "View your hotel reservations",
-      "myPackageBookings": "My Package Bookings",
-      "myPackageBookingsDesc": "View and manage your tour bookings",
-      "myTransportBookings": "My Transport Bookings",
-      "myTransportBookingsDesc": "View bus and car rental bookings",
+      "myTransportBookings": "Tickets",
+      "myTransportBookingsDesc": "Bus tickets and car rentals",
       "exploreHotels": "Explore Hotels",
       "exploreHotelsDesc": "Find and book your next stay",
       "tripPlanner": "Trip Planner",
@@ -629,7 +635,7 @@
     "fare": "Fare"
   },
   "transportBooking": {
-    "myBookings": "Transport bookings",
+    "myBookings": "Tickets",
     "myBookingsDesc": "Bus tickets and car rentals",
     "noBookings": "No transport bookings",
     "noBookingsDesc": "Book a bus seat or rental from Home or Explore",
@@ -812,7 +818,7 @@
     "confirmPurchase": "Confirm Purchase",
     "processing": "Processing",
     "cancelBooking": "Cancel Booking",
-    "viewMyBookings": "View My Bookings",
+    "viewMyBookings": "Go to dashboard",
     "browseTours": "Browse Tours",
     "bookingSuccess": "Booking Successful!",
     "bookingSuccessDesc": "Your tour has been booked successfully. You will receive a confirmation email shortly.",
@@ -929,7 +935,7 @@
     "detailStops": "Stops",
     "detailTravellers": "Travellers",
     "detailBudget": "Budget",
-    "detailAbout": "About this tour",
+    "detailAbout": "About This Tour",
     "detailItinerary": "Day-by-day itinerary",
     "detailItineraryHint": "{{days}} days · {{stops}} stops",
     "detailNoStops": "No day-wise itinerary has been added yet.",

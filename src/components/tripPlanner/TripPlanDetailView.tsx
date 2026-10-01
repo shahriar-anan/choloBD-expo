@@ -2,7 +2,7 @@
  * Scrolling personal trip detail, adapted from the web TourPackagePostView.
  */
 
-import React, { useRef, useState } from 'react';
+import React, { useState } from 'react';
 import { View, Text, ScrollView, Image, TouchableOpacity } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
@@ -10,14 +10,12 @@ import { useTranslation } from 'react-i18next';
 import { TRANSLATION_KEYS } from '../../constants/translationKeys';
 import { theme } from '../../constants/theme';
 import { useTheme } from '../../hooks/useTheme';
-import { TripPlan } from '../../types/trips';
+import { TripPlan, UserSegment } from '../../types/trips';
 import {
   formatDisplayDate,
   formatEnumLabel,
   formatTaka,
 } from '../../utils/tripPlanItinerary';
-
-const LIGHT_BLUE = '#7EC8F8';
 
 interface TripPlanDetailViewProps {
   trip: TripPlan;
@@ -28,13 +26,9 @@ interface TripPlanDetailViewProps {
 export function TripPlanDetailView({ trip, onEdit, onBack }: TripPlanDetailViewProps) {
   const { t } = useTranslation();
   const { isDark } = useTheme();
-  const scrollRef = useRef<ScrollView>(null);
-  const itineraryOffset = useRef(0);
-  const dayLocalOffsets = useRef<Record<number, number>>({});
-  const dayOffsets = useRef<Record<number, number>>({});
   const [activeDay, setActiveDay] = useState<number | null>(null);
 
-  const days = new Map<number, typeof trip.userSegments>();
+  const days = new Map<number, UserSegment[]>();
   for (const segment of [...(trip.userSegments || [])].sort(
     (a, b) => a.dayNumber - b.dayNumber || a.segmentOrder - b.segmentOrder
   )) {
@@ -51,74 +45,12 @@ export function TripPlanDetailView({ trip, onEdit, onBack }: TripPlanDetailViewP
   const iconColor = isDark ? theme.colors['primary-dark'] : theme.colors.primary;
   const mutedColor = isDark ? theme.colors['muted-dark'] : theme.colors.muted;
   const selectedDay = activeDay ?? dayEntries[0]?.[0] ?? null;
-
-  const scrollToDay = (dayNumber: number) => {
-    setActiveDay(dayNumber);
-    const y = dayOffsets.current[dayNumber];
-    if (y != null) scrollRef.current?.scrollTo({ y: Math.max(0, y - 12), animated: true });
-  };
-
-  const publishDayOffsets = () => {
-    for (const [day, localY] of Object.entries(dayLocalOffsets.current)) {
-      dayOffsets.current[Number(day)] = itineraryOffset.current + localY;
-    }
-  };
+  const selectedSegments =
+    selectedDay != null ? dayEntries.find(([dayNumber]) => dayNumber === selectedDay)?.[1] ?? [] : [];
 
   return (
     <View className="flex-1">
-      {dayEntries.length > 0 ? (
-        <View className="border-b border-border dark:border-border-dark bg-background dark:bg-background-dark px-3 py-3">
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            <View className="flex-row items-center gap-2">
-              {dayEntries.map(([dayNumber, segments]) => {
-                const selected = dayNumber === selectedDay;
-                return (
-                  <TouchableOpacity
-                    key={dayNumber}
-                    onPress={() => scrollToDay(dayNumber)}
-                    className={`min-w-[84px] items-center rounded-2xl border px-4 py-2.5 ${
-                      selected
-                        ? 'border-transparent'
-                        : 'bg-surface dark:bg-surface-dark border-border dark:border-border-dark'
-                    }`}
-                    style={selected ? { backgroundColor: LIGHT_BLUE } : theme.elevation.sm}
-                  >
-                    <Text
-                      className={`text-base font-bold ${
-                        selected ? 'text-white' : 'text-text dark:text-text-dark'
-                      }`}
-                    >
-                      {t(TRANSLATION_KEYS.TRIP_PLANNER.DAY_PLAN_DAY, { day: dayNumber })}
-                    </Text>
-                    <Text
-                      className={`text-xs mt-0.5 ${
-                        selected ? 'text-white' : 'text-text dark:text-text-dark'
-                      }`}
-                    >
-                      {segments.length} {t(TRANSLATION_KEYS.TRIP_PLANNER.DETAIL_STOPS).toLowerCase()}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          </ScrollView>
-        </View>
-      ) : null}
-
-      <ScrollView
-        ref={scrollRef}
-        className="flex-1"
-        contentContainerStyle={{ paddingBottom: 40 }}
-        scrollEventThrottle={32}
-        onScroll={(event) => {
-          const y = event.nativeEvent.contentOffset.y + 48;
-          let current = dayEntries[0]?.[0] ?? null;
-          for (const [dayNumber, offset] of Object.entries(dayOffsets.current)) {
-            if (offset <= y) current = Number(dayNumber);
-          }
-          if (current != null && current !== activeDay) setActiveDay(current);
-        }}
-      >
+      <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 40 }}>
         <View>
           <View className="h-64 bg-surface dark:bg-surface-dark justify-end">
             {cover ? <Image source={{ uri: cover }} className="absolute inset-0 w-full h-64" resizeMode="cover" /> : null}
@@ -152,13 +84,6 @@ export function TripPlanDetailView({ trip, onEdit, onBack }: TripPlanDetailViewP
             </View>
           </View>
 
-          <View className="flex-row flex-wrap px-4 mt-3 gap-2">
-            <Highlight label={t(TRANSLATION_KEYS.TRIP_PLANNER.DETAIL_DURATION)} value={`${duration}`} />
-            <Highlight label={t(TRANSLATION_KEYS.TRIP_PLANNER.DETAIL_STOPS)} value={`${stopCount}`} />
-            <Highlight label={t(TRANSLATION_KEYS.TRIP_PLANNER.DETAIL_TRAVELLERS)} value={`${trip.participantCount}`} />
-            <Highlight label={t(TRANSLATION_KEYS.TRIP_PLANNER.DETAIL_BUDGET)} value={formatTaka(budget)} />
-          </View>
-
           {trip.shortDescription || trip.description ? (
             <View className="px-4 mt-6">
               <Text className="text-xl font-bold text-text dark:text-text-dark mb-3">
@@ -175,13 +100,7 @@ export function TripPlanDetailView({ trip, onEdit, onBack }: TripPlanDetailViewP
             </View>
           ) : null}
 
-          <View
-            className="px-4 mt-6"
-            onLayout={(event) => {
-              itineraryOffset.current = event.nativeEvent.layout.y;
-              publishDayOffsets();
-            }}
-          >
+          <View className="px-4 mt-6">
             <Text className="text-xl font-bold text-text dark:text-text-dark">
               {t(TRANSLATION_KEYS.TRIP_PLANNER.DETAIL_ITINERARY)}
             </Text>
@@ -191,26 +110,50 @@ export function TripPlanDetailView({ trip, onEdit, onBack }: TripPlanDetailViewP
                 stops: stopCount,
               })}
             </Text>
+
             {dayEntries.length === 0 ? (
               <Text className="text-base text-muted dark:text-muted-dark">
                 {t(TRANSLATION_KEYS.TRIP_PLANNER.DETAIL_NO_STOPS)}
               </Text>
             ) : (
-              dayEntries.map(([dayNumber, segments]) => {
-                return (
-                  <View
-                    key={dayNumber}
-                    className="mb-5"
-                    onLayout={(event) => {
-                      dayLocalOffsets.current[dayNumber] = event.nativeEvent.layout.y;
-                      publishDayOffsets();
-                    }}
-                  >
-                    <Text className="text-lg font-bold text-text dark:text-text-dark mb-3">
-                      {t(TRANSLATION_KEYS.TRIP_PLANNER.DAY_PLAN_DAY, { day: dayNumber })}
-                    </Text>
-                    {segments.map((segment, index) => {
-                      const isLast = index === segments.length - 1;
+              <>
+                <View className="mb-3">
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                    <View className="flex-row items-center gap-2">
+                      {dayEntries.map(([dayNumber]) => {
+                        const selected = dayNumber === selectedDay;
+                        return (
+                          <TouchableOpacity
+                            key={dayNumber}
+                            onPress={() => setActiveDay(dayNumber)}
+                            accessibilityRole="button"
+                            accessibilityState={{ selected }}
+                            accessibilityLabel={t(TRANSLATION_KEYS.TRIP_PLANNER.DAY_PLAN_DAY, { day: dayNumber })}
+                            className={`rounded-full border px-3 py-1.5 ${
+                              selected
+                                ? 'border-transparent bg-primary'
+                                : 'bg-surface dark:bg-surface-dark border-border dark:border-border-dark'
+                            }`}
+                            style={selected ? undefined : theme.elevation.sm}
+                          >
+                            <Text
+                              className={`text-xs font-semibold ${
+                                selected ? 'text-onPrimary' : 'text-text dark:text-text-dark'
+                              }`}
+                            >
+                              {t(TRANSLATION_KEYS.TRIP_PLANNER.DAY_PLAN_DAY, { day: dayNumber })}
+                            </Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+                  </ScrollView>
+                </View>
+
+                {selectedDay != null ? (
+                  <View className="mb-5">
+                    {selectedSegments.map((segment, index) => {
+                      const isLast = index === selectedSegments.length - 1;
                       return (
                         <View key={segment.id} className="flex-row">
                           <View className="items-center mr-3 w-9">
@@ -270,21 +213,27 @@ export function TripPlanDetailView({ trip, onEdit, onBack }: TripPlanDetailViewP
                       );
                     })}
                   </View>
-                );
-              })
+                ) : null}
+              </>
             )}
           </View>
 
           <View
-            className="mx-4 mt-2 rounded-2xl border border-border dark:border-border-dark p-4 bg-surface dark:bg-surface-dark"
+            className="mx-4 mt-6 rounded-2xl border border-border dark:border-border-dark p-4 bg-surface dark:bg-surface-dark"
             style={theme.elevation.sm}
           >
-            <Text className="text-xs uppercase tracking-wide text-muted dark:text-muted-dark font-semibold">
+            <Text className="text-xl font-bold text-text dark:text-text-dark mb-3">
               {t(TRANSLATION_KEYS.TRIP_PLANNER.DETAIL_GLANCE)}
             </Text>
-            <Text className="text-2xl font-bold text-text dark:text-text-dark mt-1">{formatTaka(budget)}</Text>
+            <FactRow label={t(TRANSLATION_KEYS.TRIP_PLANNER.DETAIL_DURATION)} value={`${duration}`} />
+            <FactRow label={t(TRANSLATION_KEYS.TRIP_PLANNER.DETAIL_STOPS)} value={`${stopCount}`} />
+            <FactRow
+              label={t(TRANSLATION_KEYS.TRIP_PLANNER.DETAIL_TRAVELLERS)}
+              value={`${trip.participantCount}`}
+            />
+            <FactRow label={t(TRANSLATION_KEYS.TRIP_PLANNER.DETAIL_BUDGET)} value={formatTaka(budget)} />
             {perDay ? (
-              <Text className="text-sm text-muted dark:text-muted-dark mb-2">
+              <Text className="text-sm text-muted dark:text-muted-dark pb-2 mb-1 border-b border-border dark:border-border-dark">
                 {t(TRANSLATION_KEYS.TRIP_PLANNER.DETAIL_PER_DAY, { amount: formatTaka(perDay) })}
               </Text>
             ) : null}
@@ -310,15 +259,6 @@ export function TripPlanDetailView({ trip, onEdit, onBack }: TripPlanDetailViewP
           </View>
         </View>
       </ScrollView>
-    </View>
-  );
-}
-
-function Highlight({ label, value }: { label: string; value: string }) {
-  return (
-    <View className="w-[47%] rounded-xl border border-border dark:border-border-dark px-3 py-2 bg-surface dark:bg-surface-dark">
-      <Text className="text-[11px] uppercase tracking-wide text-muted dark:text-muted-dark font-semibold">{label}</Text>
-      <Text className="text-base font-bold text-text dark:text-text-dark mt-0.5">{value}</Text>
     </View>
   );
 }

@@ -1,8 +1,9 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { View, Text, FlatList, ActivityIndicator, Pressable, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { BookingCard } from '../../../components/ui/bookingCard';
 import { useTheme } from '../../../hooks/useTheme';
@@ -36,11 +37,28 @@ export default function UserBookingsPage() {
   const { t } = useTranslation();
   const { bookings, loading, onRefresh, onPressBooking } = useDashboardLogic();
   const [filter, setFilter] = useState<BookingListFilter>('all');
+  const [hasLoaded, setHasLoaded] = useState(false);
   const primaryColor = isDark ? theme.colors['primary-dark'] : theme.colors.primary;
   const visibleBookings = useMemo(
     () => bookings.filter((booking) => matchesBookingFilter(booking, filter)),
     [bookings, filter],
   );
+
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+      onRefresh().finally(() => {
+        if (active) {
+          setHasLoaded(true);
+        }
+      });
+      return () => {
+        active = false;
+      };
+    }, [onRefresh])
+  );
+
+  const busy = !hasLoaded || (loading && bookings.length === 0);
 
   return (
     <SafeAreaView edges={["top", "bottom"]} className="flex-1 bg-background dark:bg-background-dark">
@@ -96,7 +114,7 @@ export default function UserBookingsPage() {
           </ScrollView>
         ) : null}
 
-        {loading ? (
+        {busy ? (
           <View className="items-center justify-center flex-1 mt-6">
             <ActivityIndicator size="large" color={theme.colors.primary} />
             <Text className="mt-4 text-sm text-muted dark:text-muted-dark">

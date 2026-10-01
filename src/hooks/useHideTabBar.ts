@@ -58,13 +58,43 @@ const dashboardReservedSegments = new Set([
     'index',
     'notifications',
     'payment',
-    'package-bookings',
     'transport-bookings',
     'service-admin',
+    'recent-bookings',
+    'user-bookings',
 ]);
 
+const tripPlannerListSegments = new Set(['create', 'edit', 'list', 'index']);
+
+/** Personal trip detail `trip-planner/[id]` — hide bottom tabs like booking detail screens. */
+export function isTripPlannerDetailTabBarHidden(pathname: string): boolean {
+    const match = pathname.match(/\/trip-planner\/([^/]+)\/?$/);
+    if (!match) {
+        return false;
+    }
+    return !tripPlannerListSegments.has(match[1]);
+}
+
+export function useTripPlannerTabBar(pathname: string): void {
+    const navigation = useNavigation();
+    const insets = useSafeAreaInsets();
+    const { isDark } = useTheme();
+    const bottomInset = insets.bottom ?? 0;
+    const hidden = isTripPlannerDetailTabBarHidden(pathname);
+
+    useFocusEffect(
+        useCallback(() => {
+            const nav = navigation as TabBarNavigation;
+            applyTabBarStyle(nav, hidden ? hiddenTabBarStyle : tabBarScreenStyle(isDark, bottomInset));
+            return () => {
+                applyTabBarStyle(nav, tabBarScreenStyle(isDark, bottomInset));
+            };
+        }, [navigation, isDark, bottomInset, hidden]),
+    );
+}
+
 export function isDashboardBookingChromeHidden(pathname: string): boolean {
-    if (pathname.includes('user-bookings')) {
+    if (pathname.includes('user-bookings') || pathname.includes('recent-bookings')) {
         return true;
     }
     if (/\/dashboard\/transport-bookings\/[^/]+/.test(pathname)) {

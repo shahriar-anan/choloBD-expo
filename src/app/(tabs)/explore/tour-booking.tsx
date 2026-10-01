@@ -76,8 +76,7 @@ export default function TourBookingPage() {
   const handleCloseSuccessModal = () => {
     setShowSuccessModal(false);
     clearLastPurchased();
-    // Navigate to package bookings page
-    router.replace('/(tabs)/dashboard/package-bookings');
+    router.replace('/(tabs)/dashboard');
   };
 
   const handleBack = () => {

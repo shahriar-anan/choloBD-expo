@@ -2,9 +2,13 @@
  * Trip Planner Navigation Layout
  */
 
-import { Stack } from 'expo-router';
+import { Stack, usePathname } from 'expo-router';
+import { useTripPlannerTabBar } from '../../../hooks/useHideTabBar';
 
 export default function TripPlannerLayout() {
+  const pathname = usePathname();
+  useTripPlannerTabBar(pathname);
+
   return (
     <Stack
       screenOptions={{

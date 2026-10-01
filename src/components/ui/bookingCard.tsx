@@ -16,6 +16,8 @@ interface BookingCardProps {
   showRooms?: boolean;
   deskView?: boolean;
   footer?: React.ReactNode;
+  /** Dashboard preview: smaller single-row layout */
+  compact?: boolean;
 }
 
 // Helper function to format dates in a readable way
@@ -29,7 +31,7 @@ const formatDate = (dateString: string): string => {
   });
 };
 
-export function BookingCard({ booking, onPress, showGenerateQr = false, showRooms = true, deskView, footer }: BookingCardProps) {
+export function BookingCard({ booking, onPress, showGenerateQr = false, showRooms = true, deskView, footer, compact = false }: BookingCardProps) {
   const router = useRouter();
   const { isDark } = useTheme();
   const { t } = useTranslation();
@@ -73,6 +75,68 @@ export function BookingCard({ booking, onPress, showGenerateQr = false, showRoom
         return isDark ? theme.colors['muted-dark'] : theme.colors.muted;
     }
   };
+
+  if (compact && !isServiceAdmin) {
+    const thumbSize = 52;
+    const compactBody = (
+      <View className="p-3 mb-2 bg-white border rounded-xl border-border dark:bg-surface-dark dark:border-border-dark">
+        <View className="flex-row items-center">
+          {coverUrl ? (
+            <Image
+              source={{ uri: coverUrl }}
+              accessibilityLabel={displayName}
+              style={{ width: thumbSize, height: thumbSize, borderRadius: 10 }}
+            />
+          ) : (
+            <View
+              className="items-center justify-center bg-background dark:bg-background-dark"
+              style={{ width: thumbSize, height: thumbSize, borderRadius: 10 }}
+            >
+              <Ionicons name="bed-outline" size={22} color={muteIconColor} />
+            </View>
+          )}
+          <View className="flex-1 ml-3 min-w-0">
+            <Text className="text-sm font-bold text-text dark:text-text-dark" numberOfLines={1}>
+              {displayName}
+            </Text>
+            <View className="flex-row flex-wrap mt-1.5 gap-1">
+              <View
+                style={{ backgroundColor: `${getStatusColor(booking.status)}20` }}
+                className="px-2 py-0.5 rounded-md"
+              >
+                <Text style={{ color: getStatusColor(booking.status) }} className="text-[10px] font-bold">
+                  {booking.status || 'Unknown'}
+                </Text>
+              </View>
+              <View
+                style={{ backgroundColor: `${getPaymentStatusColor(booking.paymentStatus)}20` }}
+                className="px-2 py-0.5 rounded-md"
+              >
+                <Text style={{ color: getPaymentStatusColor(booking.paymentStatus) }} className="text-[10px] font-bold">
+                  {booking.paymentStatus || 'Unpaid'}
+                </Text>
+              </View>
+            </View>
+            <Text className="mt-1.5 text-xs text-muted dark:text-muted-dark" numberOfLines={1}>
+              {formatDate(booking.checkInDate)} → {formatDate(booking.checkOutDate)}
+              {booking.totalPrice != null ? ` · ৳${booking.totalPrice}` : ''}
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={16} color={muteIconColor} />
+        </View>
+      </View>
+    );
+
+    if (!onPress) {
+      return compactBody;
+    }
+
+    return (
+      <TouchableOpacity onPress={() => onPress(booking.id)} activeOpacity={0.8}>
+        {compactBody}
+      </TouchableOpacity>
+    );
+  }
 
   const card = (
       <View className="p-4 mb-3 bg-white border shadow rounded-xl border-border dark:bg-surface-dark dark:border-border-dark">
