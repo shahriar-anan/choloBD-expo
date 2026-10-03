@@ -23,6 +23,7 @@ import { useFetchLocations } from '../../hooks/useFetchLocations';
 import { getApiInstance } from '../../services/api/axiosClient';
 import { unwrapList, catalogSegmentsToWizardStops } from '../../services/api/personalPlanMapping';
 import { uploadCommunityImageToCloudinary } from '../../services/api/cloudinaryUpload';
+import { getTourPlan } from '../../services/api/tourBuilder';
 import {
   attachPersonalTourImages,
   savePersonalTourPlan,
@@ -56,7 +57,6 @@ import {
 } from '../../utils/tripPlanItinerary';
 
 const STEPS = ['details', 'itinerary', 'photos'] as const;
-const CATALOG_PAGE_SIZE = 4;
 
 export interface WizardInitial {
   packageName: string;
@@ -75,6 +75,7 @@ interface TripPlanCreateWizardProps {
   mode: 'create' | 'edit';
   initial?: WizardInitial;
   planId?: string;
+  templateId?: string;
   onSaved: (plan: TripPlan) => void;
   onCancel: () => void;
 }
@@ -98,6 +99,7 @@ export function TripPlanCreateWizard({
   mode,
   initial,
   planId,
+  templateId,
   onSaved,
   onCancel,
 }: TripPlanCreateWizardProps) {
@@ -120,9 +122,6 @@ export function TripPlanCreateWizard({
   );
   const [basedOnPackageId, setBasedOnPackageId] = useState(initial?.basedOnPackageId || '');
   const [stops, setStops] = useState<WizardStop[]>(initial?.stops || []);
-  const [catalog, setCatalog] = useState<any[]>([]);
-  const [catalogPage, setCatalogPage] = useState(0);
-  const [catalogLoading, setCatalogLoading] = useState(false);
   const [cloning, setCloning] = useState(false);
   const [checklistDismissed, setChecklistDismissed] = useState(false);
   const [assetsLoading, setAssetsLoading] = useState(false);
@@ -155,27 +154,36 @@ export function TripPlanCreateWizard({
     .sort((a, b) => a.segmentOrder - b.segmentOrder);
 
   useEffect(() => {
-    if (mode !== 'create') return;
+    if (mode !== 'create' || !templateId) return;
     let cancelled = false;
     (async () => {
-      setCatalogLoading(true);
+      setCloning(true);
       try {
-        const api = getApiInstance();
-        const res = await api.get('/api/tour-builder', { params: { limit: 100, isActive: true } });
-        const list = unwrapList<any>(res.data?.data).filter(
-          (item) => !item.kind || item.kind === 'CATALOG'
-        );
-        if (!cancelled) setCatalog(list);
-      } catch {
-        if (!cancelled) setCatalog([]);
+        const tour = await getTourPlan(templateId);
+        if (cancelled || !tour) return;
+        setBasedOnPackageId(tour.id);
+        setPackageName(tour.packageName || '');
+        setShortDescription(tour.shortDescription || '');
+        setTourType(tour.tourType || '');
+        setLocationId(tour.location?.id || '');
+        setDuration(tour.duration || 0);
+        setTotalBudget(String(tour.totalBudget || ''));
+        setStops(catalogSegmentsToWizardStops(tour.daySegments || []));
+        setActiveDay(1);
+        setChecklistDismissed(false);
+      } catch (error: any) {
+        if (!cancelled) {
+          setBasedOnPackageId('');
+          Alert.alert(t(TRANSLATION_KEYS.COMMON.ERROR), error?.message || 'Could not load this template');
+        }
       } finally {
-        if (!cancelled) setCatalogLoading(false);
+        if (!cancelled) setCloning(false);
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [mode]);
+  }, [mode, templateId]);
 
   useEffect(() => {
     if (!locationId) {
@@ -212,49 +220,6 @@ export function TripPlanCreateWizard({
       cancelled = true;
     };
   }, [locationId]);
-
-  const pagedCatalog = catalog.slice(
-    catalogPage * CATALOG_PAGE_SIZE,
-    catalogPage * CATALOG_PAGE_SIZE + CATALOG_PAGE_SIZE
-  );
-  const catalogPages = Math.max(1, Math.ceil(catalog.length / CATALOG_PAGE_SIZE));
-
-  const applyCatalog = async (id: string) => {
-    setCloning(true);
-    setBasedOnPackageId(id);
-    setChecklistDismissed(false);
-    try {
-      const api = getApiInstance();
-      const res = await api.get(`/api/tour-builder/${id}`);
-      const tour = res.data?.data;
-      if (!tour) return;
-      setPackageName(tour.packageName || '');
-      setShortDescription(tour.shortDescription || '');
-      setTourType(tour.tourType || '');
-      setLocationId(tour.location?.id || tour.locationId || '');
-      setDuration(tour.duration || 0);
-      setTotalBudget(String(tour.totalBudget || tour.estimatedBudget || ''));
-      setStops(catalogSegmentsToWizardStops(tour.daySegments || []));
-      setActiveDay(1);
-    } catch (error: any) {
-      Alert.alert(t(TRANSLATION_KEYS.COMMON.ERROR), error?.message || 'Could not clone catalog tour');
-    } finally {
-      setCloning(false);
-    }
-  };
-
-  const clearCatalog = () => {
-    setBasedOnPackageId('');
-    setPackageName('');
-    setShortDescription('');
-    setTourType('');
-    setLocationId('');
-    setStartDate('');
-    setDuration(0);
-    setTotalBudget('');
-    setStops([]);
-    setChecklistDismissed(false);
-  };
 
   const commitStops = (next: WizardStop[]) => {
     setStops(applyOvernightHotelToLastStop(next));
@@ -419,74 +384,7 @@ export function TripPlanCreateWizard({
       </View>
 
       <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingBottom: 24 }} keyboardShouldPersistTaps="handled">
-        {step === 0 && mode === 'create' ? (
-          <View className="mt-4 mb-2">
-            <View className="flex-row items-start justify-between">
-              <View className="flex-1 pr-3">
-                <Text className="text-base font-semibold text-text dark:text-text-dark">
-                  {t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_CATALOG_TITLE)}
-                </Text>
-                <Text className="text-xs text-muted dark:text-muted-dark mt-1">
-                  {t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_CATALOG_HINT)}
-                </Text>
-              </View>
-              {basedOnPackageId ? (
-                <TouchableOpacity onPress={clearCatalog}>
-                  <Text className="text-xs font-semibold text-primary">
-                    {t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_CLEAR_CATALOG)}
-                  </Text>
-                </TouchableOpacity>
-              ) : null}
-            </View>
-            {catalogLoading || cloning ? (
-              <ActivityIndicator className="mt-4" />
-            ) : pagedCatalog.length === 0 ? (
-              <Text className="text-sm text-muted mt-3">{t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_NO_CATALOG)}</Text>
-            ) : (
-              pagedCatalog.map((tour) => {
-                const selected = basedOnPackageId === tour.id;
-                const image = tour.images?.[0]?.url;
-                return (
-                  <TouchableOpacity
-                    key={tour.id}
-                    onPress={() => applyCatalog(tour.id)}
-                    className={`mt-3 rounded-xl overflow-hidden border ${selected ? 'border-primary' : 'border-border dark:border-border-dark'}`}
-                  >
-                    {image ? <Image source={{ uri: image }} className="h-28 w-full" /> : null}
-                    <View className="p-3 bg-surface dark:bg-surface-dark">
-                      <Text className="font-semibold text-text dark:text-text-dark">{tour.packageName}</Text>
-                      <Text className="text-xs text-muted mt-1">
-                        {tour.location?.name || 'Bangladesh'} · {formatEnumLabel(tour.tourType)} · {tour.duration}{' '}
-                        {t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_DAYS)} · {formatTaka(tour.totalBudget)}
-                      </Text>
-                      {selected ? (
-                        <Text className="text-xs text-primary font-semibold mt-1">
-                          {t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_SELECTED)}
-                        </Text>
-                      ) : null}
-                    </View>
-                  </TouchableOpacity>
-                );
-              })
-            )}
-            {catalogPages > 1 ? (
-              <View className="flex-row justify-between mt-3">
-                <TouchableOpacity disabled={catalogPage === 0} onPress={() => setCatalogPage((page) => page - 1)}>
-                  <Text className="text-primary">{t(TRANSLATION_KEYS.COMMON.BACK)}</Text>
-                </TouchableOpacity>
-                <Text className="text-muted text-xs">
-                  {catalogPage + 1}/{catalogPages}
-                </Text>
-                <TouchableOpacity
-                  disabled={catalogPage >= catalogPages - 1}
-                  onPress={() => setCatalogPage((page) => page + 1)}
-                >
-                  <Text className="text-primary">{t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_NEXT)}</Text>
-                </TouchableOpacity>
-              </View>
-            ) : null}
-          </View>
-        ) : null}
+        {cloning ? <ActivityIndicator className="mt-4" /> : null}
 
         {step === 0 ? (
           <View className="mt-4 gap-4">

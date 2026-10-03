@@ -3,7 +3,7 @@
  */
 
 import React, { useState } from 'react';
-import { View, Text, ScrollView, Image, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, Image, TouchableOpacity, Modal, Pressable } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
@@ -27,6 +27,7 @@ export function TripPlanDetailView({ trip, onEdit, onBack }: TripPlanDetailViewP
   const { t } = useTranslation();
   const { isDark } = useTheme();
   const [activeDay, setActiveDay] = useState<number | null>(null);
+  const [glanceOpen, setGlanceOpen] = useState(false);
 
   const days = new Map<number, UserSegment[]>();
   for (const segment of [...(trip.userSegments || [])].sort(
@@ -44,6 +45,8 @@ export function TripPlanDetailView({ trip, onEdit, onBack }: TripPlanDetailViewP
   const perDay = duration && budget ? Math.round(budget / duration) : null;
   const iconColor = isDark ? theme.colors['primary-dark'] : theme.colors.primary;
   const mutedColor = isDark ? theme.colors['muted-dark'] : theme.colors.muted;
+  const textColor = isDark ? theme.colors['text-dark'] : theme.colors.text;
+  const surfaceColor = isDark ? theme.colors['surface-dark'] : theme.colors.surface;
   const selectedDay = activeDay ?? dayEntries[0]?.[0] ?? null;
   const selectedSegments =
     selectedDay != null ? dayEntries.find(([dayNumber]) => dayNumber === selectedDay)?.[1] ?? [] : [];
@@ -58,6 +61,24 @@ export function TripPlanDetailView({ trip, onEdit, onBack }: TripPlanDetailViewP
               colors={['transparent', 'rgba(0,0,0,0.82)']}
               style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 140 }}
             />
+            <TouchableOpacity
+              onPress={onBack}
+              accessibilityRole="button"
+              accessibilityLabel={t(TRANSLATION_KEYS.TRIP_PLANNER.DETAIL_BACK)}
+              style={{
+                position: 'absolute',
+                top: 12,
+                left: 12,
+                width: 40,
+                height: 40,
+                borderRadius: 20,
+                backgroundColor: 'rgba(0,0,0,0.45)',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Feather name="chevron-left" size={22} color="#FFFFFF" />
+            </TouchableOpacity>
             <View className="px-4 pb-5">
               {trip.primaryLocation?.name ? (
                 <View className="flex-row items-center">
@@ -71,18 +92,50 @@ export function TripPlanDetailView({ trip, onEdit, onBack }: TripPlanDetailViewP
             </View>
           </View>
 
-          <View className="flex-row flex-wrap gap-2 px-4 pt-4">
-            {trip.tourType ? (
+          <View className="flex-row items-center px-4 pt-4">
+            <View className="flex-1 flex-row flex-wrap gap-2">
+              {trip.tourType ? (
+                <View className="rounded-full border border-border dark:border-border-dark bg-surface dark:bg-surface-dark px-4 py-2">
+                  <Text className="text-sm font-semibold text-text dark:text-text-dark">{formatEnumLabel(trip.tourType)}</Text>
+                </View>
+              ) : null}
               <View className="rounded-full border border-border dark:border-border-dark bg-surface dark:bg-surface-dark px-4 py-2">
-                <Text className="text-sm font-semibold text-text dark:text-text-dark">{formatEnumLabel(trip.tourType)}</Text>
+                <Text className="text-sm font-semibold text-text dark:text-text-dark">
+                  {duration} {t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_DAYS)}
+                </Text>
               </View>
-            ) : null}
-            <View className="rounded-full border border-border dark:border-border-dark bg-surface dark:bg-surface-dark px-4 py-2">
-              <Text className="text-sm font-semibold text-text dark:text-text-dark">
-                {duration} {t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_DAYS)}
-              </Text>
             </View>
+            <TouchableOpacity
+              onPress={onEdit}
+              accessibilityRole="button"
+              accessibilityLabel={t(TRANSLATION_KEYS.TRIP_PLANNER.DETAIL_EDIT)}
+              style={{
+                marginLeft: 8,
+                width: 40,
+                height: 40,
+                borderRadius: 20,
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderWidth: 1,
+                borderColor: isDark ? theme.colors['border-dark'] : theme.colors.border,
+                backgroundColor: surfaceColor,
+              }}
+            >
+              <Feather name="edit-2" size={18} color={iconColor} />
+            </TouchableOpacity>
           </View>
+
+          <TouchableOpacity
+            onPress={() => setGlanceOpen(true)}
+            accessibilityRole="button"
+            className="mx-4 mt-4 flex-row items-center justify-between rounded-2xl border border-border dark:border-border-dark bg-surface dark:bg-surface-dark px-4 py-3.5"
+            style={theme.elevation.sm}
+          >
+            <Text className="text-base font-semibold text-text dark:text-text-dark">
+              {t(TRANSLATION_KEYS.TRIP_PLANNER.DETAIL_GLANCE)}
+            </Text>
+            <Feather name="chevron-right" size={18} color={mutedColor} />
+          </TouchableOpacity>
 
           {trip.shortDescription || trip.description ? (
             <View className="px-4 mt-6">
@@ -218,47 +271,60 @@ export function TripPlanDetailView({ trip, onEdit, onBack }: TripPlanDetailViewP
             )}
           </View>
 
-          <View
-            className="mx-4 mt-6 rounded-2xl border border-border dark:border-border-dark p-4 bg-surface dark:bg-surface-dark"
-            style={theme.elevation.sm}
-          >
-            <Text className="text-xl font-bold text-text dark:text-text-dark mb-3">
-              {t(TRANSLATION_KEYS.TRIP_PLANNER.DETAIL_GLANCE)}
-            </Text>
-            <FactRow label={t(TRANSLATION_KEYS.TRIP_PLANNER.DETAIL_DURATION)} value={`${duration}`} />
-            <FactRow label={t(TRANSLATION_KEYS.TRIP_PLANNER.DETAIL_STOPS)} value={`${stopCount}`} />
-            <FactRow
-              label={t(TRANSLATION_KEYS.TRIP_PLANNER.DETAIL_TRAVELLERS)}
-              value={`${trip.participantCount}`}
-            />
-            <FactRow label={t(TRANSLATION_KEYS.TRIP_PLANNER.DETAIL_BUDGET)} value={formatTaka(budget)} />
-            {perDay ? (
-              <Text className="text-sm text-muted dark:text-muted-dark pb-2 mb-1 border-b border-border dark:border-border-dark">
-                {t(TRANSLATION_KEYS.TRIP_PLANNER.DETAIL_PER_DAY, { amount: formatTaka(perDay) })}
-              </Text>
-            ) : null}
-            <FactRow label={t(TRANSLATION_KEYS.TRIP_PLANNER.DETAIL_LOCATION)} value={trip.primaryLocation?.name} />
-            <FactRow label={t(TRANSLATION_KEYS.TRIP_PLANNER.DETAIL_TYPE)} value={formatEnumLabel(trip.tourType)} />
-            <FactRow
-              label={t(TRANSLATION_KEYS.TRIP_PLANNER.DETAIL_WINDOW)}
-              value={`${formatDisplayDate(trip.startDate)} → ${formatDisplayDate(trip.endDate)}`}
-            />
-            {trip.basedOnPackageName ? (
-              <FactRow label={t(TRANSLATION_KEYS.TRIP_PLANNER.DETAIL_BASED_ON)} value={trip.basedOnPackageName} />
-            ) : null}
-            <TouchableOpacity onPress={onEdit} className="bg-primary rounded-xl py-3.5 items-center mt-4">
-              <Text className="text-onPrimary text-base font-semibold">
-                {t(TRANSLATION_KEYS.TRIP_PLANNER.DETAIL_EDIT)}
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={onBack} className="py-3 items-center">
-              <Text className="text-base text-text dark:text-text-dark font-semibold">
-                {t(TRANSLATION_KEYS.TRIP_PLANNER.DETAIL_BACK)}
-              </Text>
-            </TouchableOpacity>
-          </View>
         </View>
       </ScrollView>
+
+      <Modal visible={glanceOpen} transparent animationType="slide" onRequestClose={() => setGlanceOpen(false)}>
+        <View className="flex-1 justify-end">
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t(TRANSLATION_KEYS.COMMON.CLOSE)}
+            onPress={() => setGlanceOpen(false)}
+            style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, backgroundColor: 'rgba(0,0,0,0.4)' }}
+          />
+          <View
+            className="rounded-t-3xl px-5 pt-5 pb-8"
+            style={{ backgroundColor: surfaceColor, maxHeight: '85%' }}
+          >
+            <View className="flex-row items-center justify-between mb-2">
+              <Text className="text-xl font-bold text-text dark:text-text-dark">
+                {t(TRANSLATION_KEYS.TRIP_PLANNER.DETAIL_GLANCE)}
+              </Text>
+              <TouchableOpacity
+                onPress={() => setGlanceOpen(false)}
+                accessibilityRole="button"
+                accessibilityLabel={t(TRANSLATION_KEYS.COMMON.CLOSE)}
+                style={{ width: 40, height: 40, alignItems: 'center', justifyContent: 'center' }}
+              >
+                <Feather name="x" size={22} color={textColor} />
+              </TouchableOpacity>
+            </View>
+            <ScrollView>
+              <FactRow label={t(TRANSLATION_KEYS.TRIP_PLANNER.DETAIL_DURATION)} value={`${duration}`} />
+              <FactRow label={t(TRANSLATION_KEYS.TRIP_PLANNER.DETAIL_STOPS)} value={`${stopCount}`} />
+              <FactRow
+                label={t(TRANSLATION_KEYS.TRIP_PLANNER.DETAIL_TRAVELLERS)}
+                value={`${trip.participantCount}`}
+              />
+              <FactRow label={t(TRANSLATION_KEYS.TRIP_PLANNER.DETAIL_BUDGET)} value={formatTaka(budget)} />
+              {perDay ? (
+                <Text className="text-sm text-muted dark:text-muted-dark py-3 border-b border-border dark:border-border-dark">
+                  {t(TRANSLATION_KEYS.TRIP_PLANNER.DETAIL_PER_DAY, { amount: formatTaka(perDay) })}
+                </Text>
+              ) : null}
+              <FactRow label={t(TRANSLATION_KEYS.TRIP_PLANNER.DETAIL_LOCATION)} value={trip.primaryLocation?.name} />
+              <FactRow label={t(TRANSLATION_KEYS.TRIP_PLANNER.DETAIL_TYPE)} value={formatEnumLabel(trip.tourType)} />
+              <FactRow
+                label={t(TRANSLATION_KEYS.TRIP_PLANNER.DETAIL_WINDOW)}
+                value={`${formatDisplayDate(trip.startDate)} → ${formatDisplayDate(trip.endDate)}`}
+              />
+              {trip.basedOnPackageName ? (
+                <FactRow label={t(TRANSLATION_KEYS.TRIP_PLANNER.DETAIL_BASED_ON)} value={trip.basedOnPackageName} />
+              ) : null}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }

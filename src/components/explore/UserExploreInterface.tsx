@@ -22,12 +22,12 @@ export function UserExploreInterface() {
 
   const handleBrowseTours = () => {
     console.log('[UserExploreInterface] Navigating to tour list');
-    router.push('/(tabs)/explore/tour-list');
+    router.push('/(tabs)/trip-planner?tab=templates');
   };
 
   const handleCreateTripPlan = () => {
     console.log('[UserExploreInterface] Navigating to trip planner');
-    router.push('/(tabs)/trip-planner');
+    router.push('/(tabs)/trip-planner?tab=mine');
   };
 
   return (

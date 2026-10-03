@@ -21,6 +21,7 @@ export default function TourPackageDetailPage() {
   const { t } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
   const { detail, detailLoading, detailError } = useSelector((state: RootState) => state.tourBuilder);
+  const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated);
 
   const primaryColor = isDark ? theme.colors['primary-dark'] : theme.colors.primary;
   const errorColor = isDark ? theme.colors['error-dark'] : theme.colors.error;
@@ -44,6 +45,18 @@ export default function TourPackageDetailPage() {
     router.push({
       pathname: '/(tabs)/explore/tour-booking',
       params: { packageId: id },
+    });
+  };
+
+  const handleUseAsPlan = () => {
+    if (!id) return;
+    if (!isAuthenticated) {
+      router.push('/(auth)/login');
+      return;
+    }
+    router.push({
+      pathname: '/(tabs)/trip-planner/create',
+      params: { templateId: id },
     });
   };
 
@@ -204,20 +217,32 @@ export default function TourPackageDetailPage() {
           </View>
         )}
 
-        {detail.isActive && <View className="h-24" />}
+        {detail.isActive && <View style={{ height: 148 }} />}
       </ScrollView>
 
-      {/* Book Tour Button */}
       {detail.isActive && (
         <View
           style={{
             borderTopWidth: 1,
             borderTopColor: isDark ? theme.colors['border-dark'] : theme.colors.border,
             paddingHorizontal: 24,
-            paddingVertical: 16,
+            paddingTop: 12,
             paddingBottom: Math.max(16, insets.bottom),
+            gap: 8,
+            backgroundColor: isDark ? theme.colors['surface-dark'] : theme.colors.surface,
           }}
         >
+          <TouchableOpacity
+            onPress={handleUseAsPlan}
+            className="flex-row items-center justify-center p-4 rounded-lg"
+            style={{ borderWidth: 1, borderColor: primaryColor }}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="create-outline" size={20} color={primaryColor} style={{ marginRight: 8 }} />
+            <Text className="text-base font-semibold" style={{ color: primaryColor }}>
+              {t(TRANSLATION_KEYS.TRIP_PLANNER.HUB_USE_AS_PLAN)}
+            </Text>
+          </TouchableOpacity>
           <TouchableOpacity
             onPress={handleBookTour}
             className="flex-row items-center justify-center p-4 rounded-lg"

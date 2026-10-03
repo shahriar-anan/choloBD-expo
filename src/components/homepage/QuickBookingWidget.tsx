@@ -16,7 +16,7 @@ interface ActivityTypeOption {
 
 const ACTIVITY_TYPES: ActivityTypeOption[] = [
   { id: 'hotels', label: 'Hotels', route: '/(tabs)/explore/hotel-search' },
-  { id: 'tours', label: 'Tours', route: '/(tabs)/explore/tour-list' },
+  { id: 'tours', label: 'Tours', route: '/(tabs)/trip-planner?tab=templates&fromHome=true' },
   { id: 'attractions', label: 'Attractions', route: '/(tabs)/explore/attractions?tab=places' },
 ];
 

@@ -39,7 +39,7 @@ export default function QuickActionGrid({ onNavigate }: QuickActionGridProps) {
         id: 'plan-trip',
         translationKey: TRANSLATION_KEYS.HOME.QUICK_ACTIONS.PLAN_TRIP,
         icon: 'map-marker-path',
-        route: '/(tabs)/trip-planner',
+        route: '/(tabs)/trip-planner?tab=mine&fromHome=true',
       },
       {
         id: 'browse-tours',

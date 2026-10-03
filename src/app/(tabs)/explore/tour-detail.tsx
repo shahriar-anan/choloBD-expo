@@ -28,7 +28,7 @@ export default function TourDetailPage() {
   const { isDark } = useTheme();
   const { t } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
-  const { isAdmin } = useAuthWithAdminCheck();
+  const { isAdmin, isAuthenticated } = useAuthWithAdminCheck();
   const { detail, detailLoading, detailError } = useSelector((state: RootState) => state.tourBuilder);
 
   const primaryColor = isDark ? theme.colors['primary-dark'] : theme.colors.primary;
@@ -66,6 +66,18 @@ export default function TourDetailPage() {
     router.push({
       pathname: '/(tabs)/explore/tour-booking',
       params: { packageId: id },
+    });
+  };
+
+  const handleUseAsPlan = () => {
+    if (!id) return;
+    if (!isAuthenticated) {
+      router.push('/(auth)/login');
+      return;
+    }
+    router.push({
+      pathname: '/(tabs)/trip-planner/create',
+      params: { templateId: id },
     });
   };
 
@@ -244,11 +256,10 @@ export default function TourDetailPage() {
         )}
 
         {/* Spacer for bottom button */}
-        {!isAdmin && detail.isActive && <View className="h-24" />}
+        {detail.isActive && <View style={{ height: !isAdmin ? 148 : 88 }} />}
       </ScrollView>
 
-      {/* Book Tour Button (Fixed at bottom for non-admin users) */}
-      {!isAdmin && detail.isActive && (
+      {detail.isActive && (
         <View
           className="px-6 pb-4 pt-3"
           style={{
@@ -256,19 +267,33 @@ export default function TourDetailPage() {
             borderTopWidth: 1,
             borderTopColor: isDark ? theme.colors['border-dark'] : theme.colors.border,
             paddingBottom: Math.max(16, insets.bottom),
+            gap: 8,
           }}
         >
           <TouchableOpacity
-            onPress={handleBookTour}
+            onPress={handleUseAsPlan}
             className="flex-row items-center justify-center p-4 rounded-xl"
-            style={{ backgroundColor: successColor }}
+            style={{ borderWidth: 1, borderColor: primaryColor }}
             activeOpacity={0.8}
           >
-            <Ionicons name="calendar" size={24} color="#fff" style={{ marginRight: 8 }} />
-            <Text className="text-base font-bold text-white">
-              {t(TRANSLATION_KEYS.PACKAGE_BOOKING.BOOK_THIS_TOUR)}
+            <Ionicons name="create-outline" size={22} color={primaryColor} style={{ marginRight: 8 }} />
+            <Text className="text-base font-bold" style={{ color: primaryColor }}>
+              {t(TRANSLATION_KEYS.TRIP_PLANNER.HUB_USE_AS_PLAN)}
             </Text>
           </TouchableOpacity>
+          {!isAdmin ? (
+            <TouchableOpacity
+              onPress={handleBookTour}
+              className="flex-row items-center justify-center p-4 rounded-xl"
+              style={{ backgroundColor: successColor }}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="calendar" size={24} color="#fff" style={{ marginRight: 8 }} />
+              <Text className="text-base font-bold text-white">
+                {t(TRANSLATION_KEYS.PACKAGE_BOOKING.BOOK_THIS_TOUR)}
+              </Text>
+            </TouchableOpacity>
+          ) : null}
         </View>
       )}
     </SafeAreaView>

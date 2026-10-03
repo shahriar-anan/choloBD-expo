@@ -56,7 +56,7 @@ export default function HomeCommunityRow() {
               height={132}
               title={t(TRANSLATION_KEYS.HOME.BUILD_ITINERARY)}
               detail={t(TRANSLATION_KEYS.HOME.BUILD_ITINERARY_HINT)}
-              onPress={() => router.push('/(tabs)/trip-planner')}
+              onPress={() => router.push('/(tabs)/trip-planner?tab=mine')}
             />
           </View>
         </View>

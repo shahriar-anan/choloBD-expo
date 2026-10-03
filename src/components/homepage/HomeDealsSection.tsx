@@ -90,7 +90,7 @@ export default function HomeDealsSection({
 
   const seeAll = () => {
     if (chip === 'stays') router.push('/(tabs)/explore/hotel-search?fromHome=true');
-    if (chip === 'holidays') router.push('/(tabs)/explore/tour-list');
+    if (chip === 'holidays') router.push('/(tabs)/trip-planner?tab=templates&fromHome=true');
   };
 
   const showSeeAll =

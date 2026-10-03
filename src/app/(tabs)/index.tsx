@@ -44,7 +44,7 @@ export default function HomePage() {
         router.push('/(tabs)/explore/attractions?tab=places');
         break;
       case 'tours':
-        router.push('/(tabs)/explore/tour-list');
+        router.push('/(tabs)/trip-planner?tab=templates&fromHome=true');
         break;
       case 'scan-qr':
         router.push('/(tabs)/dashboard/service-admin/qr-scanner');

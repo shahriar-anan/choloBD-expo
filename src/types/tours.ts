@@ -149,6 +149,14 @@ export interface TourFilters {
   maxBudget?: number;
 }
 
+/** Public catalog page. Do not send isActive or a name query; the server forces active catalog rows. */
+export interface CatalogPageFilters {
+  divisionId?: string;
+  tourType?: TourType;
+  page?: number;
+  limit?: number;
+}
+
 /**
  * API response wrapper for tour endpoints
  */

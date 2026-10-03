@@ -8,11 +8,13 @@ import { unwrapList } from './personalPlanMapping';
 import {
   TourPackage,
   TourFilters,
+  CatalogPageFilters,
   CreateTourPlanData,
   UpdateTourPlanData,
   TourApiResponse,
   TourApiError,
 } from '../../types/tours';
+import type { PagedResult } from './tourSpots';
 import { AxiosError } from 'axios';
 
 /**
@@ -83,6 +85,36 @@ export async function getTourPlans(filters?: TourFilters): Promise<TourPackage[]
   } catch (error: any) {
     console.error('[tourBuilder.ts] getTourPlans error:', error?.response?.status, error?.message);
     throw mapApiError(error);
+  }
+}
+
+/**
+ * GET /api/tour-builder
+ * Paged active catalog. Sends divisionId and tourType only. Leaves getTourPlans as an array for the home feed.
+ */
+export async function getCatalogTourPlansPage(filters?: CatalogPageFilters): Promise<PagedResult<TourPackage>> {
+  try {
+    const api = getApiInstance();
+    const params: Record<string, string | number> = {
+      page: filters?.page ?? 1,
+      limit: filters?.limit ?? 20,
+    };
+    if (filters?.divisionId) params.divisionId = filters.divisionId;
+    if (filters?.tourType) params.tourType = filters.tourType;
+
+    const res = await api.get<TourApiResponse<{ results?: TourPackage[]; total?: number; page?: number; limit?: number }>>(
+      '/api/tour-builder',
+      { params },
+    );
+    const payload = res.data?.data;
+    const results = unwrapList<TourPackage>(payload);
+    const page = Number(payload?.page || params.page);
+    const limit = Number(payload?.limit || params.limit);
+    const total = Number(payload?.total ?? results.length);
+    return { results, total, page, limit };
+  } catch (error: any) {
+    const mapped = mapApiError(error);
+    throw new Error(mapped.message);
   }
 }
 

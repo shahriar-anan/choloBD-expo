@@ -25,7 +25,7 @@ const TRANSPORT_OPTIONS: TransportOption[] = [
     id: 'trip-plan',
     label: 'TRIP_PLAN',
     icon: 'calendar',
-    route: '/(tabs)/trip-planner',
+    route: '/(tabs)/trip-planner?tab=mine',
   },
   {
     id: 'track',

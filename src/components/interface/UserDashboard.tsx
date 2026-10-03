@@ -223,7 +223,7 @@ export function UserDashboard({
           <DashboardLinkRow
             title={t(TRANSLATION_KEYS.DASHBOARD.USER_CARDS.TRIP_PLANNER)}
             iconName="compass"
-            onPress={() => router.push('/(tabs)/trip-planner')}
+            onPress={() => router.push('/(tabs)/trip-planner?tab=mine')}
             showDivider={false}
           />
         </View>

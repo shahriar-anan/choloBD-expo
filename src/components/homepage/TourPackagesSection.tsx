@@ -30,7 +30,7 @@ export default function TourPackagesSection({ packages, isLoading, error, onRetr
     <View style={{ paddingTop: 22, paddingBottom: 4, paddingHorizontal: 16 }}>
       <HomeSectionHeader
         title={t(TRANSLATION_KEYS.HOME.FEATURED_HOLIDAYS)}
-        onSeeAll={visible.length > 0 ? () => router.push('/(tabs)/explore/tour-list') : undefined}
+        onSeeAll={visible.length > 0 ? () => router.push('/(tabs)/trip-planner?tab=templates&fromHome=true') : undefined}
       />
       <HomeFeedStatus isLoading={isLoading} error={error} onRetry={onRetry} />
       {!isLoading && !error && lead ? (

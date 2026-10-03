@@ -29,12 +29,12 @@ export function ExploreInterface({ isAdmin = false }: ExploreInterfaceProps) {
     () => ({
       handleBookHotel: () => router.push('/(tabs)/explore/hotel-search'),
       handleBrowseAttractions: () => router.push('/(tabs)/explore/attractions?tab=places'),
-      handleBrowseTours: () => router.push('/(tabs)/explore/tour-list'),
-      handleCreateTripPlan: () => router.push('/(tabs)/trip-planner'),
+      handleBrowseTours: () => router.push(isAdmin ? '/(tabs)/explore/tour-list' : '/(tabs)/trip-planner?tab=templates'),
+      handleCreateTripPlan: () => router.push('/(tabs)/trip-planner?tab=mine'),
       handleCreateTours: () => router.push('/(tabs)/explore/tour-create'),
       handleMyTours: () => router.push('/(tabs)/explore/my-tours'),
     }),
-    [router]
+    [router, isAdmin]
   );
 
   return (
