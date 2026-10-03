@@ -38,8 +38,24 @@ export default function CommunityIndex() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: bg }}>
       <View className="px-5 pb-3 gap-3">
-        <View>
+        <View className="flex-row items-center">
+          <TouchableOpacity
+            onPress={() => {
+              if (router.canGoBack()) {
+                router.back();
+                return;
+              }
+              router.replace('/(tabs)');
+            }}
+            accessibilityRole="button"
+            accessibilityLabel={t(TRANSLATION_KEYS.COMMON.BACK)}
+            style={{ marginRight: 8, minWidth: 44, minHeight: 44, justifyContent: 'center' }}
+          >
+            <Ionicons name="chevron-back" size={24} color={text} />
+          </TouchableOpacity>
           <Text className="text-3xl font-bold text-text dark:text-text-dark">{t(TRANSLATION_KEYS.COMMUNITY.TITLE)}</Text>
+        </View>
+        <View>
           <Text className="mt-1 text-sm text-muted dark:text-muted-dark">
             {t(TRANSLATION_KEYS.COMMUNITY.SUBTITLE)}
           </Text>

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, Modal, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -13,6 +13,9 @@ import { TransportBooking } from '../../../../types/transports';
 import { CancellationEligibilityPreview } from '../../../../components/booking/CancellationEligibilityPreview';
 import { PaymentStatusBadge } from '../../../../components/ui/PaymentStatusBadge';
 import { getCancelActionLabel, shouldFetchCancellationEligibility } from '../../../../utilities/bookingCancelHelpers';
+import { profilePhotoUri } from '../../../../utilities/profileImage';
+import { DetailCard, DetailRow } from '../../../../components/booking/DetailBlocks';
+import { BookingQrSheet } from '../../../../components/booking/BookingQrSheet';
 
 function formatWhen(value?: string | null): string {
   if (!value) return '—';
@@ -33,6 +36,7 @@ export default function TransportBookingDetailPage() {
   const [booking, setBooking] = useState<TransportBooking | null>(null);
   const [eligibility, setEligibility] = useState<CancellationEligibility | null>(null);
   const [showCancelModal, setShowCancelModal] = useState(false);
+  const [qrOpen, setQrOpen] = useState(false);
 
   const primary = isDark ? theme.colors['primary-dark'] : theme.colors.primary;
   const errorColor = isDark ? theme.colors['error-dark'] : theme.colors.error;
@@ -94,111 +98,119 @@ export default function TransportBookingDetailPage() {
 
   const showCancel = shouldFetchCancellationEligibility(booking.status);
   const unpaid = booking.paymentStatus === 'UNPAID' && booking.status !== 'CANCELLED';
+  const cover = profilePhotoUri(booking.transport?.images?.[0]?.url);
+  const leave = () => {
+    if (router.canGoBack()) {
+      router.back();
+      return;
+    }
+    router.replace('/(tabs)/dashboard/transport-bookings');
+  };
+  const vehicle = booking.items?.find((item) => item.transportVehicle)?.transportVehicle;
 
   return (
     <SafeAreaView className="flex-1 bg-background dark:bg-background-dark">
-      <View className="flex-row items-center px-4 py-3">
-        <Pressable onPress={() => {
-          if (router.canGoBack()) {
-            router.back();
-            return;
-          }
-          router.replace('/(tabs)/dashboard/transport-bookings');
-        }} className="p-2 mr-2">
-          <Ionicons name="chevron-back" size={24} color={textColor} />
-        </Pressable>
-        <Text className="text-xl font-bold text-text dark:text-text-dark">
-          {t(TRANSLATION_KEYS.TRANSPORT_BOOKING.DETAILS)}
-        </Text>
-      </View>
-      <ScrollView className="px-4" contentContainerStyle={{ paddingBottom: 140 }}>
-        <Text className="text-lg font-bold text-text dark:text-text-dark">
-          {booking.transport?.name || booking.transportType}
-        </Text>
-        <Text className="mt-1 text-sm text-muted dark:text-muted-dark">{booking.confirmationCode}</Text>
-        <View className="mt-3">
-          <PaymentStatusBadge status={booking.paymentStatus} />
-        </View>
-        <Text className="mt-4 text-sm text-muted dark:text-muted-dark">
-          {t(TRANSLATION_KEYS.TRANSPORT_BOOKING.ROUTE)}
-        </Text>
-        <Text className="text-text dark:text-text-dark">
-          {booking.departureLocation} → {booking.arrivalLocation}
-        </Text>
-        <Text className="mt-3 text-sm text-muted dark:text-muted-dark">
-          {t(TRANSLATION_KEYS.TRANSPORT_BOOKING.DEPARTURE)}
-        </Text>
-        <Text className="text-text dark:text-text-dark">{formatWhen(booking.departureDateTime)}</Text>
-        <Text className="mt-3 text-sm text-muted dark:text-muted-dark">
-          {t(TRANSLATION_KEYS.TRANSPORT_BOOKING.ARRIVAL)}
-        </Text>
-        <Text className="text-text dark:text-text-dark">{formatWhen(booking.arrivalDateTime)}</Text>
-        {booking.seatNumber ? (
-          <>
-            <Text className="mt-3 text-sm text-muted dark:text-muted-dark">
-              {t(TRANSLATION_KEYS.TRANSPORT_BOOKING.SEATS)}
-            </Text>
-            <Text className="text-text dark:text-text-dark">{booking.seatNumber}</Text>
-          </>
-        ) : null}
-        {booking.boardingStop?.name ? (
-          <>
-            <Text className="mt-3 text-sm text-muted dark:text-muted-dark">
-              {t(TRANSLATION_KEYS.TRANSPORT_BOOKING.BOARDING)}
-            </Text>
-            <Text className="text-text dark:text-text-dark">{booking.boardingStop.name}</Text>
-          </>
-        ) : null}
-        {booking.droppingStop?.name ? (
-          <>
-            <Text className="mt-3 text-sm text-muted dark:text-muted-dark">
-              {t(TRANSLATION_KEYS.TRANSPORT_BOOKING.DROPPING)}
-            </Text>
-            <Text className="text-text dark:text-text-dark">{booking.droppingStop.name}</Text>
-          </>
-        ) : null}
-        {booking.contactPhone || booking.contactEmail ? (
-          <>
-            <Text className="mt-3 text-sm text-muted dark:text-muted-dark">
-              {t(TRANSLATION_KEYS.TRANSPORT_BOOKING.CONTACT)}
-            </Text>
-            {booking.contactPhone ? (
-              <Text className="text-text dark:text-text-dark">{booking.contactPhone}</Text>
-            ) : null}
-            {booking.contactEmail ? (
-              <Text className="text-text dark:text-text-dark">{booking.contactEmail}</Text>
-            ) : null}
-          </>
-        ) : null}
-        {booking.items && booking.items.length > 0 ? (
-          <>
-            <Text className="mt-3 text-sm text-muted dark:text-muted-dark">
-              {t(TRANSLATION_KEYS.TRANSPORT_BOOKING.PASSENGERS)}
-            </Text>
-            {booking.items.map((item) => (
-              <Text key={item.id} className="text-text dark:text-text-dark">
-                {item.passengerName || item.assignedSeatLabel}
-                {item.passengerGender ? ` · ${item.passengerGender}` : ''}
-              </Text>
-            ))}
-          </>
-        ) : null}
-        {booking.linkedLegBookingId ? (
+      <ScrollView contentContainerStyle={{ paddingBottom: 150 }}>
+        <View style={{ height: 180, backgroundColor: isDark ? theme.colors['surface-2-dark'] : theme.colors['surface-2'] }}>
+          {cover ? (
+            <Image source={{ uri: cover }} style={{ width: '100%', height: 180 }} resizeMode="cover" accessibilityRole="image" />
+          ) : (
+            <View className="items-center justify-center flex-1">
+              <Ionicons name="ticket-outline" size={40} color={mutedColor} />
+            </View>
+          )}
           <Pressable
-            onPress={() =>
-              router.push({
-                pathname: '/(tabs)/dashboard/transport-bookings/[bookingId]',
-                params: { bookingId: booking.linkedLegBookingId as string },
-              })
-            }
-            className="mt-4"
+            onPress={leave}
+            accessibilityRole="button"
+            accessibilityLabel={t(TRANSLATION_KEYS.COMMON.BACK)}
+            className="absolute items-center justify-center w-10 h-10 rounded-full"
+            style={{ top: 12, left: 12, backgroundColor: 'rgba(255,255,255,0.92)' }}
           >
-            <Text style={{ color: primary }}>{t(TRANSLATION_KEYS.TRANSPORT_BOOKING.OPEN_LINKED_LEG)}</Text>
+            <Ionicons name="chevron-back" size={22} color={theme.colors.text} />
           </Pressable>
-        ) : null}
-        <Text className="mt-3 text-lg font-bold text-text dark:text-text-dark">৳{booking.totalPrice}</Text>
+        </View>
+
+        <View className="px-4 pt-4">
+          <Text className="text-2xl font-bold text-text dark:text-text-dark">
+            {booking.transport?.name || booking.transportType}
+          </Text>
+          <Text className="mt-1 text-sm text-muted dark:text-muted-dark">
+            {booking.departureLocation} → {booking.arrivalLocation}
+          </Text>
+          <View className="flex-row items-center justify-between mt-3">
+            <View className="flex-1 pr-3">
+              <Text className="text-xs text-muted dark:text-muted-dark">{t(TRANSLATION_KEYS.BOOKING.CONFIRMATION_CODE)}</Text>
+              <Text className="text-sm font-semibold text-text dark:text-text-dark">{booking.confirmationCode}</Text>
+            </View>
+            <Pressable
+              onPress={() => setQrOpen(true)}
+              accessibilityRole="button"
+              accessibilityLabel={t(TRANSLATION_KEYS.BOOKING.QR_CODE)}
+              className="flex-row items-center px-3 py-2 rounded-full"
+              style={{ backgroundColor: isDark ? theme.colors['surface-2-dark'] : theme.colors['surface-2'] }}
+            >
+              <Ionicons name="qr-code" size={20} color={primary} />
+              <Text className="ml-2 text-sm font-bold" style={{ color: primary }}>{t(TRANSLATION_KEYS.BOOKING.QR_CODE)}</Text>
+            </Pressable>
+          </View>
+          <View className="flex-row items-center mt-3">
+            <Text className="mr-2 text-sm font-semibold text-text dark:text-text-dark">{booking.status}</Text>
+            <PaymentStatusBadge status={booking.paymentStatus} />
+          </View>
+        </View>
+
+        <DetailCard title={t(TRANSLATION_KEYS.TRANSPORT_BOOKING.ROUTE)}>
+          <DetailRow label={t(TRANSLATION_KEYS.TRANSPORT_BOOKING.TYPE)} value={booking.transportType} />
+          <DetailRow label={t(TRANSLATION_KEYS.TRANSPORT_BOOKING.DEPARTURE)} value={`${booking.departureLocation} · ${formatWhen(booking.departureDateTime)}`} />
+          <DetailRow label={t(TRANSLATION_KEYS.TRANSPORT_BOOKING.ARRIVAL)} value={`${booking.arrivalLocation} · ${formatWhen(booking.arrivalDateTime)}`} />
+          <DetailRow label={t(TRANSLATION_KEYS.TRANSPORT_BOOKING.BOARDING)} value={booking.boardingStop?.name} />
+          <DetailRow label={t(TRANSLATION_KEYS.TRANSPORT_BOOKING.DROPPING)} value={booking.droppingStop?.name} />
+        </DetailCard>
+
+        <DetailCard title={t(TRANSLATION_KEYS.TRANSPORT_BOOKING.PASSENGERS)}>
+          <DetailRow label={t(TRANSLATION_KEYS.TRANSPORT_BOOKING.PASSENGER_COUNT)} value={booking.passengerCount} />
+          <DetailRow label={t(TRANSLATION_KEYS.TRANSPORT_BOOKING.SEATS)} value={booking.seatNumber} />
+          <DetailRow label={t(TRANSLATION_KEYS.TRANSPORT_BOOKING.CLASS)} value={booking.serviceClass} />
+          <DetailRow label={t(TRANSLATION_KEYS.TRANSPORT_BOOKING.VEHICLE)} value={[vehicle?.name, vehicle?.licensePlate].filter(Boolean).join(' · ')} />
+          {booking.items?.map((item) => (
+            <Text key={item.id} className="py-1 text-sm text-text dark:text-text-dark">
+              {[item.passengerName || [item.passengerFirstName, item.passengerLastName].filter(Boolean).join(' '), item.assignedSeatLabel || item.transportSeat?.seatLabel, item.serviceClassLabel || item.transportClass?.name, item.passengerGender].filter(Boolean).join(' · ')}
+            </Text>
+          ))}
+        </DetailCard>
+
+        <DetailCard title={t(TRANSLATION_KEYS.TRANSPORT_BOOKING.OPERATOR)}>
+          <DetailRow label={t(TRANSLATION_KEYS.TRANSPORT_BOOKING.OPERATOR)} value={booking.transport?.name} />
+          <DetailRow label={t(TRANSLATION_KEYS.TRANSPORT_BOOKING.CONTACT)} value={[booking.contactPhone, booking.contactEmail].filter(Boolean).join(' · ')} />
+          <DetailRow label={t(TRANSLATION_KEYS.DASHBOARD.ATTRACTION_BOOKINGS.PHONE)} value={booking.transport?.phoneNumber} />
+          <DetailRow label={t(TRANSLATION_KEYS.BOOKING.EMAIL)} value={booking.transport?.contactEmail} />
+        </DetailCard>
+
+        <DetailCard>
+          <DetailRow label={t(TRANSLATION_KEYS.BOOKING.TOTAL_PRICE)} value={`৳${booking.totalPrice}`} />
+          <DetailRow label={t(TRANSLATION_KEYS.TRANSPORT_BOOKING.PAYMENT)} value={booking.paymentMethod || booking.paymentStatus} />
+          <DetailRow label={t(TRANSLATION_KEYS.TRANSPORT_BOOKING.BOOKED_ON)} value={formatWhen(booking.bookedAt)} />
+          <DetailRow label={t(TRANSLATION_KEYS.TRANSPORT_BOOKING.REQUESTS)} value={booking.specialRequests} />
+          {booking.cancellationReason ? (
+            <DetailRow label={t(TRANSLATION_KEYS.BOOKING.CANCEL)} value={booking.cancellationReason} />
+          ) : null}
+          {booking.linkedLegBookingId ? (
+            <Pressable
+              onPress={() =>
+                router.push({
+                  pathname: '/(tabs)/bookings/ticket/[bookingId]',
+                  params: { bookingId: booking.linkedLegBookingId as string },
+                })
+              }
+              className="py-2"
+            >
+              <Text style={{ color: primary }}>{t(TRANSLATION_KEYS.TRANSPORT_BOOKING.OPEN_LINKED_LEG)}</Text>
+            </Pressable>
+          ) : null}
+        </DetailCard>
+
         {showCancel && eligibility ? (
-          <View className="mt-6">
+          <View className="mx-3 mt-3">
             <CancellationEligibilityPreview
               eligibility={eligibility}
               t={t}
@@ -283,6 +295,7 @@ export default function TransportBookingDetailPage() {
           </View>
         </View>
       </Modal>
+      <BookingQrSheet visible={qrOpen} mode="unsupported" onClose={() => setQrOpen(false)} />
     </SafeAreaView>
   );
 }

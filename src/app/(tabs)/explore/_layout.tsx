@@ -5,10 +5,12 @@ import { HotelSearchProvider } from '../../../context/HotelSearchContext';
 import { TransportBusCheckoutProvider } from '../../../context/TransportBusCheckoutContext';
 import { TransportSearchProvider } from '../../../context/TransportSearchContext';
 import { useHotelFlowTabBar } from '../../../hooks/useHideTabBar';
+import { useIsTraveler } from '../../../hooks/useIsTraveler';
 
 export default function ExploreLayout() {
   const pathname = usePathname();
-  useHotelFlowTabBar(pathname);
+  const traveler = useIsTraveler();
+  useHotelFlowTabBar(pathname, traveler);
 
   return (
     <ExploreProvider>

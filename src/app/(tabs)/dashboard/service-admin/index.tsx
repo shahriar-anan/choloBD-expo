@@ -23,6 +23,7 @@ export default function ServiceAdminIndex() {
 
   useEffect(() => {
     const load = async () => {
+      let openedHotel = false;
       try {
         setLoading(true);
         console.log('[ServiceAdminIndex] ▶️ Starting load...');
@@ -35,6 +36,12 @@ export default function ServiceAdminIndex() {
 
         const res = await fetchMyHotel();
         const hotelsList = Array.isArray(res) ? res : [];
+
+        if (hotelsList.length === 1 && hotelsList[0]?.id) {
+          openedHotel = true;
+          router.replace(`/(tabs)/dashboard/service-admin/hotel-info?hotelId=${hotelsList[0].id}`);
+          return;
+        }
 
         if (hotelsList.length === 0) {
           setMessage(null);
@@ -58,12 +65,12 @@ export default function ServiceAdminIndex() {
         }
         setHotels([]);
       } finally {
-        setLoading(false);
+        if (!openedHotel) setLoading(false);
         console.log('[ServiceAdminIndex] ✅ Load complete');
       }
     };
     load();
-  }, [auth.user?.id, fetchMyHotel, t]);
+  }, [auth.user?.id, fetchMyHotel, router, t]);
 
   return (
     <SafeAreaView edges={["top", "bottom"]} className="flex-1 bg-background dark:bg-background-dark">

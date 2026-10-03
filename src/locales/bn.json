@@ -5,10 +5,55 @@
   },
   "tabs": {
     "homepage": "হোমপেজ",
+    "home": "হোম",
     "explore": "অন্বেষণ",
     "dashboard": "ড্যাশবোর্ড",
     "tracking": "ট্র্যাকিং",
-    "tripPlanner": "ভ্রমণ পরিকল্পনাকারী"
+    "tripPlanner": "ভ্রমণ পরিকল্পনাকারী",
+    "bookings": "বুকিং",
+    "notifications": "বিজ্ঞপ্তি",
+    "profile": "প্রোফাইল"
+  },
+  "bookingsTab": {
+    "title": "বুকিং",
+    "all": "সব",
+    "hotels": "হোটেল",
+    "tickets": "টিকিট",
+    "activities": "অ্যাক্টিভিটি",
+    "empty": "এখনও কোনো বুকিং নেই",
+    "findHotel": "হোটেল খুঁজুন",
+    "findTransport": "বাস খুঁজুন",
+    "findAttractions": "দর্শনীয় স্থান"
+  },
+  "hotelDesk": {
+    "arriving": "আগত",
+    "inHouse": "অবস্থানরত",
+    "departing": "প্রস্থান",
+    "unpaid": "বকেয়া",
+    "all": "সব",
+    "loadFailed": "আজকের হিসাব লোড হয়নি।",
+    "search": "অতিথি, কোড, বা রুম খুঁজুন",
+    "empty": "এই তালিকায় কোনো বুকিং নেই",
+    "emptySearch": "আপনার খোঁজের সাথে কোনো বুকিং মেলেনি",
+    "clearSearch": "খোঁজ মুছুন",
+    "subtitle": "আপনার হোটেলের বুকিং",
+    "earningsLink": "পরিশোধিত, বকেয়া, এবং ফেরতের হিসাব দেখুন।",
+    "loading": "বুকিং লোড হচ্ছে..."
+  },
+  "profile": {
+    "title": "প্রোফাইল",
+    "greeting": "হ্যালো, {{name}}",
+    "sectionAccount": "অ্যাকাউন্ট",
+    "sectionPreferences": "পছন্দ",
+    "appearance": "চেহারা",
+    "appearanceSystem": "সিস্টেম",
+    "appearanceLight": "লাইট",
+    "appearanceDark": "ডার্ক",
+    "about": "সম্পর্কে",
+    "tracking": "ট্র্যাকিং",
+    "offers": "অফার",
+    "community": "কমিউনিটি",
+    "help": "সহায়তা"
   },
   "common": {
     "loading": "লোড হচ্ছে...",
@@ -430,6 +475,7 @@
     "welcomeBack": "আপনাকে স্বাগতম,",
     "userTitle": "আমার ড্যাশবোর্ড",
     "adminTitle": "মালিক ড্যাশবোর্ড",
+    "settings": "সেটিংস",
     "yourBookings": "আপনার বুকিং",
     "recentStays": "সাম্প্রতিক থাকার ব্যবস্থা",
     "recentBookings": "সাম্প্রতিক বুকিং",
@@ -446,7 +492,9 @@
     "notifications": {
       "title": "বিজ্ঞপ্তি",
       "markAllRead": "সব পড়া হিসেবে চিহ্নিত করুন",
-      "empty": "কোনো বিজ্ঞপ্তি নেই"
+      "empty": "কোনো বিজ্ঞপ্তি নেই",
+      "today": "আজ",
+      "earlier": "আগের"
     },
     "userInfo": {
       "role": "ভূমিকা",
@@ -476,6 +524,12 @@
       "qrScannerDesc": "অতিথি চেক-ইন কোড স্ক্যান করুন",
       "complaints": "অভিযোগ",
       "complaintsDesc": "আপনার হোটেলের অতিথি অভিযোগ",
+      "today": "আজ",
+      "todayDesc": "আগমন, অবস্থানরত অতিথি, প্রস্থান এবং বকেয়া থাকার হিসাব",
+      "earnings": "আয়",
+      "earningsDesc": "লোড করা বুকিং থেকে পরিশোধিত, বকেয়া এবং ফেরতের যোগফল",
+      "weekAvailability": "সপ্তাহের খালি রুম",
+      "weekAvailabilityDesc": "প্রতিদিন ও প্রতি শিফটে খালি রুম",
       "notifications": "বিজ্ঞপ্তি",
       "staffInfo": "কর্মচারী / কর্মী তথ্য",
       "staffInfoDesc": "আপনার কর্মচারীদের পরিচালনা করুন",
@@ -528,7 +582,23 @@
       "participants": "অংশগ্রহণকারী",
       "travelers": "ভ্রমণকারী",
       "date": "তারিখ",
-      "time": "সময়"
+      "time": "সময়",
+      "status": "অবস্থা",
+      "location": "স্থান",
+      "requests": "বিশেষ অনুরোধ",
+      "requirements": "শর্ত",
+      "instructions": "যা জানা দরকার",
+      "hours": "সময়সূচি",
+      "duration": "সময়কাল",
+      "phone": "ফোন",
+      "perPerson": "প্রতিজনের মূল্য",
+      "about": "সম্পর্কে",
+      "bestTime": "যাওয়ার ভালো সময়",
+      "age": "বয়স",
+      "entry": "প্রবেশ",
+      "languages": "ভাষা",
+      "experience": "অভিজ্ঞতা",
+      "qrHint": "পৌঁছালে এই কোড দেখান"
     },
     "userCards": {
       "myBookings": "হোটেল বুকিং",
@@ -558,6 +628,8 @@
     "cancel": "বুকিং বাতিল করুন",
     "generateQr": "QR কোড",
     "qrCode": "QR কোড",
+    "qrNotSupportedTitle": "QR এখনো নেই",
+    "qrNotSupportedBody": "এই বুকিংয়ের জন্য QR চেক-ইন এখনো সমর্থিত নয়।",
     "filterAll": "সব",
     "filterUnpaid": "অপরিশোধিত",
     "filterConfirmed": "নিশ্চিত",
@@ -741,7 +813,14 @@
     "contact": "যোগাযোগ",
     "passengers": "যাত্রী",
     "linkedLeg": "সংযুক্ত ফেরার টিকিট",
-    "openLinkedLeg": "সংযুক্ত বুকিং দেখুন"
+    "openLinkedLeg": "সংযুক্ত বুকিং দেখুন",
+    "type": "ধরন",
+    "class": "শ্রেণি",
+    "passengerCount": "যাত্রী",
+    "requests": "বিশেষ অনুরোধ",
+    "payment": "পেমেন্ট",
+    "operator": "অপারেটর",
+    "bookedOn": "বুক করার তারিখ"
   },
   "hotelSearch": {
     "title": "হোটেল",

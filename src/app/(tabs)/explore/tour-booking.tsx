@@ -17,6 +17,7 @@ import { usePackageBookingLogic } from '../../../hooks/usePackageBookingLogic';
 import { useTheme } from '../../../hooks/useTheme';
 import { theme } from '../../../constants/theme';
 import { TRANSLATION_KEYS } from '../../../constants/translationKeys';
+import { roleBookings } from '../../../utilities/travelerShell';
 
 console.log('[TourBookingPage] Component loaded');
 
@@ -28,6 +29,7 @@ export default function TourBookingPage() {
   const dispatch = useDispatch<AppDispatch>();
 
   const { detail: tourPackage, detailLoading } = useSelector((state: RootState) => state.tourBuilder);
+  const role = useSelector((state: RootState) => state.auth.user?.role);
   const {
     handlePurchase,
     purchaseLoading,
@@ -76,7 +78,7 @@ export default function TourBookingPage() {
   const handleCloseSuccessModal = () => {
     setShowSuccessModal(false);
     clearLastPurchased();
-    router.replace('/(tabs)/dashboard');
+    router.replace(roleBookings(role));
   };
 
   const handleBack = () => {

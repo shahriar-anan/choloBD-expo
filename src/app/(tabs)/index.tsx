@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, ScrollView, Alert } from 'react-native';
+import { View, ScrollView, Alert, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useDispatch, useSelector } from 'react-redux';
 import { useRouter } from 'expo-router';
@@ -17,8 +17,10 @@ import {
   HomeCommunityRow,
 } from '../../components/homepage';
 import { useFetchTourPackages } from '../../hooks/useFetchTourPackages';
+import { useHotelAdminSession } from '../../hooks/useHotelAdminSession';
+import { HotelDeskHome } from '../../components/hotel/HotelDeskHome';
 
-export default function HomePage() {
+function TravelerHome() {
   const dispatch = useDispatch<AppDispatch>();
   const router = useRouter();
   const auth = useSelector((s: RootState) => s.auth);
@@ -104,9 +106,23 @@ export default function HomePage() {
         />
         <HomeCommunityRow />
 
-        {/* Bottom Spacing */}
-        <View className="h-10" />
+        <View style={{ height: 120 }} />
       </ScrollView>
     </SafeAreaView>
   );
+}
+
+export default function HomePage() {
+  const { isHotelAdmin, pending } = useHotelAdminSession();
+  if (pending) {
+    return (
+      <View className="items-center justify-center flex-1 bg-background dark:bg-background-dark">
+        <ActivityIndicator />
+      </View>
+    );
+  }
+  if (isHotelAdmin) {
+    return <HotelDeskHome />;
+  }
+  return <TravelerHome />;
 }

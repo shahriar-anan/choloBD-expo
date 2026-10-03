@@ -4,10 +4,12 @@
 
 import { Stack, usePathname } from 'expo-router';
 import { useTripPlannerTabBar } from '../../../hooks/useHideTabBar';
+import { useIsTraveler } from '../../../hooks/useIsTraveler';
 
 export default function TripPlannerLayout() {
   const pathname = usePathname();
-  useTripPlannerTabBar(pathname);
+  const traveler = useIsTraveler();
+  useTripPlannerTabBar(pathname, traveler);
 
   return (
     <Stack

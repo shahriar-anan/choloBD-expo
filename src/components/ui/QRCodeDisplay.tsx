@@ -8,6 +8,7 @@ interface QRCodeDisplayProps {
   qrToken: string;
   size?: number;
   label?: string;
+  hint?: string;
   expiresAt?: string;
 }
 
@@ -15,6 +16,7 @@ export const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({
   qrToken,
   size = 300,
   label = 'Check-in QR Code',
+  hint = 'Show this code to hotel staff at check-in',
   expiresAt,
 }) => {
   const { isDark } = useTheme();
@@ -24,7 +26,7 @@ export const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({
   return (
     <View className="items-center p-6 bg-white dark:bg-surface-dark rounded-2xl border" style={{ borderColor: primaryColor, borderWidth: 1 }}>
       <Text className="text-lg font-semibold text-text dark:text-text-dark mb-1">{label}</Text>
-      <Text className="text-xs text-muted dark:text-muted-dark mb-6">Show this code to hotel staff at check-in</Text>
+      <Text className="text-xs text-muted dark:text-muted-dark mb-6">{hint}</Text>
 
       <View
         className="bg-white p-4 rounded-2xl"

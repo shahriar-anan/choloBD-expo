@@ -9,6 +9,9 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useSelector } from 'react-redux';
+import type { RootState } from '@/store/store';
+import { roleBookings } from '@/utilities/travelerShell';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/hooks/useTheme';
 import theme from '@/constants/theme';
@@ -24,6 +27,7 @@ export default function ExplorePaymentScreen() {
   const { t } = useTranslation();
   const { isDark } = useTheme();
   const router = useRouter();
+  const role = useSelector((state: RootState) => state.auth.user?.role);
   const { lastBookingResult, hotelDetail, checkInDate, checkOutDate, clearAllAndGoToSearch } =
     useExplore();
   const { startPayment } = usePaymentLogic();
@@ -103,12 +107,12 @@ export default function ExplorePaymentScreen() {
 
   const handlePayLater = () => {
     clearAllAndGoToSearch();
-    router.replace('/(tabs)/dashboard');
+    router.replace(roleBookings(role));
   };
 
   const handleGoToDashboard = () => {
     clearAllAndGoToSearch();
-    router.replace('/(tabs)/dashboard');
+    router.replace(roleBookings(role));
   };
 
   if (!lastBookingResult) {

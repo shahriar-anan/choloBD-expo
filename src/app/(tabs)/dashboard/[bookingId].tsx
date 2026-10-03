@@ -2,6 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, ScrollView, ActivityIndicator, Pressable, Modal, Alert, Image } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useSelector } from 'react-redux';
+import { RootState } from '../../../store/store';
+import { roleHome } from '../../../utilities/travelerShell';
 import { Ionicons } from '@expo/vector-icons';
 import { useBookingLogic } from '../../../hooks/useBookingLogic';
 import { useTheme } from '../../../hooks/useTheme';
@@ -30,6 +33,7 @@ export default function BookingTrackingPage() {
   const params = useLocalSearchParams();
   const bookingId = params.bookingId as string | undefined;
   const router = useRouter();
+  const role = useSelector((state: RootState) => state.auth.user?.role);
   const insets = useSafeAreaInsets();
   const { isDark } = useTheme();
   const { t } = useTranslation();
@@ -172,7 +176,11 @@ export default function BookingTrackingPage() {
       cancelEdit();
       return;
     }
-    router.replace('/(tabs)/dashboard');
+    if (router.canGoBack()) {
+      router.back();
+      return;
+    }
+    router.replace(roleHome(role));
   };
 
   const cancelModal = (

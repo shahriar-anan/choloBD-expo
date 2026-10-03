@@ -13,6 +13,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { registerSchema, RegisterForm } from '../../validators/auth';
 import AppBrandSection from '../../components/homepage/AppBrandSection';
 import { TRANSLATION_KEYS } from '../../constants/translationKeys';
+import { resolveRoleHome } from '../../utilities/travelerShell';
 import { useGoogleSignIn } from '../../hooks/useGoogleSignIn';
 import { useFacebookSignIn } from '../../hooks/useFacebookSignIn';
 
@@ -46,10 +47,19 @@ export default function Register() {
   };
 
   useEffect(() => {
-    if (auth.isAuthenticated) {
-      router.replace('/(tabs)/dashboard');
+    if (!auth.isAuthenticated || !auth.user) {
+      return;
     }
-  }, [auth.isAuthenticated, auth.isLoading, auth.error]);
+    let active = true;
+    void resolveRoleHome(auth.user.role, auth.user.id).then((path) => {
+      if (active) {
+        router.replace(path);
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, [auth.isAuthenticated, auth.user?.id, auth.user?.role, router]);
 
   useEffect(() => {
     return () => {

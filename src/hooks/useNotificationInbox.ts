@@ -7,7 +7,12 @@ import {
 } from '../services/api/notifications';
 import { AppNotification } from '../types/notification';
 
-export function useNotificationInbox() {
+interface InboxOptions {
+  traveler?: boolean;
+}
+
+export function useNotificationInbox(options?: InboxOptions) {
+  const traveler = options?.traveler === true;
   const router = useRouter();
   const [items, setItems] = useState<AppNotification[]>([]);
   const [loading, setLoading] = useState(true);
@@ -42,14 +47,35 @@ export function useNotificationInbox() {
       }
     }
 
-    if (item.relatedEntityType === 'HOTEL_BOOKING' && item.relatedEntityId) {
-      router.push(`/(tabs)/dashboard/${item.relatedEntityId}`);
+    const entityId = item.relatedEntityId;
+    const entityType = item.relatedEntityType;
+    if (traveler) {
+      if (entityType === 'HOTEL_BOOKING' && entityId) {
+        router.push(`/(tabs)/bookings/stay/${entityId}`);
+        return;
+      }
+      if ((entityType === 'TRANSPORT_BOOKING' || entityType === 'TRANSPORT_SERVICE') && entityId) {
+        router.push(`/(tabs)/bookings/ticket/${entityId}`);
+        return;
+      }
+      if (entityType === 'ACTIVITY_BOOKING' && entityId) {
+        router.push({ pathname: '/(tabs)/bookings/activity/[bookingId]', params: { bookingId: entityId, kind: 'activity' } });
+        return;
+      }
+      if ((entityType === 'GUIDE_SERVICE' || entityType === 'GUIDE_BOOKING') && entityId) {
+        router.push({ pathname: '/(tabs)/bookings/activity/[bookingId]', params: { bookingId: entityId, kind: 'guide' } });
+      }
       return;
     }
-    if (item.relatedEntityType === 'PACKAGE_BOOKING') {
+
+    if (entityType === 'HOTEL_BOOKING' && entityId) {
+      router.push(`/(tabs)/dashboard/${entityId}`);
+      return;
+    }
+    if (entityType === 'PACKAGE_BOOKING') {
       router.push('/(tabs)/dashboard');
     }
-  }, [router]);
+  }, [router, traveler]);
 
   const markAllRead = useCallback(async () => {
     setMarkingAll(true);
@@ -69,5 +95,6 @@ export function useNotificationInbox() {
     markingAll,
     openNotification,
     markAllRead,
+    load,
   };
 }

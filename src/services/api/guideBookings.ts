@@ -16,10 +16,20 @@ export interface GuideBookingRecord {
   status: string;
   paymentStatus: string;
   specialRequests?: string | null;
+  specialRequirements?: string | null;
+  price?: number | null;
+  paymentMethod?: string | null;
+  bookedAt?: string | null;
   guide?: {
     id: string;
     firstName?: string | null;
     lastName?: string | null;
+    bio?: string | null;
+    languages?: string[] | null;
+    experienceYears?: number | null;
+    pricePerDay?: number | null;
+    phoneNumber?: string | null;
+    contactEmail?: string | null;
     location?: { name?: string | null } | null;
     images?: { url?: string | null }[];
   } | null;

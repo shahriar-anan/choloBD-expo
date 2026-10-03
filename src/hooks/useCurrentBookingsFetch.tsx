@@ -52,6 +52,7 @@ export function useCurrentBookingsFetch(limit = 20): UseCurrentBookingsFetchRetu
   const [currentPage, setCurrentPage] = useState(1);
   const [hotels, setHotels] = useState<AssignedHotel[]>([]);
   const [hotelId, setHotelId] = useState<string | null>(null);
+  const [reloadToken, setReloadToken] = useState(0);
 
   // Fetch bookings from API
   const fetchBookings = useCallback(async (hId: string, page: number) => {
@@ -109,7 +110,7 @@ export function useCurrentBookingsFetch(limit = 20): UseCurrentBookingsFetchRetu
     return () => {
       mounted = false;
     };
-  }, [fetchBookings]);
+  }, [fetchBookings, reloadToken]);
 
   // Refetch when page changes
   useEffect(() => {
@@ -119,9 +120,11 @@ export function useCurrentBookingsFetch(limit = 20): UseCurrentBookingsFetchRetu
   }, [currentPage, fetchBookings, hotelId]);
 
   const refetch = useCallback(async () => {
-    if (hotelId) {
-      await fetchBookings(hotelId, currentPage);
+    if (!hotelId) {
+      setReloadToken((value) => value + 1);
+      return;
     }
+    await fetchBookings(hotelId, currentPage);
   }, [hotelId, currentPage, fetchBookings]);
 
   const selectHotel = useCallback((nextHotelId: string) => {

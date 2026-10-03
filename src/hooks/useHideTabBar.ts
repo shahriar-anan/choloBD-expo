@@ -1,18 +1,40 @@
 import { useCallback } from 'react';
-import { Platform, type ViewStyle } from 'react-native';
+import { type ViewStyle } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from './useTheme';
 import theme from '../constants/theme';
 
+export const TAB_BAR_HEIGHT = 52;
+const TAB_BAR_FLOAT_GAP = 14;
+
 export function tabBarScreenStyle(isDark: boolean, bottomInset: number): ViewStyle {
     return {
-        borderTopColor: isDark ? theme.colors['border-dark'] : theme.colors.border,
+        position: 'absolute',
+        start: 16,
+        end: 16,
+        left: 16,
+        right: 16,
+        bottom: bottomInset + TAB_BAR_FLOAT_GAP,
+        height: TAB_BAR_HEIGHT,
+        paddingTop: 4,
+        paddingBottom: 4,
+        paddingHorizontal: 0,
+        borderRadius: TAB_BAR_HEIGHT / 2,
+        borderTopWidth: 0,
         backgroundColor: isDark ? theme.colors['surface-dark'] : theme.colors.surface,
-        height: 60 + bottomInset,
-        paddingBottom: Platform.OS === 'ios' ? bottomInset : bottomInset + 8,
         display: 'flex',
+        overflow: 'hidden',
+        elevation: 6,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
     };
+}
+
+export function tabBarClearance(bottomInset: number): number {
+    return TAB_BAR_HEIGHT + bottomInset + TAB_BAR_FLOAT_GAP + 12;
 }
 
 const hiddenTabBarStyle: ViewStyle = { display: 'none', height: 0, overflow: 'hidden' };
@@ -82,12 +104,12 @@ export function isTripPlannerDetailTabBarHidden(pathname: string): boolean {
     return !tripPlannerListSegments.has(match[1]);
 }
 
-export function useTripPlannerTabBar(pathname: string): void {
+export function useTripPlannerTabBar(pathname: string, forceHide = false): void {
     const navigation = useNavigation();
     const insets = useSafeAreaInsets();
     const { isDark } = useTheme();
     const bottomInset = insets.bottom ?? 0;
-    const hidden = isTripPlannerDetailTabBarHidden(pathname);
+    const hidden = forceHide || isTripPlannerDetailTabBarHidden(pathname);
 
     useFocusEffect(
         useCallback(() => {
@@ -135,12 +157,29 @@ export function useDashboardBookingTabBar(pathname: string): void {
     );
 }
 
-export function useHotelFlowTabBar(pathname: string): void {
+export function usePathTabBar(hidden: boolean): void {
     const navigation = useNavigation();
     const insets = useSafeAreaInsets();
     const { isDark } = useTheme();
     const bottomInset = insets.bottom ?? 0;
-    const hidden = isHotelBookingChild(pathname) || isAttractionFlow(pathname);
+
+    useFocusEffect(
+        useCallback(() => {
+            const nav = navigation as TabBarNavigation;
+            applyTabBarStyle(nav, hidden ? hiddenTabBarStyle : tabBarScreenStyle(isDark, bottomInset));
+            return () => {
+                applyTabBarStyle(nav, tabBarScreenStyle(isDark, bottomInset));
+            };
+        }, [navigation, isDark, bottomInset, hidden]),
+    );
+}
+
+export function useHotelFlowTabBar(pathname: string, forceHide = false): void {
+    const navigation = useNavigation();
+    const insets = useSafeAreaInsets();
+    const { isDark } = useTheme();
+    const bottomInset = insets.bottom ?? 0;
+    const hidden = forceHide || isHotelBookingChild(pathname) || isAttractionFlow(pathname);
 
     useFocusEffect(
         useCallback(() => {

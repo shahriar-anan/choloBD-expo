@@ -9,6 +9,9 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useSelector } from 'react-redux';
+import { RootState } from '../../../store/store';
+import { roleBookings } from '../../../utilities/travelerShell';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../../hooks/useTheme';
 import { usePaymentLogic } from '../../../hooks/usePaymentLogic';
@@ -74,6 +77,7 @@ function DetailRow({ label, value }: { label: string; value?: string | null }) {
 
 export default function TransportPaymentPage() {
   const router = useRouter();
+  const role = useSelector((state: RootState) => state.auth.user?.role);
   const { bookingId } = useLocalSearchParams<{ bookingId: string }>();
   const { t } = useTranslation();
   const { isDark } = useTheme();
@@ -151,7 +155,7 @@ export default function TransportPaymentPage() {
 
   const goToDashboard = () => {
     resetCheckout();
-    router.replace('/(tabs)/dashboard/transport-bookings');
+    router.replace(roleBookings(role));
   };
 
   const payWithSsl = async (booking: TransportBooking) => {

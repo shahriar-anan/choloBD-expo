@@ -22,9 +22,22 @@ export interface ActivityBookingRecord {
   status: string;
   paymentStatus: string;
   specialRequests?: string | null;
+  specialRequirements?: string | null;
+  price?: number | null;
+  paymentMethod?: string | null;
+  bookedAt?: string | null;
+  bookingConfirmInstruction?: string | null;
   activitySpot?: {
     id: string;
     name: string;
+    description?: string | null;
+    phoneNumber?: string | null;
+    openingHours?: string | null;
+    closingHours?: string | null;
+    duration?: string | null;
+    bestTimeToVisit?: string | null;
+    ageRestriction?: string | null;
+    entryCost?: number | null;
     location?: { name?: string | null } | null;
     images?: { url?: string | null }[];
   } | null;
@@ -63,6 +76,20 @@ export async function cancelActivityBooking(bookingId: string): Promise<void> {
     await api.delete(`/api/bookings/activity-spots/${bookingId}`);
   } catch (error: unknown) {
     throw new Error(apiMessage(error, 'Activity booking could not be cancelled'));
+  }
+}
+
+export async function generateActivityQr(bookingId: string): Promise<{ qrToken: string; expiresAt: string }> {
+  const api = getApiInstance();
+  try {
+    const response = await api.post(`/api/bookings/activity-spots/${bookingId}/qr-generate`, {});
+    const data = response.data?.data as { qrToken?: string; expiresAt?: string } | undefined;
+    if (!data?.qrToken) {
+      throw new Error(response.data?.message || 'QR code could not be created');
+    }
+    return { qrToken: data.qrToken, expiresAt: data.expiresAt || '' };
+  } catch (error: unknown) {
+    throw new Error(apiMessage(error, 'QR code could not be created'));
   }
 }
 

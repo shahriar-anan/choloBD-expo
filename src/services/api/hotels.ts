@@ -86,6 +86,30 @@ export async function createHotelRoomType(data: {
   return res.data?.data ?? null;
 }
 
+export async function fetchHotelStayAvailability(
+  hotelId: string,
+  checkInDate: string,
+  shift: 'ALL_DAY' | 'MORNING' | 'AFTERNOON' | 'NIGHT',
+): Promise<{ availableRoomsByType?: { roomTypeId: string; roomType?: string; availableRooms: number }[] } | null> {
+  const api = getApiInstance();
+  const [year, month, day] = checkInDate.split('-').map(Number);
+  const end = new Date(year, (month || 1) - 1, (day || 1) + 1);
+  const checkOutDate = [
+    end.getFullYear(),
+    String(end.getMonth() + 1).padStart(2, '0'),
+    String(end.getDate()).padStart(2, '0'),
+  ].join('-');
+  const res = await api.get(`/api/hotels/${hotelId}/availability`, {
+    params: {
+      numberOfRooms: 1,
+      checkInDate,
+      checkOutDate,
+      shift,
+    },
+  });
+  return res.data?.data ?? null;
+}
+
 export async function updateHotelRoomStatus(roomId: string, roomStatus: HotelRoomDeskStatus): Promise<any> {
   const api = getApiInstance();
   const res = await api.put(`/api/hotel-rooms/rooms/${roomId}`, { roomStatus });

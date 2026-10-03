@@ -5,10 +5,55 @@
   },
   "tabs": {
     "homepage": "Homepage",
+    "home": "Home",
     "explore": "Explore",
     "dashboard": "Dashboard",
     "tracking": "Tracking",
-    "tripPlanner": "Trip Planner"
+    "tripPlanner": "Trip Planner",
+    "bookings": "Bookings",
+    "notifications": "Notifications",
+    "profile": "Profile"
+  },
+  "bookingsTab": {
+    "title": "Bookings",
+    "all": "All",
+    "hotels": "Hotels",
+    "tickets": "Tickets",
+    "activities": "Activities",
+    "empty": "You have no bookings yet",
+    "findHotel": "Find a hotel",
+    "findTransport": "Find a bus",
+    "findAttractions": "Attractions"
+  },
+  "hotelDesk": {
+    "arriving": "Arriving",
+    "inHouse": "In house",
+    "departing": "Departing",
+    "unpaid": "Unpaid",
+    "all": "All",
+    "loadFailed": "Could not load today's house.",
+    "search": "Search guest, code, or room",
+    "empty": "No bookings in this list",
+    "emptySearch": "No bookings match your search",
+    "clearSearch": "Clear search",
+    "subtitle": "Bookings for your hotel",
+    "earningsLink": "Open earnings for paid, unpaid, and refunded totals.",
+    "loading": "Loading bookings..."
+  },
+  "profile": {
+    "title": "Profile",
+    "greeting": "Hi, {{name}}",
+    "sectionAccount": "Account",
+    "sectionPreferences": "Preferences",
+    "appearance": "Appearance",
+    "appearanceSystem": "System",
+    "appearanceLight": "Light",
+    "appearanceDark": "Dark",
+    "about": "About",
+    "tracking": "Tracking",
+    "offers": "Offers",
+    "community": "Community",
+    "help": "Help"
   },
   "common": {
     "loading": "Loading...",
@@ -430,6 +475,7 @@
     "welcomeBack": "Welcome back,",
     "userTitle": "My Dashboard",
     "adminTitle": "Owner Dashboard",
+    "settings": "Settings",
     "yourBookings": "Your bookings",
     "recentStays": "Recent Stays",
     "recentBookings": "Recent bookings",
@@ -446,7 +492,9 @@
     "notifications": {
       "title": "Notifications",
       "markAllRead": "Mark all read",
-      "empty": "No notifications"
+      "empty": "No notifications",
+      "today": "Today",
+      "earlier": "Earlier"
     },
     "userInfo": {
       "role": "Role",
@@ -476,6 +524,12 @@
       "qrScannerDesc": "Scan guest check-in codes",
       "complaints": "Complaints",
       "complaintsDesc": "Guest complaints for your hotel",
+      "today": "Today",
+      "todayDesc": "Arrivals, in-house guests, departures, and unpaid stays",
+      "earnings": "Earnings",
+      "earningsDesc": "Paid, unpaid, and refunded totals from loaded bookings",
+      "weekAvailability": "Week availability",
+      "weekAvailabilityDesc": "Rooms free for each day and shift",
       "notifications": "Notifications",
       "staffInfo": "Employee / Staff Info",
       "staffInfoDesc": "Manage your employees",
@@ -528,7 +582,23 @@
       "participants": "Participants",
       "travelers": "Travelers",
       "date": "Date",
-      "time": "Time"
+      "time": "Time",
+      "status": "Status",
+      "location": "Location",
+      "requests": "Special requests",
+      "requirements": "Requirements",
+      "instructions": "What to know",
+      "hours": "Hours",
+      "duration": "Duration",
+      "phone": "Phone",
+      "perPerson": "Price per person",
+      "about": "About",
+      "bestTime": "Best time to visit",
+      "age": "Age",
+      "entry": "Entry",
+      "languages": "Languages",
+      "experience": "Experience",
+      "qrHint": "Show this code when you arrive"
     },
     "userCards": {
       "myBookings": "Hotel Bookings",
@@ -558,6 +628,8 @@
     "cancel": "Cancel Booking",
     "generateQr": "Generate QR Code",
     "qrCode": "QR code",
+    "qrNotSupportedTitle": "QR not available",
+    "qrNotSupportedBody": "QR check-in is not supported for this booking yet.",
     "filterAll": "All",
     "filterUnpaid": "Unpaid",
     "filterConfirmed": "Confirmed",
@@ -741,7 +813,14 @@
     "contact": "Contact",
     "passengers": "Passengers",
     "linkedLeg": "Linked return ticket",
-    "openLinkedLeg": "View linked booking"
+    "openLinkedLeg": "View linked booking",
+    "type": "Type",
+    "class": "Class",
+    "passengerCount": "Passengers",
+    "requests": "Special requests",
+    "payment": "Payment",
+    "operator": "Operator",
+    "bookedOn": "Booked on"
   },
   "hotelSearch": {
     "title": "Hotels",

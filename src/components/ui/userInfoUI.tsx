@@ -14,9 +14,10 @@ interface UserInfoUIProps {
   role?: string;
   userStatus?: string;
   onLogout: () => void;
+  hideLogout?: boolean;
 }
 
-export function UserInfoUI({ userName, email, imageUrl, userStatus, onLogout }: UserInfoUIProps) {
+export function UserInfoUI({ userName, email, imageUrl, userStatus, onLogout, hideLogout = false }: UserInfoUIProps) {
   const { isDark } = useTheme();
   const { t } = useTranslation();
 
@@ -71,7 +72,7 @@ export function UserInfoUI({ userName, email, imageUrl, userStatus, onLogout }: 
             </View>
           </View>
           
-          {/* Logout Button */}
+          {hideLogout ? null : (
           <TouchableOpacity 
             onPress={onLogout} 
             className="p-3 rounded-lg" 
@@ -82,6 +83,7 @@ export function UserInfoUI({ userName, email, imageUrl, userStatus, onLogout }: 
           >
             <Ionicons name="log-out" size={20} color="white" />
           </TouchableOpacity>
+          )}
         </View>
       </View>
     </View>

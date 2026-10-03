@@ -301,7 +301,10 @@ export function BookingCard({ booking, onPress, showGenerateQr = false, showRoom
           </View>
         )}
         {footer ? (
-          <View className="pt-3 mt-3 border-t border-border dark:border-border-dark">
+          <View
+            className="pt-3 mt-3 border-t border-border dark:border-border-dark"
+            onStartShouldSetResponder={() => true}
+          >
             {footer}
           </View>
         ) : null}

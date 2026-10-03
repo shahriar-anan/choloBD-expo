@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, TextInput, Alert } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Pressable, ActivityIndicator, TextInput, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -10,6 +10,7 @@ import { useServiceAdminLogic } from '../../../../hooks/useServiceAdminLogic';
 import { updateMyHotel } from '../../../../services/api/users';
 import { createHotelRoomType, updateHotelRoomStatus, updateHotelRoomTypePrice, HotelRoomDeskStatus } from '../../../../services/api/hotels';
 import { getHotelReviews } from '../../../../services/api/reviews';
+import { formatDeskDate } from '../../../../utilities/hotelDesk';
 import {
   translateDescriptionIfNeeded,
   translateDisplayStringListIfNeeded,
@@ -18,7 +19,21 @@ import { useTheme } from '../../../../hooks/useTheme';
 import { RootState } from '../../../../store/store';
 
 const ROOM_STATUSES: HotelRoomDeskStatus[] = ['AVAILABLE', 'MAINTENANCE', 'OUT_OF_SERVICE'];
+const ROOM_STATUS_LABELS: Record<HotelRoomDeskStatus, string> = {
+  AVAILABLE: 'Ready to sell',
+  MAINTENANCE: 'Needs cleaning',
+  OUT_OF_SERVICE: 'Out of service',
+};
 const ROOM_TYPE_OPTIONS = ['SINGLE', 'DOUBLE', 'SUITE', 'DELUXE'];
+
+type HotelInfoTab = 'overview' | 'profile' | 'rooms' | 'reviews';
+
+const HOTEL_TABS: { id: HotelInfoTab; label: string }[] = [
+  { id: 'overview', label: 'Overview' },
+  { id: 'profile', label: 'Profile' },
+  { id: 'rooms', label: 'Rooms' },
+  { id: 'reviews', label: 'Reviews' },
+];
 
 function joinList(value: unknown): string {
   return Array.isArray(value) ? value.filter((item) => typeof item === 'string').join(', ') : '';
@@ -106,6 +121,7 @@ export default function HotelInfoPage() {
   const [savingProfile, setSavingProfile] = useState(false);
   const [savingRoomId, setSavingRoomId] = useState<string | null>(null);
   const [savingTypeId, setSavingTypeId] = useState<string | null>(null);
+  const [tab, setTab] = useState<HotelInfoTab>('overview');
 
   useEffect(() => {
     const load = async () => {
@@ -265,15 +281,28 @@ export default function HotelInfoPage() {
 
   return (
     <SafeAreaView edges={["top", "bottom"]} className="flex-1 bg-background dark:bg-background-dark">
-      {/* Header with Back Button */}
-      <View className="px-6 pt-4 pb-2 bg-white border-b dark:bg-surface-dark border-border dark:border-border-dark">
-        <TouchableOpacity 
-          onPress={() => router.replace('/(tabs)/dashboard/service-admin')} 
-          className="flex-row items-center mb-4"
+      <View className="px-6 pt-4 pb-3 bg-white border-b dark:bg-surface-dark border-border dark:border-border-dark">
+        <TouchableOpacity
+          onPress={() => {
+            if (router.canGoBack()) router.back();
+            else router.replace('/(tabs)/dashboard');
+          }}
+          className="flex-row items-center"
         >
           <Ionicons name="chevron-back" size={24} color={primaryColor} />
           <Text className="ml-2 font-semibold text-primary dark:text-primary-dark">Back</Text>
         </TouchableOpacity>
+        {hotel ? (
+          <View className="mt-3">
+            <Text className="text-2xl font-bold text-text dark:text-text-dark">{hotel.name}</Text>
+            <View className="flex-row items-center mt-1">
+              <Ionicons name="location" size={14} color={isDark ? theme.colors['muted-dark'] : theme.colors.muted} />
+              <Text className="ml-1 text-sm text-muted dark:text-muted-dark">
+                {hotel.location?.city ?? hotel.location?.name ?? '—'}
+              </Text>
+            </View>
+          </View>
+        ) : null}
       </View>
 
       {loading ? (
@@ -282,20 +311,62 @@ export default function HotelInfoPage() {
           <Text className="mt-3 text-sm text-muted dark:text-muted-dark">Loading hotel details...</Text>
         </View>
       ) : hotel ? (
-        <ScrollView showsVerticalScrollIndicator={false} className="flex-1">
-          <View className="px-6 py-6 pb-8">
-            
-            {/* Hotel Name & Location */}
-            <View className="mb-6">
-              <Text className="text-3xl font-bold text-text dark:text-text-dark">{hotel.name}</Text>
-              <View className="flex-row items-center mt-3">
-                <Ionicons name="location" size={16} color={isDark ? theme.colors['muted-dark'] : theme.colors.muted} />
-                <Text className="ml-2 text-sm text-muted dark:text-muted-dark">
-                  {hotel.location?.city ?? hotel.location?.name ?? '—'}
-                </Text>
-              </View>
+        <>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={{ flexGrow: 0 }}
+            contentContainerStyle={{ paddingHorizontal: 24, paddingVertical: 12, alignItems: 'center' }}
+          >
+            {HOTEL_TABS.map((item) => {
+              const selected = tab === item.id;
+              return (
+                <Pressable
+                  key={item.id}
+                  onPress={() => setTab(item.id)}
+                  className="px-4 py-2 mr-2 rounded-full"
+                  style={{
+                    backgroundColor: selected ? primaryColor : 'transparent',
+                    borderWidth: 1,
+                    borderColor: primaryColor,
+                  }}
+                >
+                  <Text style={{ color: selected ? '#fff' : primaryColor }} className="text-sm font-semibold">
+                    {item.label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+          <ScrollView showsVerticalScrollIndicator={false} className="flex-1">
+          <View className="px-6 pt-2 pb-8">
+            {tab === 'overview' ? (
+            <>
+            <View className="p-4 mb-6 bg-white border dark:bg-surface-dark rounded-xl border-border dark:border-border-dark">
+              <Text className="mb-3 font-semibold text-text dark:text-text-dark">Listing checklist</Text>
+              {[
+                { label: 'Name', complete: Boolean(hotel.name?.trim()) },
+                { label: 'Phone', complete: Boolean(hotel.phoneNumber?.trim()) },
+                { label: 'Email', complete: Boolean(hotel.email?.trim()) },
+                { label: 'Location', complete: Boolean(hotel.location?.name || hotel.location?.city) },
+                { label: 'Check-in and check-out', complete: Boolean(hotel.checkInTime && hotel.checkOutTime) },
+                { label: 'Description', complete: Boolean(hotel.description?.trim()) },
+                { label: 'Photos', complete: Array.isArray(hotel.images) && hotel.images.length > 0 },
+                { label: 'Room types', complete: (hotel.roomTypes ?? []).some((roomType: { pricePerNight?: number }) => (roomType.pricePerNight ?? 0) > 0) },
+                { label: 'Policies', complete: Boolean(policiesText.trim()) },
+              ].map((row) => (
+                <View key={row.label} className="flex-row items-center justify-between py-1">
+                  <Text className="text-sm text-text dark:text-text-dark">{row.label}</Text>
+                  <Text className={`text-sm font-semibold ${row.complete ? 'text-primary dark:text-primary-dark' : 'text-red-600 dark:text-red-300'}`}>
+                    {row.complete ? 'Complete' : 'Missing'}
+                  </Text>
+                </View>
+              ))}
             </View>
+            </>
+            ) : null}
 
+            {tab === 'profile' ? (
             <View className="p-4 mb-6 bg-white border dark:bg-surface-dark rounded-xl border-border dark:border-border-dark">
               <Text className="mb-3 font-semibold text-text dark:text-text-dark">Contact</Text>
               <Text className="text-sm text-muted dark:text-muted-dark">Phone</Text>
@@ -358,7 +429,9 @@ export default function HotelInfoPage() {
                 </TouchableOpacity>
               ) : null}
             </View>
+            ) : null}
 
+            {tab === 'rooms' ? (
             <View className="p-4 mb-6 bg-white border dark:bg-surface-dark rounded-xl border-border dark:border-border-dark">
               <Text className="mb-3 font-semibold text-text dark:text-text-dark">Room rates</Text>
               {(hotel.roomTypes ?? []).map((roomType: any) => (
@@ -398,20 +471,27 @@ export default function HotelInfoPage() {
                 </View>
               ) : null}
             </View>
+            ) : null}
 
+            {tab === 'reviews' ? (
             <View className="p-4 mb-6 bg-white border dark:bg-surface-dark rounded-xl border-border dark:border-border-dark">
               <Text className="mb-3 font-semibold text-text dark:text-text-dark">Reviews</Text>
               {reviews.length === 0 ? (
                 <Text className="text-sm text-muted dark:text-muted-dark">No reviews yet.</Text>
               ) : reviews.map((review) => (
                 <View key={review.id} className="mb-3">
-                  <Text className="text-sm font-semibold text-text dark:text-text-dark">{review.title || 'Review'} · {review.rating}</Text>
+                  <Text className="text-sm font-semibold text-text dark:text-text-dark">
+                    {[review.user?.firstName, review.user?.lastName].filter(Boolean).join(' ') || 'Guest'} · {review.rating} / 5
+                  </Text>
                   <Text className="mt-1 text-sm text-muted dark:text-muted-dark">{review.description}</Text>
+                  <Text className="mt-1 text-xs text-muted dark:text-muted-dark">{formatDeskDate(review.createdAt)}</Text>
                 </View>
               ))}
             </View>
+            ) : null}
 
-            {/* Rating & Type Cards */}
+            {tab === 'overview' ? (
+            <>
             <View className="flex-row gap-3 mb-6">
               <View className="flex-1 p-4 bg-white border dark:bg-surface-dark rounded-xl border-border dark:border-border-dark">
                 <View className="flex-row items-center justify-between">
@@ -456,12 +536,12 @@ export default function HotelInfoPage() {
 
               <View className="flex-row gap-3">
                 <View className="flex-1 p-4 border border-green-200 bg-green-50 dark:bg-green-950 rounded-xl dark:border-green-800">
-                  <Text className="mb-1 text-xs text-green-700 dark:text-green-300">Available Rooms</Text>
+                  <Text className="mb-1 text-xs text-green-700 dark:text-green-300">Open for sale</Text>
                   <Text className="text-2xl font-bold text-green-700 dark:text-green-300">{availableRooms}</Text>
                 </View>
 
                 <View className="flex-1 p-4 border border-blue-200 bg-blue-50 dark:bg-blue-950 rounded-xl dark:border-blue-800">
-                  <Text className="mb-1 text-xs text-blue-700 dark:text-blue-300">Total Rooms</Text>
+                  <Text className="mb-1 text-xs text-blue-700 dark:text-blue-300">Rooms</Text>
                   <Text className="text-2xl font-bold text-blue-700 dark:text-blue-300">{totalRooms}</Text>
                 </View>
               </View>
@@ -488,8 +568,10 @@ export default function HotelInfoPage() {
                 </View>
               </View>
             )}
+            </>
+            ) : null}
 
-            {/* Room Types Section */}
+            {tab === 'rooms' ? (
             <View>
               <View className="flex-row items-center mb-4">
                 <Ionicons name="list" size={20} color={primaryColor} />
@@ -525,7 +607,7 @@ export default function HotelInfoPage() {
                               ? 'text-green-700 dark:text-green-300'
                               : 'text-yellow-700 dark:text-yellow-300'
                           }`}>
-                            {room.roomStatus ?? 'N/A'}
+                            {ROOM_STATUS_LABELS[room.roomStatus as HotelRoomDeskStatus] ?? room.roomStatus ?? 'N/A'}
                           </Text>
                         </View>
                       </View>
@@ -541,7 +623,7 @@ export default function HotelInfoPage() {
                               className={`px-3 py-2 rounded-full border ${selected ? 'bg-primary border-primary' : 'border-border dark:border-border-dark'}`}
                             >
                               <Text className={`text-xs font-semibold ${selected ? 'text-white' : 'text-text dark:text-text-dark'}`}>
-                                {status}
+                                {ROOM_STATUS_LABELS[status]}
                               </Text>
                             </TouchableOpacity>
                           );
@@ -564,7 +646,7 @@ export default function HotelInfoPage() {
                           <View className="flex-row items-center justify-between py-2 border-t border-border dark:border-border-dark">
                             <View className="flex-row items-center">
                               <Ionicons name="checkmark-circle" size={16} color={successColor} />
-                              <Text className="ml-2 text-sm text-muted dark:text-muted-dark">Availability</Text>
+                              <Text className="ml-2 text-sm text-muted dark:text-muted-dark">Open for sale</Text>
                             </View>
                             <Text className="font-semibold text-text dark:text-text-dark">
                               {room.availableCount}/{room.totalCount}
@@ -606,8 +688,10 @@ export default function HotelInfoPage() {
                 </View>
               )}
             </View>
+            ) : null}
           </View>
         </ScrollView>
+        </>
       ) : (
         <View className="items-center justify-center flex-1 px-6">
           <Ionicons name="warning" size={48} color={isDark ? theme.colors['muted-dark'] : theme.colors.muted} />
