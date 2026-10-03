@@ -30,6 +30,13 @@ function applyTabBarStyle(navigation: TabBarNavigation, style: ViewStyle): void 
     }
 }
 
+export function isAttractionFlow(pathname: string): boolean {
+    return pathname.includes('/attractions')
+        || pathname.includes('/tour-spots-detail')
+        || pathname.includes('/activity-preview')
+        || pathname.includes('/guide-detail');
+}
+
 export function isHotelBookingChild(pathname: string): boolean {
     if (pathname.includes('hotel-search') || pathname.includes('transport-search')) {
         return false;
@@ -100,6 +107,9 @@ export function isDashboardBookingChromeHidden(pathname: string): boolean {
     if (/\/dashboard\/transport-bookings\/[^/]+/.test(pathname)) {
         return true;
     }
+    if (/\/dashboard\/attraction-bookings\/[^/]+/.test(pathname)) {
+        return true;
+    }
     const match = pathname.match(/\/dashboard\/([^/]+)\/?$/);
     if (!match) {
         return false;
@@ -130,11 +140,14 @@ export function useHotelFlowTabBar(pathname: string): void {
     const insets = useSafeAreaInsets();
     const { isDark } = useTheme();
     const bottomInset = insets.bottom ?? 0;
-    const hidden = isHotelBookingChild(pathname);
+    const hidden = isHotelBookingChild(pathname) || isAttractionFlow(pathname);
 
     useFocusEffect(
         useCallback(() => {
             applyTabBarStyle(navigation as TabBarNavigation, hidden ? hiddenTabBarStyle : tabBarScreenStyle(isDark, bottomInset));
+            return () => {
+                applyTabBarStyle(navigation as TabBarNavigation, tabBarScreenStyle(isDark, bottomInset));
+            };
         }, [navigation, isDark, bottomInset, hidden]),
     );
 }

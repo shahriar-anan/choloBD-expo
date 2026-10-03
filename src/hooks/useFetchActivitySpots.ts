@@ -20,8 +20,8 @@ export function useFetchActivitySpots(locationId: string | undefined) {
       try {
         setIsLoading(true);
         setError(null);
-        const data = await getActivitySpots(locationId);
-        if (active) setSpots(data);
+        const data = await getActivitySpots({ locationId, limit: 100 });
+        if (active) setSpots(data.results);
       } catch (err: any) {
         if (__DEV__) console.error('[useFetchActivitySpots] error:', err?.message);
         if (active) {

@@ -61,10 +61,10 @@ export default function UserBookingsPage() {
   const busy = !hasLoaded || (loading && bookings.length === 0);
 
   return (
-    <SafeAreaView edges={["top", "bottom"]} className="flex-1 bg-background dark:bg-background-dark">
-      <View className="flex-1 p-6">
+    <SafeAreaView edges={['top']} className="flex-1 bg-background dark:bg-background-dark">
+      <View className="flex-1 pt-4">
         {/* Header with back button */}
-        <View className="flex-row items-center mb-6">
+        <View className="flex-row items-center px-6 mb-4">
           <Pressable 
             onPress={() => router.back()} 
             style={{ padding: 6, marginRight: 12 }}
@@ -122,7 +122,7 @@ export default function UserBookingsPage() {
             </Text>
           </View>
         ) : bookings.length === 0 ? (
-          <View className="items-center p-6 py-12 mt-6 bg-white border rounded-xl dark:bg-surface-dark border-border dark:border-border-dark">
+          <View className="items-center p-6 py-12 mx-6 mt-6 bg-white border rounded-xl dark:bg-surface-dark border-border dark:border-border-dark">
             <Ionicons 
               name="calendar-clear-outline" 
               size={48} 
@@ -138,7 +138,7 @@ export default function UserBookingsPage() {
         ) : (
           <View className="flex-1">
             {visibleBookings.length === 0 ? (
-              <View className="items-center p-6 py-12 mt-2 bg-white border rounded-xl dark:bg-surface-dark border-border dark:border-border-dark">
+              <View className="items-center p-6 py-12 mx-6 mt-2 bg-white border rounded-xl dark:bg-surface-dark border-border dark:border-border-dark">
                 <Text className="text-sm text-center text-muted dark:text-muted-dark">
                   {t(TRANSLATION_KEYS.BOOKING.FILTER_EMPTY)}
                 </Text>
@@ -157,7 +157,7 @@ export default function UserBookingsPage() {
               )}
               scrollEnabled={true}
               showsVerticalScrollIndicator={false}
-              contentContainerStyle={{ paddingBottom: 12 }}
+              contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 0 }}
               onRefresh={onRefresh}
               refreshing={loading}
             />

@@ -4,8 +4,9 @@
  */
 
 import React, { useState } from 'react';
-import { View, Text, ScrollView, Image, Dimensions } from 'react-native';
+import { View, Text, ScrollView, Image, Dimensions, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../hooks/useTheme';
 import { theme } from '../../constants/theme';
@@ -58,6 +59,9 @@ interface TourSpotDetail {
   location: TourSpotLocation;
   images: TourSpotImage[];
   reviews: TourSpotReview[];
+  nearbyHotelsCount?: number;
+  nearbyActivitySpotsCount?: number;
+  nearbyGuidesCount?: number;
 }
 
 interface TourSpotDetailViewProps {
@@ -67,6 +71,7 @@ interface TourSpotDetailViewProps {
 export function TourSpotDetailView({ spot }: TourSpotDetailViewProps) {
   const { isDark } = useTheme();
   const { t } = useTranslation();
+  const router = useRouter();
   const [activeImageIndex, setActiveImageIndex] = useState(0);
 
   const primaryColor = isDark ? theme.colors['primary-dark'] : theme.colors.primary;
@@ -184,6 +189,40 @@ export function TourSpotDetailView({ spot }: TourSpotDetailViewProps) {
             {spot.description || t(TRANSLATION_KEYS.TOUR_SPOTS.DETAILS.NO_DESCRIPTION)}
           </Text>
         </View>
+
+        {(spot.nearbyHotelsCount ?? 0) > 0 ? (
+          <Text style={{ fontSize: 14, color: mutedColor, marginBottom: 12 }}>
+            {t(TRANSLATION_KEYS.ATTRACTIONS.NEARBY_HOTELS, { count: spot.nearbyHotelsCount })}
+          </Text>
+        ) : null}
+        {(spot.nearbyActivitySpotsCount ?? 0) > 0 && spot.location?.id ? (
+          <TouchableOpacity
+            onPress={() => router.push({
+              pathname: '/(tabs)/explore/attractions',
+              params: { tab: 'activities', locationId: spot.location.id },
+            })}
+            style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 14, borderTopWidth: 1, borderTopColor: borderColor }}
+          >
+            <Text style={{ fontSize: 15, fontWeight: '600', color: textColor }}>
+              {t(TRANSLATION_KEYS.ATTRACTIONS.NEARBY_ACTIVITIES, { count: spot.nearbyActivitySpotsCount })}
+            </Text>
+            <Ionicons name="chevron-forward" size={18} color={mutedColor} />
+          </TouchableOpacity>
+        ) : null}
+        {(spot.nearbyGuidesCount ?? 0) > 0 && spot.location?.id ? (
+          <TouchableOpacity
+            onPress={() => router.push({
+              pathname: '/(tabs)/explore/attractions',
+              params: { tab: 'guides', locationId: spot.location.id },
+            })}
+            style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 14, marginBottom: 12, borderTopWidth: 1, borderBottomWidth: 1, borderColor }}
+          >
+            <Text style={{ fontSize: 15, fontWeight: '600', color: textColor }}>
+              {t(TRANSLATION_KEYS.ATTRACTIONS.NEARBY_GUIDES, { count: spot.nearbyGuidesCount })}
+            </Text>
+            <Ionicons name="chevron-forward" size={18} color={mutedColor} />
+          </TouchableOpacity>
+        ) : null}
 
         {/* Best Time to Visit */}
         {spot.bestTimeToVisit && (

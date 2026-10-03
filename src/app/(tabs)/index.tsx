@@ -41,7 +41,7 @@ export default function HomePage() {
         router.push('/(tabs)/dashboard');
         break;
       case 'activity':
-        router.push('/(tabs)/explore/tour-spots-list');
+        router.push('/(tabs)/explore/attractions?tab=places');
         break;
       case 'tours':
         router.push('/(tabs)/explore/tour-list');

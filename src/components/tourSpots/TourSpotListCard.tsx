@@ -15,9 +15,10 @@ import { TourSpot } from '../../hooks/useFetchTourSpots';
 interface TourSpotListCardProps {
   spot: TourSpot;
   onPress?: () => void;
+  compact?: boolean;
 }
 
-export function TourSpotListCard({ spot, onPress }: TourSpotListCardProps) {
+export function TourSpotListCard({ spot, onPress, compact = false }: TourSpotListCardProps) {
   const { isDark } = useTheme();
   const { t } = useTranslation();
   
@@ -29,6 +30,50 @@ export function TourSpotListCard({ spot, onPress }: TourSpotListCardProps) {
 
   // Map tour type to display label
   const tourTypeLabel = t(TRANSLATION_KEYS.TOUR_SPOTS.TYPES[spot.tourType as keyof typeof TRANSLATION_KEYS.TOUR_SPOTS.TYPES] || TRANSLATION_KEYS.TOUR_SPOTS.TYPES.MIXED);
+  const showRating = typeof spot.rating === 'number' && spot.rating > 0;
+
+  if (compact) {
+    return (
+      <TouchableOpacity
+        onPress={onPress}
+        activeOpacity={0.7}
+        className="overflow-hidden rounded-2xl"
+        style={{ flex: 1, backgroundColor: surfaceColor, ...theme.elevation.sm }}
+      >
+        <View style={{ height: 112, backgroundColor: isDark ? theme.colors['surface-2-dark'] : theme.colors['surface-2'] }}>
+          {spot.imageUrl ? (
+            <Image source={{ uri: spot.imageUrl }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+          ) : (
+            <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+              <Ionicons name="image-outline" size={28} color={mutedColor} />
+            </View>
+          )}
+          <View style={{ position: 'absolute', top: 8, left: 8, right: 8, flexDirection: 'row', justifyContent: 'space-between' }}>
+            <View style={{ backgroundColor: primaryColor, borderRadius: 6, paddingHorizontal: 6, paddingVertical: 3, maxWidth: '70%' }}>
+              <Text style={{ fontSize: 10, fontWeight: '700', color: '#fff' }} numberOfLines={1}>{tourTypeLabel}</Text>
+            </View>
+            {spot.isPopular ? <Ionicons name="star" size={14} color={warningColor} /> : null}
+          </View>
+        </View>
+        <View style={{ padding: 10 }}>
+          <Text style={{ fontSize: 14, fontWeight: '700', color: textColor, minHeight: 36 }} numberOfLines={2}>
+            {spot.name}
+          </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 6 }}>
+            <Ionicons name="location" size={12} color={primaryColor} />
+            <Text style={{ marginLeft: 4, fontSize: 12, color: mutedColor, flex: 1 }} numberOfLines={1}>
+              {spot.locationName}
+            </Text>
+            {showRating ? (
+              <Text style={{ marginLeft: 6, fontSize: 12, fontWeight: '700', color: textColor }}>
+                {spot.rating?.toFixed(1)}
+              </Text>
+            ) : null}
+          </View>
+        </View>
+      </TouchableOpacity>
+    );
+  }
 
   return (
     <TouchableOpacity

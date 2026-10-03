@@ -17,7 +17,7 @@ interface ActivityTypeOption {
 const ACTIVITY_TYPES: ActivityTypeOption[] = [
   { id: 'hotels', label: 'Hotels', route: '/(tabs)/explore/hotel-search' },
   { id: 'tours', label: 'Tours', route: '/(tabs)/explore/tour-list' },
-  { id: 'attractions', label: 'Attractions', route: '/(tabs)/explore/tour-spots-list' },
+  { id: 'attractions', label: 'Attractions', route: '/(tabs)/explore/attractions?tab=places' },
 ];
 
 export default function QuickBookingWidget() {

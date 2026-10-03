@@ -28,7 +28,7 @@ export function ExploreInterface({ isAdmin = false }: ExploreInterfaceProps) {
   const navigationHandlers = useMemo(
     () => ({
       handleBookHotel: () => router.push('/(tabs)/explore/hotel-search'),
-      handleBrowseAttractions: () => router.push('/(tabs)/explore/tour-spots-list'),
+      handleBrowseAttractions: () => router.push('/(tabs)/explore/attractions?tab=places'),
       handleBrowseTours: () => router.push('/(tabs)/explore/tour-list'),
       handleCreateTripPlan: () => router.push('/(tabs)/trip-planner'),
       handleCreateTours: () => router.push('/(tabs)/explore/tour-create'),

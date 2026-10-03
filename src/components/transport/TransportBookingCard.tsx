@@ -20,7 +20,8 @@ function titleCase(value?: string | null): string {
   return lower.charAt(0).toUpperCase() + lower.slice(1);
 }
 
-function dayLabel(value: string): string {
+function dayLabel(value?: string | null): string {
+  if (!value) return '—';
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return '—';
   try {
@@ -34,10 +35,10 @@ export function TransportBookingCard({ booking, onPress }: TransportBookingCardP
   const { t } = useTranslation();
   const { isDark } = useTheme();
   const primary = isDark ? theme.colors['primary-dark'] : theme.colors.primary;
-  const textColor = isDark ? theme.colors['text-dark'] : theme.colors.text;
   const muted = isDark ? theme.colors['muted-dark'] : theme.colors.muted;
-  const surface = isDark ? theme.colors['surface-dark'] : theme.colors.surface;
-  const borderColor = isDark ? theme.colors['border-dark'] : theme.colors.border;
+  const success = isDark ? theme.colors['success-dark'] : theme.colors.success;
+  const warning = isDark ? theme.colors['warning-dark'] : theme.colors.warning;
+  const error = isDark ? theme.colors['error-dark'] : theme.colors.error;
   const imageUrl = booking.transport?.images?.[0]?.url;
   const isBus = booking.transportType === 'BUS';
   const coach =
@@ -45,95 +46,118 @@ export function TransportBookingCard({ booking, onPress }: TransportBookingCardP
     booking.items?.find((item) => item.transportTrip?.coachLabel)?.transportTrip?.coachLabel ||
     null;
 
-  const chip = (label: string, color: string) => (
+  const statusColor = (status?: string | null) => {
+    switch (String(status || '').toLowerCase()) {
+      case 'confirmed':
+      case 'paid':
+        return success;
+      case 'pending':
+      case 'unpaid':
+        return warning;
+      case 'cancelled':
+      case 'failed':
+        return error;
+      default:
+        return muted;
+    }
+  };
+
+  const badge = (label: string, color: string) => (
     <View
       key={label}
-      className="px-2.5 py-1 mr-2 rounded-full"
-      style={{ backgroundColor: 'rgba(0,0,0,0.55)' }}
+      style={{ backgroundColor: `${color}20` }}
+      className="px-3 py-1 mr-2 rounded-lg"
     >
-      <Text style={{ color, fontSize: 11, fontWeight: '700' }}>{label}</Text>
+      <Text style={{ color }} className="text-xs font-bold">{label}</Text>
     </View>
   );
 
   return (
     <Pressable
       onPress={onPress}
-      className="mb-4 overflow-hidden"
-      style={{
-        backgroundColor: surface,
-        borderRadius: 20,
-        borderWidth: 1,
-        borderColor,
-        ...theme.elevation.sm,
-      }}
+      className="p-4 mb-3 bg-white border rounded-xl border-border dark:bg-surface-dark dark:border-border-dark"
     >
-      <View style={{ height: 148, backgroundColor: isDark ? '#1E3A5F' : '#E8F1FF' }}>
+      <View className="flex-row items-start">
         {imageUrl ? (
-          <Image source={{ uri: imageUrl }} style={{ width: '100%', height: 148 }} resizeMode="cover" />
+          <Image
+            source={{ uri: imageUrl }}
+            style={{ width: 96, height: 96, borderRadius: 12 }}
+          />
         ) : (
-          <View className="items-center justify-center flex-1">
-            <Ionicons name={isBus ? 'bus' : 'car'} size={42} color={primary} />
+          <View
+            className="items-center justify-center bg-background dark:bg-background-dark"
+            style={{ width: 96, height: 96, borderRadius: 12 }}
+          >
+            <Ionicons name={isBus ? 'bus-outline' : 'car-outline'} size={28} color={muted} />
           </View>
         )}
-        <View className="absolute flex-row left-3 top-3">
-          {chip(titleCase(booking.status), '#fff')}
-          {chip(titleCase(booking.paymentStatus), '#fff')}
+        <View className="flex-1 ml-3">
+          <Text className="text-lg font-bold text-text dark:text-text-dark" numberOfLines={1}>
+            {booking.transport?.name || titleCase(booking.transportType)}
+          </Text>
+          {coach ? (
+            <Text className="mt-1 text-sm text-muted dark:text-muted-dark" numberOfLines={1}>
+              {coach}
+            </Text>
+          ) : null}
+          <View className="flex-row flex-wrap mt-2">
+            {badge(titleCase(booking.status), statusColor(booking.status))}
+            {badge(titleCase(booking.paymentStatus), statusColor(booking.paymentStatus))}
+          </View>
         </View>
       </View>
 
-      <View className="p-4">
-        <Text className="text-lg font-bold text-text dark:text-text-dark" numberOfLines={1}>
-          {booking.transport?.name || booking.transportType}
+      <View className="h-px my-3 bg-border dark:bg-border-dark" />
+
+      <View className="flex-row items-center mb-3">
+        <Ionicons name="receipt" size={16} color={primary} style={{ marginRight: 10 }} />
+        <View className="flex-1">
+          <Text className="text-xs text-muted dark:text-muted-dark mb-0.5">
+            {t(TRANSLATION_KEYS.BOOKING.CONFIRMATION_CODE)}
+          </Text>
+          <Text className="text-sm font-semibold text-text dark:text-text-dark">
+            {booking.confirmationCode}
+          </Text>
+        </View>
+        <Text className="text-base font-bold text-text dark:text-text-dark">৳{booking.totalPrice}</Text>
+      </View>
+
+      <View className="flex-row items-center mb-3">
+        <Text className="text-sm font-semibold text-text dark:text-text-dark" numberOfLines={1}>
+          {booking.departureLocation}
         </Text>
-        {coach ? (
-          <Text className="mt-0.5 text-xs text-muted dark:text-muted-dark" numberOfLines={1}>
-            {coach}
-          </Text>
-        ) : null}
-
-        <View className="flex-row items-center mt-3">
-          <Text className="text-sm font-semibold text-text dark:text-text-dark" numberOfLines={1}>
-            {booking.departureLocation}
-          </Text>
-          <Ionicons name="arrow-forward" size={14} color={muted} style={{ marginHorizontal: 8 }} />
-          <Text className="flex-1 text-sm font-semibold text-text dark:text-text-dark" numberOfLines={1}>
-            {booking.arrivalLocation}
-          </Text>
-        </View>
-
-        <View className="flex-row mt-4">
-          <View className="flex-1 pr-2">
-            <Text className="text-xs font-semibold text-muted dark:text-muted-dark">
-              {t(TRANSLATION_KEYS.TRANSPORT_BOOKING.DEPARTURE)}
-            </Text>
-            <Text className="mt-1 text-base font-bold" style={{ color: textColor }}>
-              {formatTripClock(booking.departureDateTime)}
-            </Text>
-            <Text className="text-xs text-muted dark:text-muted-dark">{dayLabel(booking.departureDateTime)}</Text>
-          </View>
-          <View className="items-end flex-1 pl-2">
-            <Text className="text-xs font-semibold text-muted dark:text-muted-dark">
-              {t(TRANSLATION_KEYS.TRANSPORT_BOOKING.ARRIVAL)}
-            </Text>
-            <Text className="mt-1 text-base font-bold" style={{ color: textColor }}>
-              {formatTripClock(booking.arrivalDateTime)}
-            </Text>
-            <Text className="text-xs text-muted dark:text-muted-dark">{dayLabel(booking.arrivalDateTime)}</Text>
-          </View>
-        </View>
-
-        <View className="h-px my-3 bg-border dark:bg-border-dark" />
-
-        <View className="flex-row items-center justify-between">
-          <Text className="text-xs text-muted dark:text-muted-dark">{booking.confirmationCode}</Text>
-          <Text className="text-base font-bold text-text dark:text-text-dark">৳{booking.totalPrice}</Text>
-        </View>
-        {booking.seatNumber ? (
-          <Text className="mt-1 text-xs text-muted dark:text-muted-dark">
-            {t(TRANSLATION_KEYS.TRANSPORT_BOOKING.SEATS)}: {booking.seatNumber}
-          </Text>
-        ) : null}
+        <Ionicons name="arrow-forward" size={14} color={muted} style={{ marginHorizontal: 8 }} />
+        <Text className="flex-1 text-sm font-semibold text-text dark:text-text-dark" numberOfLines={1}>
+          {booking.arrivalLocation}
+        </Text>
       </View>
+
+      <View className="flex-row justify-between gap-3">
+        <View className="flex-1 p-3 border border-border rounded-lg bg-surface-2 dark:bg-surface-2-dark dark:border-border-dark">
+          <Text className="mb-1 text-xs font-semibold text-muted dark:text-muted-dark">
+            {t(TRANSLATION_KEYS.TRANSPORT_BOOKING.DEPARTURE)}
+          </Text>
+          <Text className="text-base font-bold text-text dark:text-text-dark">
+            {formatTripClock(booking.departureDateTime)}
+          </Text>
+          <Text className="text-xs text-muted dark:text-muted-dark">{dayLabel(booking.departureDateTime)}</Text>
+        </View>
+        <View className="flex-1 p-3 border border-border rounded-lg bg-surface-2 dark:bg-surface-2-dark dark:border-border-dark">
+          <Text className="mb-1 text-xs font-semibold text-muted dark:text-muted-dark">
+            {t(TRANSLATION_KEYS.TRANSPORT_BOOKING.ARRIVAL)}
+          </Text>
+          <Text className="text-base font-bold text-text dark:text-text-dark">
+            {formatTripClock(booking.arrivalDateTime)}
+          </Text>
+          <Text className="text-xs text-muted dark:text-muted-dark">{dayLabel(booking.arrivalDateTime)}</Text>
+        </View>
+      </View>
+
+      {booking.seatNumber ? (
+        <Text className="mt-3 text-xs text-muted dark:text-muted-dark">
+          {t(TRANSLATION_KEYS.TRANSPORT_BOOKING.SEATS)}: {booking.seatNumber}
+        </Text>
+      ) : null}
     </Pressable>
   );
 }

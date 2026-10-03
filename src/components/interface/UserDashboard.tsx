@@ -45,7 +45,7 @@ function statusColor(status: string | undefined, isDark: boolean): string {
 
 interface DashboardLinkRowProps {
   title: string;
-  iconName: 'bed' | 'compass' | 'bus';
+  iconName: 'bed' | 'compass' | 'bus' | 'binoculars';
   onPress: () => void;
   showDivider: boolean;
 }
@@ -212,6 +212,12 @@ export function UserDashboard({
             title={t(TRANSLATION_KEYS.DASHBOARD.USER_CARDS.MY_TRANSPORT_BOOKINGS)}
             iconName="bus"
             onPress={() => router.push('/(tabs)/dashboard/transport-bookings')}
+            showDivider
+          />
+          <DashboardLinkRow
+            title={t(TRANSLATION_KEYS.DASHBOARD.USER_CARDS.ATTRACTION_BOOKINGS)}
+            iconName="binoculars"
+            onPress={() => router.push('/(tabs)/dashboard/attraction-bookings')}
             showDivider
           />
           <DashboardLinkRow

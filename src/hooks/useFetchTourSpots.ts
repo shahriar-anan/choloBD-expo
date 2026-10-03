@@ -17,8 +17,8 @@ export function useFetchTourSpots(filters?: TourSpotFilters) {
         setIsLoading(true);
         setError(null);
         const data = await getTourSpots(filters);
-        if (__DEV__) console.log('[useFetchTourSpots] Fetch successful, spots count:', data.length);
-        if (active) setSpots(data);
+        if (__DEV__) console.log('[useFetchTourSpots] Fetch successful, spots count:', data.results.length);
+        if (active) setSpots(data.results);
       } catch (err: any) {
         console.error('[useFetchTourSpots] ❌ Fetch error:', {
           message: err?.message,

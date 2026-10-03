@@ -26,12 +26,12 @@ export default function PopularPlacesSection() {
     const locationId = district.matchNames.map((name) => locationIds[name]).find(Boolean);
     if (locationId) {
       router.push({
-        pathname: '/(tabs)/explore/tour-spots-list',
-        params: { locationId, fromHome: 'true' },
+        pathname: '/(tabs)/explore/attractions',
+        params: { tab: 'places', locationId, fromHome: 'true' },
       });
       return;
     }
-    router.push('/(tabs)/explore/tour-spots-list?fromHome=true');
+    router.push('/(tabs)/explore/attractions?tab=places&fromHome=true');
   };
 
   const tile = (district: HomeDistrict, height: number) => (
@@ -48,7 +48,7 @@ export default function PopularPlacesSection() {
     <View style={{ paddingTop: 22, paddingBottom: 4, paddingHorizontal: 16 }}>
       <HomeSectionHeader
         title={t(TRANSLATION_KEYS.HOME.POPULAR_PLACES)}
-        onSeeAll={() => router.push('/(tabs)/explore/tour-spots-list?fromHome=true')}
+        onSeeAll={() => router.push('/(tabs)/explore/attractions?tab=places&fromHome=true')}
       />
       {lead ? tile(lead, 168) : null}
       <View style={{ flexDirection: 'row', gap: 10, marginTop: 10 }}>

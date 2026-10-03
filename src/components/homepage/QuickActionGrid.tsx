@@ -45,7 +45,7 @@ export default function QuickActionGrid({ onNavigate }: QuickActionGridProps) {
         id: 'browse-tours',
         translationKey: TRANSLATION_KEYS.HOME.QUICK_ACTIONS.ATTRACTIONS,
         icon: 'binoculars',
-        route: '/(tabs)/explore/tour-spots-list?fromHome=true',
+        route: '/(tabs)/explore/attractions?tab=places&fromHome=true',
       },
       {
         id: 'transport',

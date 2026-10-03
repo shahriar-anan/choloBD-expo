@@ -21,7 +21,18 @@ export interface TourSpot {
 export interface TourSpotFilters {
   isPopular?: boolean;
   locationId?: string;
+  divisionId?: string;
+  name?: string;
   minRating?: number;
+  page?: number;
+  limit?: number;
+}
+
+export interface PagedResult<T> {
+  results: T[];
+  total: number;
+  page: number;
+  limit: number;
 }
 
 export interface TourSpotImage {
@@ -69,49 +80,33 @@ export interface TourSpotDetail {
   location: TourSpotLocation;
   images: TourSpotImage[];
   reviews: TourSpotReview[];
+  nearbyHotelsCount: number;
+  nearbyActivitySpotsCount: number;
+  nearbyGuidesCount: number;
 }
 
 /**
  * Fetch tour spots with optional filters
  * GET /api/tour-spots
+ * Do not send spotType or maxEntryCost. Those query names are not TourSpot columns.
  */
-export async function getTourSpots(filters?: TourSpotFilters): Promise<TourSpot[]> {
+export async function getTourSpots(filters?: TourSpotFilters): Promise<PagedResult<TourSpot>> {
   const api = getApiInstance();
-  
-  const params: any = {};
+  const params: Record<string, string | number | boolean> = {};
   if (filters?.isPopular !== undefined) params.isPopular = filters.isPopular;
   if (filters?.locationId) params.locationId = filters.locationId;
+  if (filters?.divisionId) params.divisionId = filters.divisionId;
+  if (filters?.name) params.name = filters.name;
   if (filters?.minRating !== undefined) params.minRating = filters.minRating;
+  if (filters?.page !== undefined) params.page = filters.page;
+  if (filters?.limit !== undefined) params.limit = filters.limit;
 
-  console.log('[getTourSpots] 🔍 Request details:', {
-    endpoint: '/api/tour-spots',
-    params,
-    baseURL: api.defaults.baseURL
-  });
-
-  const response = await api.get('/api/tour-spots', { params });
-  const data = unwrapList<any>(response.data?.data);
-  
-  console.log('[getTourSpots] 📦 Response received:', {
-    status: response.status,
-    dataCount: data.length,
-    firstItem: data[0] ? {
-      id: data[0].id,
-      name: data[0].name,
-      isPopular: data[0].isPopular,
-      hasImages: !!data[0].images,
-      imageCount: data[0].images?.length
-    } : 'NO DATA'
-  });
-  
-  const mapped = data.map(mapTourSpotRow);
-
-  console.log('[getTourSpots] ✨ Mapped spots:', {
-    count: mapped.length,
-    firstSpot: mapped[0] || 'EMPTY'
-  });
-
-  return mapped;
+  try {
+    const response = await api.get('/api/tour-spots', { params });
+    return readPage(response.data?.data, mapTourSpotRow);
+  } catch (error: unknown) {
+    throw new Error(readApiMessage(error));
+  }
 }
 
 function mapTourSpotRow(spot: any): TourSpot {
@@ -135,8 +130,7 @@ export async function getPopularTourSpots(limit = 24): Promise<TourSpot[]> {
   const api = getApiInstance();
   try {
     const response = await api.get('/api/tour-spots/popular', { params: { limit } });
-    const data = unwrapList<any>(response.data?.data);
-    return data.map(mapTourSpotRow);
+    return readPage(response.data?.data, mapTourSpotRow).results;
   } catch (error: unknown) {
     throw new Error(readApiMessage(error));
   }
@@ -145,6 +139,19 @@ export async function getPopularTourSpots(limit = 24): Promise<TourSpot[]> {
 function readApiMessage(error: unknown): string {
   const err = error as { response?: { data?: { message?: string } }; message?: string };
   return err.response?.data?.message || err.message || 'Request failed';
+}
+
+function readPage<T>(data: unknown, mapRow: (row: any) => T): PagedResult<T> {
+  const rows = unwrapList<any>(data);
+  const payload = data && typeof data === 'object' && !Array.isArray(data)
+    ? data as { total?: number; page?: number; limit?: number }
+    : {};
+  return {
+    results: rows.map(mapRow),
+    total: typeof payload.total === 'number' ? payload.total : rows.length,
+    page: typeof payload.page === 'number' ? payload.page : 1,
+    limit: typeof payload.limit === 'number' ? payload.limit : (rows.length || 20),
+  };
 }
 
 /**
@@ -158,13 +165,6 @@ export async function getTourSpotDetail(id: string): Promise<TourSpotDetail> {
 
   const response = await api.get(`/api/tour-spots/${id}`);
   const spot = response.data.data;
-  
-  console.log('[getTourSpotDetail] 📦 Response received:', {
-    id: spot.id,
-    name: spot.name,
-    imagesCount: spot.images?.length || 0,
-    reviewsCount: spot.reviews?.length || 0,
-  });
 
   return {
     id: spot.id,
@@ -205,5 +205,8 @@ export async function getTourSpotDetail(id: string): Promise<TourSpotDetail> {
         imageUrl: review.user.imageUrl,
       },
     })) || [],
+    nearbyHotelsCount: typeof spot.nearbyHotelsCount === 'number' ? spot.nearbyHotelsCount : 0,
+    nearbyActivitySpotsCount: typeof spot.nearbyActivitySpotsCount === 'number' ? spot.nearbyActivitySpotsCount : 0,
+    nearbyGuidesCount: typeof spot.nearbyGuidesCount === 'number' ? spot.nearbyGuidesCount : 0,
   };
 }
