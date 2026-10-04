@@ -90,7 +90,7 @@ export async function fetchHotelStayAvailability(
   hotelId: string,
   checkInDate: string,
   shift: 'ALL_DAY' | 'MORNING' | 'AFTERNOON' | 'NIGHT',
-): Promise<{ availableRoomsByType?: { roomTypeId: string; roomType?: string; availableRooms: number }[] } | null> {
+): Promise<{ availableRoomsByType?: { roomTypeId: string; roomType?: string; availableRooms: number; totalRooms?: number }[] } | null> {
   const api = getApiInstance();
   const [year, month, day] = checkInDate.split('-').map(Number);
   const end = new Date(year, (month || 1) - 1, (day || 1) + 1);

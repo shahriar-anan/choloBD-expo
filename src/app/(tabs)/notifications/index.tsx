@@ -16,6 +16,8 @@ function iconFor(type?: string | null): keyof typeof Ionicons.glyphMap {
   switch (type) {
     case 'HOTEL_BOOKING':
       return 'bed-outline';
+    case 'HOTEL_TASK':
+      return 'sparkles-outline';
     case 'TRANSPORT_BOOKING':
     case 'TRANSPORT_SERVICE':
       return 'bus-outline';
@@ -64,8 +66,10 @@ export default function NotificationsTab() {
   const { isDark } = useTheme();
   const { t } = useTranslation();
   const { currentLanguage } = useLanguage();
-  const { isHotelAdmin, pending } = useHotelAdminSession();
-  const { items, loading, markingAll, openNotification, markAllRead, load } = useNotificationInbox({ traveler: !isHotelAdmin });
+  const { isHotelAdmin, isHotelEmployee, pending } = useHotelAdminSession();
+  const { items, loading, markingAll, openNotification, markAllRead, load } = useNotificationInbox({
+    traveler: !pending && !isHotelAdmin && !isHotelEmployee,
+  });
   const primaryColor = isDark ? theme.colors['primary-dark'] : theme.colors.primary;
   const surface = isDark ? theme.colors['surface-dark'] : theme.colors.surface;
   const pale = isDark ? theme.colors['surface-2-dark'] : theme.colors['surface-2'];

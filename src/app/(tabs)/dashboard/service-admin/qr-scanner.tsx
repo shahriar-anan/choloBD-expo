@@ -4,7 +4,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import theme from '../../../../constants/theme';
-import { useRouter } from 'expo-router';
+import { usePathname, useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { tabBarClearance } from '../../../../hooks/useHideTabBar';
 import { QRCodeScanner } from '../../../../components/ui/QRCodeScanner';
 import { QRBookingDetailsDisplay } from '../../../../components/ui/QRBookingDetailsDisplay';
 import { useQRScanner } from '../../../../hooks/useQRScanner';
@@ -15,7 +17,10 @@ import { canRecordStay } from '../../../../utilities/hotelDesk';
 
 export default function QRScannerPage() {
   const router = useRouter();
+  const pathname = usePathname();
+  const insets = useSafeAreaInsets();
   const { isDark } = useTheme();
+  const isTab = pathname === '/qr-scanner';
   const { scanQRCode, loading, error, clearError } = useQRScanner();
   const [scannedBooking, setScannedBooking] = useState<QRBookingDetail | null>(null);
   const [stayBusy, setStayBusy] = useState(false);
@@ -62,13 +67,15 @@ export default function QRScannerPage() {
   };
 
   return (
-    <SafeAreaView edges={["top", "bottom"]} className="flex-1 bg-background dark:bg-background-dark">
+    <SafeAreaView edges={["top", "bottom"]} className="flex-1 bg-background dark:bg-background-dark" style={isTab ? { paddingBottom: tabBarClearance(insets.bottom) } : undefined}>
       <View className="p-6 border-b border-border dark:border-border-dark">
         <View className="flex-row items-center justify-between">
           <Text className="text-2xl font-bold text-text dark:text-text-dark">QR Scanner</Text>
-          <Pressable onPress={() => router.replace('/(tabs)/dashboard')} style={{ padding: 6 }}>
-            <Ionicons name="close" size={24} color={isDark ? theme.colors['text-dark'] : theme.colors.text} />
-          </Pressable>
+          {isTab ? null : (
+            <Pressable onPress={() => router.replace('/(tabs)/dashboard')} style={{ padding: 6 }}>
+              <Ionicons name="close" size={24} color={isDark ? theme.colors['text-dark'] : theme.colors.text} />
+            </Pressable>
+          )}
         </View>
       </View>
 

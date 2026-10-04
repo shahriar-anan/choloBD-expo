@@ -612,6 +612,17 @@ export default function HotelInfoPage() {
                         </View>
                       </View>
 
+                      {isHotelAdmin ? (
+                        <TouchableOpacity
+                          onPress={() => router.push(`/(tabs)/dashboard/service-admin/tasks?roomId=${room.id}`)}
+                          className="self-start mb-3"
+                        >
+                          <Text className="text-sm font-semibold text-primary dark:text-primary-dark">
+                            {i18next.t('hotelDesk.assignCleaning')}
+                          </Text>
+                        </TouchableOpacity>
+                      ) : null}
+
                       <View className="flex-row flex-wrap gap-2">
                         {ROOM_STATUSES.map((status) => {
                           const selected = room.roomStatus === status;

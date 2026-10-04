@@ -113,7 +113,7 @@ function TravelerHome() {
 }
 
 export default function HomePage() {
-  const { isHotelAdmin, pending } = useHotelAdminSession();
+  const { isHotelAdmin, isHotelEmployee, pending } = useHotelAdminSession();
   if (pending) {
     return (
       <View className="items-center justify-center flex-1 bg-background dark:bg-background-dark">
@@ -121,7 +121,7 @@ export default function HomePage() {
       </View>
     );
   }
-  if (isHotelAdmin) {
+  if (isHotelAdmin || isHotelEmployee) {
     return <HotelDeskHome />;
   }
   return <TravelerHome />;

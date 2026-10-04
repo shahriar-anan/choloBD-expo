@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, View } from 'react-native';
 import { Tabs, usePathname } from 'expo-router';
 import { DarkTheme, DefaultTheme, ThemeProvider as NavigationThemeProvider } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -55,9 +56,10 @@ export default function TabsLayout() {
   const { t } = useTranslation();
   const role = useSelector((state: RootState) => state.auth.user?.role);
   const traveler = isTravelerRole(role);
-  const { isHotelAdmin } = useHotelAdminSession();
+  const { isHotelAdmin, isHotelEmployee, pending } = useHotelAdminSession();
+  const hotelDesk = isHotelAdmin || isHotelEmployee;
   const [unread, setUnread] = useState<number | null>(null);
-  const inboxTab = traveler || isHotelAdmin;
+  const inboxTab = traveler || hotelDesk;
 
   const tabBarActiveTintColor = isDark ? theme.colors['primary-dark'] : theme.colors.primary;
   const tabBarInactiveTintColor = isDark ? theme.colors['muted-dark'] : theme.colors.muted;
@@ -86,7 +88,7 @@ export default function TabsLayout() {
   }, [inboxTab, pathname]);
 
   const pageBackground = isDark ? theme.colors['background-dark'] : theme.colors.background;
-  const barHidden = hideTabBar(pathname, traveler, isHotelAdmin);
+  const barHidden = hideTabBar(pathname, traveler, hotelDesk);
 
   const navigationTheme = {
     ...(isDark ? DarkTheme : DefaultTheme),
@@ -95,6 +97,16 @@ export default function TabsLayout() {
       background: pageBackground,
     },
   };
+
+  if (pending) {
+    return (
+      <NavigationThemeProvider value={navigationTheme}>
+        <View className="items-center justify-center flex-1" style={{ backgroundColor: pageBackground }}>
+          <ActivityIndicator />
+        </View>
+      </NavigationThemeProvider>
+    );
+  }
 
   return (
     <NavigationThemeProvider value={navigationTheme}>
@@ -124,14 +136,14 @@ export default function TabsLayout() {
           tabPress: (e) => {
             const state = navigation.getState();
             const isFocused = state.routes[state.index]?.name === 'index';
-            if ((traveler || isHotelAdmin) && isFocused) {
+            if ((traveler || hotelDesk) && isFocused) {
               e.preventDefault();
               navigation.navigate('index');
             }
           },
         })}
         options={{
-          title: t(traveler || isHotelAdmin ? TRANSLATION_KEYS.TABS.HOME : TRANSLATION_KEYS.TABS.HOMEPAGE),
+          title: t(traveler || hotelDesk ? TRANSLATION_KEYS.TABS.HOME : TRANSLATION_KEYS.TABS.HOMEPAGE),
           tabBarIcon: ({ color, focused }) => tabIcon(focused, color, 'home', 'home-outline'),
         }}
       />
@@ -169,7 +181,7 @@ export default function TabsLayout() {
         })}
         options={{
           title: t(TRANSLATION_KEYS.TABS.NOTIFICATIONS),
-          href: traveler || isHotelAdmin ? undefined : null,
+          href: traveler || hotelDesk ? undefined : null,
           tabBarBadge: badge,
           tabBarIcon: ({ color, focused }) => tabIcon(focused, color, 'notifications', 'notifications-outline'),
         }}
@@ -207,7 +219,7 @@ export default function TabsLayout() {
         })}
         options={{
           title: t(TRANSLATION_KEYS.TABS.EXPLORE),
-          href: traveler || isHotelAdmin ? null : undefined,
+          href: traveler || hotelDesk ? null : undefined,
           tabBarIcon: ({ color, focused }) => tabIcon(focused, color, 'compass', 'compass-outline'),
         }}
       />
@@ -215,7 +227,7 @@ export default function TabsLayout() {
         name="dashboard"
         listeners={({ navigation }) => ({
           tabPress: (e) => {
-            if (!isHotelAdmin) {
+            if (!hotelDesk) {
               return;
             }
             const state = navigation.getState();
@@ -233,16 +245,32 @@ export default function TabsLayout() {
           tabBarIcon: ({ color, focused }) => tabIcon(
             focused,
             color,
-            isHotelAdmin ? 'grid' : 'person',
-            isHotelAdmin ? 'grid-outline' : 'person-outline',
+            hotelDesk ? 'grid' : 'person',
+            hotelDesk ? 'grid-outline' : 'person-outline',
           ),
+        }}
+      />
+      <Tabs.Screen
+        name="qr-scanner"
+        options={{
+          title: t(TRANSLATION_KEYS.DASHBOARD.ADMIN_CARDS.QR_SCANNER),
+          href: isHotelEmployee ? undefined : null,
+          tabBarIcon: ({ color, focused }) => tabIcon(focused, color, 'qr-code', 'qr-code-outline'),
+        }}
+      />
+      <Tabs.Screen
+        name="settings"
+        options={{
+          title: t(TRANSLATION_KEYS.DASHBOARD.SETTINGS),
+          href: isHotelEmployee ? undefined : null,
+          tabBarIcon: ({ color, focused }) => tabIcon(focused, color, 'settings', 'settings-outline'),
         }}
       />
       <Tabs.Screen
         name="tracking"
         options={{
           title: t(TRANSLATION_KEYS.TABS.TRACKING),
-          href: traveler || isHotelAdmin ? null : undefined,
+          href: traveler || hotelDesk ? null : undefined,
           tabBarIcon: ({ color, focused }) => tabIcon(focused, color, 'checkmark-done', 'checkmark-done-outline'),
         }}
       />

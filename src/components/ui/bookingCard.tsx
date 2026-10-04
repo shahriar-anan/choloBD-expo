@@ -8,6 +8,7 @@ import { RootState } from '../../store/store';
 import { useTheme } from '../../hooks/useTheme';
 import theme from '../../constants/theme';
 import { TRANSLATION_KEYS } from '../../constants/translationKeys';
+import { staffDisplayName } from '../../services/api/hotelDesk';
 
 interface BookingCardProps {
   booking: any;
@@ -197,6 +198,14 @@ export function BookingCard({ booking, onPress, showGenerateQr = false, showRoom
                 </Text>
               </View>
             </View>
+            {isServiceAdmin && (booking.assignedEmployee || booking.staffNote) ? (
+              <Text className="mt-2 text-xs text-muted dark:text-muted-dark" numberOfLines={2}>
+                {booking.assignedEmployee
+                  ? `${t(TRANSLATION_KEYS.HOTEL_DESK.HANDLING)}: ${staffDisplayName(booking.assignedEmployee)}`
+                  : t(TRANSLATION_KEYS.HOTEL_DESK.UNASSIGNED)}
+                {booking.staffNote ? ` · ${booking.staffNote}` : ''}
+              </Text>
+            ) : null}
           </View>
         </View>
 

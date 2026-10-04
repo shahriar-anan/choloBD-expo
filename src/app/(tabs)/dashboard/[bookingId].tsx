@@ -16,6 +16,7 @@ import { useTranslation } from 'react-i18next';
 import { TRANSLATION_KEYS } from '../../../constants/translationKeys';
 import { CancellationEligibility } from '../../../types/cancellation';
 import { shouldFetchCancellationEligibility, getCancelActionLabel } from '../../../utilities/bookingCancelHelpers';
+import { HotelStayDesk } from '../../../components/hotel/HotelStayDesk';
 
 function formatStayDate(value?: string): string {
   if (!value) return '—';
@@ -176,6 +177,11 @@ export default function BookingTrackingPage() {
       cancelEdit();
       return;
     }
+    const operator = role === 'SERVICE_ADMIN' || role === 'EMPLOYEE';
+    if (!loading && !booking && operator) {
+      router.replace('/(tabs)/dashboard');
+      return;
+    }
     if (router.canGoBack()) {
       router.back();
       return;
@@ -257,8 +263,17 @@ export default function BookingTrackingPage() {
             <ActivityIndicator size="large" color={primaryColor} />
           </View>
         ) : !booking ? (
-          <View className="items-center justify-center flex-1">
-            <Text className="text-muted dark:text-muted-dark">{t(TRANSLATION_KEYS.PACKAGE_BOOKING.BOOKING_NOT_FOUND)}</Text>
+          <View className="items-center justify-center flex-1 px-6">
+            <Text className="text-base text-center text-muted dark:text-muted-dark">{t(TRANSLATION_KEYS.PACKAGE_BOOKING.BOOKING_NOT_FOUND)}</Text>
+            {role === 'SERVICE_ADMIN' || role === 'EMPLOYEE' ? (
+              <Pressable
+                onPress={leaveDetail}
+                accessibilityRole="button"
+                className="px-5 py-3 mt-6 rounded-xl bg-primary"
+              >
+                <Text className="font-semibold text-white">{t(TRANSLATION_KEYS.TABS.DASHBOARD)}</Text>
+              </Pressable>
+            ) : null}
           </View>
         ) : (
           <ScrollView className="flex-1 p-4">
@@ -348,6 +363,8 @@ export default function BookingTrackingPage() {
             {booking.paymentStatus ? <PaymentStatusBadge status={booking.paymentStatus} /> : null}
           </View>
         </View>
+
+        <HotelStayDesk booking={booking} onUpdated={setBooking} />
 
         <View className="p-4 mx-4 mt-4 bg-white border rounded-xl dark:bg-surface-dark border-border dark:border-border-dark">
           <Text className="mb-3 font-semibold text-text dark:text-text-dark">

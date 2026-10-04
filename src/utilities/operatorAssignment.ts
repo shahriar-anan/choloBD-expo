@@ -3,6 +3,7 @@ import { getUserProfile } from '../services/api/users';
 export interface OperatorAssignment {
   userId: string;
   serviceType: string | null;
+  employeeServiceType: string | null;
 }
 
 let cached: OperatorAssignment | null = null;
@@ -14,6 +15,13 @@ export function isHotelServiceAdmin(
   serviceType: string | null | undefined,
 ): boolean {
   return String(role || '').toUpperCase() === 'SERVICE_ADMIN' && serviceType === 'HOTEL_BOOKING';
+}
+
+export function isHotelEmployee(
+  role: string | null | undefined,
+  employeeServiceType: string | null | undefined,
+): boolean {
+  return String(role || '').toUpperCase() === 'EMPLOYEE' && employeeServiceType === 'HOTEL_BOOKING';
 }
 
 export function readOperatorAssignment(userId: string | null | undefined): OperatorAssignment | null {
@@ -42,7 +50,8 @@ export function loadOperatorAssignment(userId: string): Promise<OperatorAssignme
   const promise = getUserProfile()
     .then((profile) => {
       const serviceType = typeof profile?.serviceType === 'string' ? profile.serviceType : null;
-      const next = { userId, serviceType };
+      const employeeServiceType = typeof profile?.employeeServiceType === 'string' ? profile.employeeServiceType : null;
+      const next = { userId, serviceType, employeeServiceType };
       publish(next);
       return next;
     })
@@ -50,7 +59,7 @@ export function loadOperatorAssignment(userId: string): Promise<OperatorAssignme
       if (cached?.userId === userId) {
         return cached;
       }
-      const next = { userId, serviceType: null };
+      const next = { userId, serviceType: null, employeeServiceType: null };
       publish(next);
       return next;
     })

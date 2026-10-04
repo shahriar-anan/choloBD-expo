@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store/store';
 import {
+  isHotelEmployee,
   isHotelServiceAdmin,
   loadOperatorAssignment,
   readOperatorAssignment,
@@ -16,7 +17,8 @@ export function useHotelAdminSession() {
   useEffect(() => subscribeOperatorAssignment(() => setTick((value) => value + 1)), []);
 
   useEffect(() => {
-    if (!userId || String(role || '').toUpperCase() !== 'SERVICE_ADMIN') {
+    const normalized = String(role || '').toUpperCase();
+    if (!userId || (normalized !== 'SERVICE_ADMIN' && normalized !== 'EMPLOYEE')) {
       return;
     }
     let active = true;
@@ -31,12 +33,14 @@ export function useHotelAdminSession() {
   }, [userId, role]);
 
   const known = readOperatorAssignment(userId);
-  const isServiceAdmin = String(role || '').toUpperCase() === 'SERVICE_ADMIN';
-  const pending = Boolean(userId && isServiceAdmin && !known);
+  const normalized = String(role || '').toUpperCase();
+  const needsAssignment = normalized === 'SERVICE_ADMIN' || normalized === 'EMPLOYEE';
+  const pending = Boolean(userId && needsAssignment && !known);
 
   return {
     pending,
     isHotelAdmin: isHotelServiceAdmin(role, known?.serviceType),
+    isHotelEmployee: isHotelEmployee(role, known?.employeeServiceType),
     role,
   };
 }

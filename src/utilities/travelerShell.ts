@@ -1,5 +1,5 @@
 import { UserRole } from '../types/auth';
-import { isHotelServiceAdmin, loadOperatorAssignment } from './operatorAssignment';
+import { isHotelEmployee, isHotelServiceAdmin, loadOperatorAssignment } from './operatorAssignment';
 
 export function isTravelerRole(role: UserRole | string | null | undefined): boolean {
   if (!role) {
@@ -19,11 +19,14 @@ export async function resolveRoleHome(
   if (isTravelerRole(role) || !userId) {
     return roleHome(role);
   }
-  if (String(role).toUpperCase() !== 'SERVICE_ADMIN') {
+  const normalized = String(role).toUpperCase();
+  if (normalized !== 'SERVICE_ADMIN' && normalized !== 'EMPLOYEE') {
     return '/(tabs)/dashboard';
   }
   const assignment = await loadOperatorAssignment(userId);
-  return isHotelServiceAdmin(role, assignment.serviceType) ? '/(tabs)' : '/(tabs)/dashboard';
+  const hotelDesk = isHotelServiceAdmin(role, assignment.serviceType)
+    || isHotelEmployee(role, assignment.employeeServiceType);
+  return hotelDesk ? '/(tabs)' : '/(tabs)/dashboard';
 }
 
 export function roleBookings(role: UserRole | string | null | undefined): '/(tabs)/bookings' | '/(tabs)/dashboard' {

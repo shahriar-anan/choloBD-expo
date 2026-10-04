@@ -9,8 +9,8 @@ function isBookingsIndex(pathname: string): boolean {
 
 export default function BookingsLayout() {
   const pathname = usePathname();
-  const { isHotelAdmin } = useHotelAdminSession();
-  usePathTabBar(!(isHotelAdmin && isBookingsIndex(pathname)));
+  const { isHotelAdmin, isHotelEmployee } = useHotelAdminSession();
+  usePathTabBar(!((isHotelAdmin || isHotelEmployee) && isBookingsIndex(pathname)));
 
   return (
     <Stack screenOptions={{ headerShown: false }}>

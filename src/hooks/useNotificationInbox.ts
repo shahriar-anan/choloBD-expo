@@ -68,6 +68,10 @@ export function useNotificationInbox(options?: InboxOptions) {
       return;
     }
 
+    if (entityType === 'HOTEL_TASK') {
+      router.push('/(tabs)/dashboard/service-admin/tasks');
+      return;
+    }
     if (entityType === 'HOTEL_BOOKING' && entityId) {
       router.push(`/(tabs)/dashboard/${entityId}`);
       return;
