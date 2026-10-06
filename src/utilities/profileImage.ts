@@ -17,6 +17,18 @@ export function profilePhotoUri(url?: string | null): string | null {
   return trimmed;
 }
 
+export function profileDisplayName(user?: {
+  firstName?: string | null;
+  lastName?: string | null;
+  userName?: string | null;
+} | null): string {
+  const fullName = [user?.firstName, user?.lastName]
+    .map((part) => part?.trim())
+    .filter(Boolean)
+    .join(' ');
+  return fullName || user?.userName?.trim() || '';
+}
+
 export function profileInitial(userName?: string | null, email?: string | null): string {
   const source = (userName && userName.trim()) || (email && email.trim()) || '';
   if (!source) {

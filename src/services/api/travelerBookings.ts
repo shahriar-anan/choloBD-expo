@@ -18,9 +18,13 @@ function asList(payload: unknown): any[] {
   return [];
 }
 
-async function getData(path: string, params?: Record<string, string | number>): Promise<unknown> {
+async function getData(
+  path: string,
+  params?: Record<string, string | number>,
+  silent404 = false,
+): Promise<unknown> {
   const api = getApiInstance();
-  const res = await api.get(path, { params });
+  const res = await api.get(path, { params, silent404 });
   return res.data?.data;
 }
 
@@ -31,7 +35,7 @@ export async function loadTravelerBookingSources(userId: string): Promise<Travel
     getData('/api/bookings/activity-spots', { userId, page: 1, limit: 20 }).catch(() => null),
     getData('/api/bookings/guides', { userId, page: 1, limit: 20 }).catch(() => null),
     getUserPackageBookings({ limit: 20, offset: 0, sortBy: 'bookingDate', sortOrder: 'desc' }).catch(() => null),
-    getData('/api/bookings/trip-bookings/my', { limit: 20, offset: 0, sortBy: 'bookedAt', sortOrder: 'desc' }).catch(() => null),
+    getData('/api/bookings/trip-bookings/my', { limit: 20, offset: 0, sortBy: 'bookedAt', sortOrder: 'desc' }, true).catch(() => null),
   ]);
 
   return {

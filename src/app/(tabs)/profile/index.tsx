@@ -12,15 +12,18 @@ import { TRANSLATION_KEYS } from '../../../constants/translationKeys';
 import { ProfileAvatar } from '../../../components/ui/profileAvatar';
 import { useDashboardLogic } from '../../../hooks/useDashboardLogic';
 import LanguageToggle from '../../../components/ui/LanguageToggle';
+import { profileDisplayName } from '../../../utilities/profileImage';
 
 type ProfileRoute =
+  | '/(tabs)/profile/account'
   | '/(tabs)/profile/about'
   | '/(tabs)/profile/tracking'
   | '/(tabs)/profile/offers'
   | '/(tabs)/profile/community'
   | '/(tabs)/profile/help';
 
-const ACCOUNT_ROWS: { titleKey: string; route: ProfileRoute; icon: keyof typeof Ionicons.glyphMap }[] = [
+const ACCOUNT_ROWS: { titleKey: string; route: ProfileRoute; icon: keyof typeof Ionicons.glyphMap; signedInOnly?: boolean }[] = [
+  { titleKey: TRANSLATION_KEYS.PROFILE.EDIT_ACCOUNT, route: '/(tabs)/profile/account', icon: 'person-outline', signedInOnly: true },
   { titleKey: TRANSLATION_KEYS.PROFILE.ABOUT, route: '/(tabs)/profile/about', icon: 'information-circle-outline' },
   { titleKey: TRANSLATION_KEYS.PROFILE.TRACKING, route: '/(tabs)/profile/tracking', icon: 'navigate-outline' },
   { titleKey: TRANSLATION_KEYS.PROFILE.OFFERS, route: '/(tabs)/profile/offers', icon: 'pricetag-outline' },
@@ -65,7 +68,7 @@ export default function ProfileIndex() {
   const textColor = isDark ? theme.colors['text-dark'] : theme.colors.text;
   const signedIn = Boolean(auth.user);
   const badge = unreadCount !== null && unreadCount > 0 ? (unreadCount > 99 ? '99+' : String(unreadCount)) : null;
-  const displayName = auth.user?.userName?.trim();
+  const displayName = profileDisplayName(auth.user);
 
   useFocusEffect(
     useCallback(() => {
@@ -90,6 +93,13 @@ export default function ProfileIndex() {
       <StatusBar style="light" />
       <SafeAreaView edges={['top']} style={{ backgroundColor: header, paddingBottom: 28 }}>
         <View className="flex-row items-center px-5 pt-4 pb-2">
+          <Pressable
+            onPress={signedIn ? () => router.push('/(tabs)/profile/account') : undefined}
+            disabled={!signedIn}
+            accessibilityRole={signedIn ? 'button' : undefined}
+            accessibilityLabel={signedIn ? t(TRANSLATION_KEYS.PROFILE.EDIT_ACCOUNT) : undefined}
+            className="flex-row items-center flex-1"
+          >
           <View
             style={{
               width: 64,
@@ -102,7 +112,7 @@ export default function ProfileIndex() {
           >
             <ProfileAvatar
               imageUrl={profileImageUrl || auth.user?.imageUrl}
-              userName={auth.user?.userName}
+              userName={displayName || auth.user?.userName}
               email={auth.user?.email}
               size={56}
             />
@@ -117,6 +127,7 @@ export default function ProfileIndex() {
               </Text>
             ) : null}
           </View>
+          </Pressable>
           <Pressable
             onPress={() => router.push('/(tabs)/notifications')}
             accessibilityRole="button"
@@ -163,7 +174,7 @@ export default function ProfileIndex() {
         ) : <View style={{ height: 8 }} />}
 
         <SectionCard title={t(TRANSLATION_KEYS.PROFILE.SECTION_ACCOUNT)}>
-          {ACCOUNT_ROWS.map((row, index) => (
+          {ACCOUNT_ROWS.filter((row) => !row.signedInOnly || signedIn).map((row, index, rows) => (
             <View key={row.route}>
               <Pressable
                 onPress={() => router.push(row.route)}
@@ -175,7 +186,7 @@ export default function ProfileIndex() {
                 <Text className="flex-1 ml-3 text-base text-text dark:text-text-dark">{t(row.titleKey)}</Text>
                 <Ionicons name="chevron-forward" size={18} color={muted} />
               </Pressable>
-              {index < ACCOUNT_ROWS.length - 1 ? <View className="h-px mx-4 bg-border dark:bg-border-dark" /> : null}
+              {index < rows.length - 1 ? <View className="h-px mx-4 bg-border dark:bg-border-dark" /> : null}
             </View>
           ))}
         </SectionCard>

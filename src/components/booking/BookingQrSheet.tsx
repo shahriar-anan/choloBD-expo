@@ -54,7 +54,7 @@ export function BookingQrSheet({ visible, mode, bookingId, onClose }: BookingQrS
     return () => {
       active = false;
     };
-  }, [visible, mode, bookingId, t]);
+  }, [visible, mode, bookingId]);
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>

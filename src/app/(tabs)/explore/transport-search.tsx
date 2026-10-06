@@ -5,7 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { addDays, format, isBefore, parseISO, startOfDay } from 'date-fns';
+import { isBefore, parseISO, startOfDay } from 'date-fns';
 import { useTheme } from '../../../hooks/useTheme';
 import theme from '../../../constants/theme';
 import { TRANSLATION_KEYS } from '../../../constants/translationKeys';
@@ -21,9 +21,10 @@ export default function TransportSearchPage() {
     const { t } = useTranslation();
     const primary = isDark ? theme.colors['primary-dark'] : theme.colors.primary;
     const muted = isDark ? theme.colors['muted-dark'] : theme.colors.muted;
-    const typeLabel = params.transportType === 'BUS'
-        ? t(TRANSLATION_KEYS.TRANSPORT.BUS)
-        : t(TRANSLATION_KEYS.TRANSPORT.RENTAL);
+    const isRental = params.transportType === 'CAR_RENTAL';
+    const typeLabel = isRental
+        ? t(TRANSLATION_KEYS.TRANSPORT.RENTAL)
+        : t(TRANSLATION_KEYS.TRANSPORT.BUS);
 
     const goBack = () => {
         if (fromHome === 'true') {
@@ -34,6 +35,32 @@ export default function TransportSearchPage() {
     };
 
     const search = () => {
+        if (isRental) {
+            if (!params.from?.locationId) {
+                Alert.alert(t(TRANSLATION_KEYS.TRANSPORT.PICKUP_LOCATION), t(TRANSLATION_KEYS.TRANSPORT.CHOOSE_PICKUP));
+                return;
+            }
+            if (!params.date || !params.returnDate) {
+                Alert.alert(t(TRANSLATION_KEYS.TRANSPORT.RENTAL_PICKUP_LABEL), t(TRANSLATION_KEYS.TRANSPORT.CHOOSE_DATES));
+                return;
+            }
+            if (!isBefore(startOfDay(parseISO(params.date)), startOfDay(parseISO(params.returnDate)))) {
+                Alert.alert(t(TRANSLATION_KEYS.TRANSPORT.RENTAL_RETURN_LABEL), t(TRANSLATION_KEYS.TRANSPORT.RETURN_AFTER_PICKUP));
+                return;
+            }
+            router.push({
+                pathname: '/(tabs)/explore/transport-results',
+                params: {
+                    mode: 'CAR_RENTAL',
+                    locationId: params.from.locationId,
+                    pickupName: params.from.name,
+                    pickupDate: params.date,
+                    returnDateRental: params.returnDate,
+                },
+            });
+            return;
+        }
+
         if (!params.from?.locationId) {
             Alert.alert(t(TRANSLATION_KEYS.TRANSPORT.FROM), t(TRANSLATION_KEYS.TRANSPORT.CHOOSE_LOCATIONS));
             return;
@@ -47,7 +74,6 @@ export default function TransportSearchPage() {
             return;
         }
         if (
-            params.transportType === 'BUS' &&
             params.returnDate &&
             isBefore(startOfDay(parseISO(params.returnDate)), startOfDay(parseISO(params.date)))
         ) {
@@ -55,29 +81,15 @@ export default function TransportSearchPage() {
             return;
         }
 
-        if (params.transportType === 'BUS') {
-            router.push({
-                pathname: '/(tabs)/explore/transport-results',
-                params: {
-                    mode: 'BUS',
-                    originId: params.from.locationId,
-                    destinationId: params.to.locationId,
-                    date: params.date,
-                    returnDate: params.returnDate ?? '',
-                    leg: 'outbound',
-                },
-            });
-            return;
-        }
-
-        const rentalReturn = format(addDays(parseISO(params.date), 1), 'yyyy-MM-dd');
         router.push({
             pathname: '/(tabs)/explore/transport-results',
             params: {
-                mode: 'CAR_RENTAL',
-                locationId: params.from.locationId,
-                pickupDate: params.date,
-                returnDateRental: rentalReturn,
+                mode: 'BUS',
+                originId: params.from.locationId,
+                destinationId: params.to.locationId,
+                date: params.date,
+                returnDate: params.returnDate ?? '',
+                leg: 'outbound',
             },
         });
     };
@@ -93,7 +105,9 @@ export default function TransportSearchPage() {
                         {t(TRANSLATION_KEYS.TRANSPORT.SEARCH_TITLE)}
                     </Text>
                     <Text className="mt-1 text-sm text-center text-white/90">
-                        {t(TRANSLATION_KEYS.TRANSPORT.SEARCH_SUBTITLE)}
+                        {isRental
+                            ? t(TRANSLATION_KEYS.TRANSPORT.RENTAL_SUBTITLE)
+                            : t(TRANSLATION_KEYS.TRANSPORT.SEARCH_SUBTITLE)}
                     </Text>
                 </LinearGradient>
 
@@ -104,18 +118,28 @@ export default function TransportSearchPage() {
                             className="p-3 mb-3 rounded-2xl bg-background dark:bg-background-dark"
                         >
                             <View className="flex-row items-center">
-                                <Ionicons name="radio-button-on" size={20} color={primary} />
-                                <View className="ml-3">
+                                <Ionicons name={isRental ? 'car' : 'radio-button-on'} size={20} color={primary} />
+                                <View className="flex-1 ml-3">
+                                    <Text className="text-xs text-muted dark:text-muted-dark">
+                                        {isRental
+                                            ? t(TRANSLATION_KEYS.TRANSPORT.PICKUP_LOCATION)
+                                            : t(TRANSLATION_KEYS.TRANSPORT.FROM)}
+                                    </Text>
                                     <Text className="font-bold text-text dark:text-text-dark">
-                                        {params.from?.name || t(TRANSLATION_KEYS.TRANSPORT.FROM)}
+                                        {params.from?.name || (isRental
+                                            ? t(TRANSLATION_KEYS.TRANSPORT.CHOOSE_PICKUP)
+                                            : t(TRANSLATION_KEYS.TRANSPORT.FROM))}
                                     </Text>
                                     <Text className="text-xs text-muted dark:text-muted-dark">
-                                        {params.from?.subtitle || t(TRANSLATION_KEYS.TRANSPORT.FROM_HINT)}
+                                        {params.from?.subtitle || (isRental
+                                            ? t(TRANSLATION_KEYS.TRANSPORT.RENTAL_PICKUP_HINT)
+                                            : t(TRANSLATION_KEYS.TRANSPORT.FROM_HINT))}
                                     </Text>
                                 </View>
                             </View>
                         </Pressable>
 
+                        {isRental ? null : (
                         <Pressable
                             onPress={() => router.push('/(tabs)/explore/transport-to')}
                             className="p-3 mb-3 rounded-2xl bg-background dark:bg-background-dark"
@@ -132,8 +156,9 @@ export default function TransportSearchPage() {
                                 </View>
                             </View>
                         </Pressable>
+                        )}
 
-                        {params.transportType === 'BUS' ? (
+                        {isRental ? null : params.transportType === 'BUS' ? (
                             <Pressable
                                 onPress={() => router.push('/(tabs)/explore/transport-date?which=return')}
                                 className="p-3 mb-3 rounded-2xl bg-background dark:bg-background-dark"
@@ -170,15 +195,45 @@ export default function TransportSearchPage() {
                             <View className="flex-row items-center">
                                 <Ionicons name="calendar" size={20} color={primary} />
                                 <View className="ml-3">
-                                    <Text className="font-bold text-text dark:text-text-dark">
-                                        {params.date ? longDayLabel(params.date) : t(TRANSLATION_KEYS.TRANSPORT.DATE)}
-                                    </Text>
                                     <Text className="text-xs text-muted dark:text-muted-dark">
-                                        {t(TRANSLATION_KEYS.TRANSPORT.DATE_HINT)}
+                                        {isRental
+                                            ? t(TRANSLATION_KEYS.TRANSPORT.RENTAL_PICKUP_LABEL)
+                                            : t(TRANSLATION_KEYS.TRANSPORT.DATE)}
                                     </Text>
+                                    <Text className="font-bold text-text dark:text-text-dark">
+                                        {params.date
+                                            ? longDayLabel(params.date)
+                                            : t(TRANSLATION_KEYS.TRANSPORT.SELECT_DATE)}
+                                    </Text>
+                                    {isRental ? null : (
+                                        <Text className="text-xs text-muted dark:text-muted-dark">
+                                            {t(TRANSLATION_KEYS.TRANSPORT.DATE_HINT)}
+                                        </Text>
+                                    )}
                                 </View>
                             </View>
                         </Pressable>
+
+                        {isRental ? (
+                            <Pressable
+                                onPress={() => router.push('/(tabs)/explore/transport-date?which=return')}
+                                className="p-3 mb-3 rounded-2xl bg-background dark:bg-background-dark"
+                            >
+                                <View className="flex-row items-center">
+                                    <Ionicons name="calendar-outline" size={20} color={primary} />
+                                    <View className="flex-1 ml-3">
+                                        <Text className="text-xs text-muted dark:text-muted-dark">
+                                            {t(TRANSLATION_KEYS.TRANSPORT.RENTAL_RETURN_LABEL)}
+                                        </Text>
+                                        <Text className="font-bold text-text dark:text-text-dark">
+                                            {params.returnDate
+                                                ? longDayLabel(params.returnDate)
+                                                : t(TRANSLATION_KEYS.TRANSPORT.SELECT_DATE)}
+                                        </Text>
+                                    </View>
+                                </View>
+                            </Pressable>
+                        ) : null}
 
                         <Pressable
                             onPress={() => router.push('/(tabs)/explore/transport-type')}

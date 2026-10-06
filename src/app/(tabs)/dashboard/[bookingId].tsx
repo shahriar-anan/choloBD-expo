@@ -346,6 +346,7 @@ export default function BookingTrackingPage() {
                 {booking.confirmationCode}
               </Text>
             </View>
+            {String(booking.status || '').toUpperCase() !== 'CANCELLED' ? (
             <Pressable
               onPress={() => router.push(`/(tabs)/dashboard/${bookingId}/qr-generate`)}
               accessibilityRole="button"
@@ -357,6 +358,7 @@ export default function BookingTrackingPage() {
                 {t(TRANSLATION_KEYS.BOOKING.QR_CODE)}
               </Text>
             </Pressable>
+            ) : null}
           </View>
           <View className="flex-row items-center mt-2">
             <Text className="mr-2 text-sm font-semibold text-text dark:text-text-dark">{booking.status}</Text>

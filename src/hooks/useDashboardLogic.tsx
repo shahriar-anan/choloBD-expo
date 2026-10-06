@@ -2,7 +2,9 @@ import { useEffect, useState, useCallback } from 'react';
 import { Alert } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '../store/store';
-import { logoutUser } from '../store/slices/authSlice';
+import { logoutUser, setAuthUser } from '../store/slices/authSlice';
+import { saveUser } from '../lib/secureStore';
+import { AuthUser } from '../types/auth';
 import { useRouter } from 'expo-router';
 import { getOwnWallet, OwnWallet } from '../services/api/wallet';
 import { getUnreadNotificationCount } from '../services/api/notifications';
@@ -76,6 +78,30 @@ export function useDashboardLogic() {
       setEmployeeServiceType(
         typeof profile?.employeeServiceType === 'string' ? profile.employeeServiceType : null
       );
+
+      const current = auth.user;
+      if (current && profile && typeof profile === 'object') {
+        const textOrNull = (value: unknown) => (typeof value === 'string' && value.trim() ? value.trim() : null);
+        const nextUser: AuthUser = {
+          ...current,
+          userName: typeof profile.userName === 'string' && profile.userName.trim() ? profile.userName.trim() : current.userName,
+          email: typeof profile.email === 'string' && profile.email.trim() ? profile.email.trim() : current.email,
+          imageUrl: imageUrl || undefined,
+          firstName: textOrNull(profile.firstName),
+          lastName: textOrNull(profile.lastName),
+          phoneNumber: textOrNull(profile.phoneNumber),
+        };
+        const changed = nextUser.userName !== current.userName
+          || nextUser.email !== current.email
+          || (nextUser.imageUrl || '') !== (current.imageUrl || '')
+          || nextUser.firstName !== (current.firstName ?? null)
+          || nextUser.lastName !== (current.lastName ?? null)
+          || nextUser.phoneNumber !== (current.phoneNumber ?? null);
+        if (changed) {
+          await saveUser(nextUser);
+          dispatch(setAuthUser(nextUser));
+        }
+      }
     } catch (e: any) {
       console.error('[useDashboardLogic] loadProfile error', e?.message ?? e);
       setServiceType(null);
@@ -83,7 +109,7 @@ export function useDashboardLogic() {
     } finally {
       setOperatorProfileLoaded(true);
     }
-  }, []);
+  }, [auth.user, dispatch]);
 
   const loadUnreadCount = useCallback(async () => {
     try {

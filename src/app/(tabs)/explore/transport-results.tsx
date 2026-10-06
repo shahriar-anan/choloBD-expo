@@ -15,7 +15,7 @@ import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../../hooks/useTheme';
 import theme from '../../../constants/theme';
 import { TRANSLATION_KEYS } from '../../../constants/translationKeys';
-import { getTransportTrips, getTransports } from '../../../services/api/transports';
+import { getTransportById, getTransportTrips, getTransports } from '../../../services/api/transports';
 import { TransportOperator, TransportTrip } from '../../../types/transports';
 import {
   BusServiceClassFilter,
@@ -24,9 +24,16 @@ import {
   tripIsSoldOut,
 } from '../../../utilities/transportTripFilters';
 import { formatTripClock } from '../../../utilities/transportFormat';
-import { longDayLabel } from '../../../utilities/hotelSearch';
+import { longDayLabel, nightsBetween } from '../../../utilities/hotelSearch';
 import { useTransportBusCheckout } from '../../../context/TransportBusCheckoutContext';
 import { useTransportSearch } from '../../../context/TransportSearchContext';
+
+function tripTitle(trip: TransportTrip): string {
+  if (trip.coachLabel) return trip.coachLabel;
+  const layoutName = trip.layout?.name?.replace(/^API\s+/i, '').trim();
+  if (layoutName) return layoutName;
+  return trip.transport?.name ?? '';
+}
 
 function tripLabel(trip: TransportTrip): string {
   const origin = trip.route?.originLocation?.name ?? '';
@@ -44,6 +51,7 @@ export default function TransportResultsPage() {
     returnDate?: string;
     leg?: string;
     locationId?: string;
+    pickupName?: string;
     pickupDate?: string;
     returnDateRental?: string;
   }>();
@@ -64,6 +72,7 @@ export default function TransportResultsPage() {
   const [trips, setTrips] = useState<TransportTrip[]>([]);
   const [operators, setOperators] = useState<TransportOperator[]>([]);
   const [serviceFilter, setServiceFilter] = useState<BusServiceClassFilter>('ALL');
+  const [imageByTransportId, setImageByTransportId] = useState<Record<string, string>>({});
 
   const loadBus = useCallback(async () => {
     if (!searchOriginId || !searchDestinationId || !activeDate) {
@@ -125,6 +134,41 @@ export default function TransportResultsPage() {
       cancelled = true;
     };
   }, [isBus, params.locationId]);
+
+  useEffect(() => {
+    if (!isBus || trips.length === 0) return;
+    const missing = [
+      ...new Set(
+        trips
+          .filter((trip) => !trip.transportImageUrl && !trip.transport?.images?.[0]?.url)
+          .map((trip) => trip.transportId)
+          .filter((id) => id && !imageByTransportId[id])
+      ),
+    ];
+    if (missing.length === 0) return;
+    let cancelled = false;
+    const loadImages = async () => {
+      const next: Record<string, string> = {};
+      await Promise.all(
+        missing.map(async (transportId) => {
+          try {
+            const operator = await getTransportById(transportId);
+            const url = operator.images?.[0]?.url;
+            if (url) next[transportId] = url;
+          } catch {
+            // Cover photo is optional; the bus icon stays as fallback.
+          }
+        })
+      );
+      if (!cancelled && Object.keys(next).length > 0) {
+        setImageByTransportId((current) => ({ ...current, ...next }));
+      }
+    };
+    loadImages();
+    return () => {
+      cancelled = true;
+    };
+  }, [isBus, trips, imageByTransportId]);
 
   const counts = useMemo(() => countTripsByServiceClass(trips), [trips]);
   const visibleTrips = useMemo(
@@ -235,6 +279,10 @@ export default function TransportResultsPage() {
           {isBus ? (
             visibleTrips.map((trip) => {
                 const soldOut = tripIsSoldOut(trip);
+                const imageUrl =
+                  trip.transportImageUrl ||
+                  trip.transport?.images?.[0]?.url ||
+                  imageByTransportId[trip.transportId];
                 return (
                   <Pressable
                     key={trip.id}
@@ -243,9 +291,9 @@ export default function TransportResultsPage() {
                     className="flex-row p-4 mb-3 border rounded-2xl border-border dark:border-border-dark opacity-100"
                     style={{ opacity: soldOut ? 0.55 : 1 }}
                   >
-                    {trip.transportImageUrl ? (
+                    {imageUrl ? (
                       <Image
-                        source={{ uri: trip.transportImageUrl }}
+                        source={{ uri: imageUrl }}
                         className="w-16 h-16 mr-3 rounded-xl bg-muted"
                       />
                     ) : (
@@ -258,7 +306,7 @@ export default function TransportResultsPage() {
                     )}
                     <View className="flex-1">
                       <Text className="font-semibold text-text dark:text-text-dark">
-                        {trip.coachLabel || trip.transport?.name}
+                        {tripTitle(trip)}
                       </Text>
                       <Text className="mt-1 text-sm text-muted dark:text-muted-dark">{tripLabel(trip)}</Text>
                       <View className="flex-row items-center justify-between mt-2">
@@ -282,29 +330,131 @@ export default function TransportResultsPage() {
                   </Pressable>
                 );
             })
-          ) : operators.length === 0 ? (
-            <Text className="mt-6 text-center text-muted dark:text-muted-dark">
-              {t(TRANSLATION_KEYS.TRANSPORT.NO_OPERATORS)}
-            </Text>
           ) : (
-            operators.map((operator) => (
-              <Pressable
-                key={operator.id}
-                onPress={() =>
-                  router.push({
-                    pathname: '/(tabs)/explore/transport-rental',
-                    params: {
-                      transportId: operator.id,
-                      pickupDate: params.pickupDate,
-                      returnDate: params.returnDateRental ?? params.returnDate,
-                    },
-                  })
-                }
-                className="p-4 mb-3 border rounded-xl border-border dark:border-border-dark"
-              >
-                <Text className="font-semibold text-text dark:text-text-dark">{operator.name}</Text>
-              </Pressable>
-            ))
+            <>
+              {params.pickupDate && params.returnDateRental ? (
+                <View className="p-4 mb-4 bg-white border rounded-2xl border-border dark:bg-surface-dark dark:border-border-dark">
+                  <Text className="text-xs font-semibold uppercase text-muted dark:text-muted-dark">
+                    {t(TRANSLATION_KEYS.TRANSPORT.PICKUP_LOCATION)}
+                  </Text>
+                  <Text className="mt-1 text-lg font-bold text-text dark:text-text-dark" numberOfLines={1}>
+                    {params.pickupName || t(TRANSLATION_KEYS.TRANSPORT.RENTAL)}
+                  </Text>
+                  <View className="flex-row items-center mt-3">
+                    <View className="flex-1">
+                      <Text className="text-xs text-muted dark:text-muted-dark">
+                        {t(TRANSLATION_KEYS.TRANSPORT.RENTAL_PICKUP_LABEL)}
+                      </Text>
+                      <Text className="mt-0.5 font-semibold text-text dark:text-text-dark">
+                        {longDayLabel(params.pickupDate)}
+                      </Text>
+                    </View>
+                    <Ionicons name="arrow-forward" size={16} color={primary} style={{ marginHorizontal: 8 }} />
+                    <View className="flex-1">
+                      <Text className="text-xs text-muted dark:text-muted-dark">
+                        {t(TRANSLATION_KEYS.TRANSPORT.RENTAL_RETURN_LABEL)}
+                      </Text>
+                      <Text className="mt-0.5 font-semibold text-text dark:text-text-dark">
+                        {longDayLabel(params.returnDateRental)}
+                      </Text>
+                    </View>
+                  </View>
+                  <Text className="mt-3 text-sm font-semibold" style={{ color: primary }}>
+                    {t(TRANSLATION_KEYS.TRANSPORT.RENTAL_DAYS, {
+                      count: Math.max(1, nightsBetween(params.pickupDate, params.returnDateRental)),
+                    })}
+                  </Text>
+                </View>
+              ) : null}
+              {operators.length === 0 ? (
+                <View className="items-center px-6 py-16">
+                  <View
+                    className="items-center justify-center w-16 h-16 mb-4 rounded-full"
+                    style={{ backgroundColor: `${primary}18` }}
+                  >
+                    <Ionicons name="car-outline" size={30} color={primary} />
+                  </View>
+                  <Text className="text-base font-semibold text-center text-text dark:text-text-dark">
+                    {t(TRANSLATION_KEYS.TRANSPORT.NO_OPERATORS)}
+                  </Text>
+                </View>
+              ) : (
+                operators.map((operator) => {
+                  const imageUrl = operator.images?.[0]?.url;
+                  const place = operator.location?.city || operator.location?.district || operator.location?.name || '';
+                  const vehicleCount = operator._count?.vehicles;
+                  const amenities = (operator.amenities ?? []).slice(0, 2);
+                  return (
+                    <Pressable
+                      key={operator.id}
+                      onPress={() =>
+                        router.push({
+                          pathname: '/(tabs)/explore/transport-rental',
+                          params: {
+                            transportId: operator.id,
+                            pickupDate: params.pickupDate,
+                            returnDate: params.returnDateRental ?? params.returnDate,
+                            pickupName: params.pickupName ?? '',
+                          },
+                        })
+                      }
+                      className="flex-row mb-3 overflow-hidden bg-white border rounded-2xl border-border dark:bg-surface-dark dark:border-border-dark"
+                    >
+                      {imageUrl ? (
+                        <Image source={{ uri: imageUrl }} style={{ width: 108, height: 128 }} />
+                      ) : (
+                        <View
+                          className="items-center justify-center"
+                          style={{ width: 108, height: 128, backgroundColor: `${primary}14` }}
+                        >
+                          <Ionicons name="car" size={32} color={primary} />
+                        </View>
+                      )}
+                      <View className="justify-center flex-1 px-3 py-3">
+                        <Text className="text-base font-bold text-text dark:text-text-dark" numberOfLines={1}>
+                          {operator.name}
+                        </Text>
+                        {place ? (
+                          <View className="flex-row items-center mt-1">
+                            <Ionicons name="location-outline" size={14} color={isDark ? theme.colors['muted-dark'] : theme.colors.muted} />
+                            <Text className="ml-1 text-xs text-muted dark:text-muted-dark" numberOfLines={1}>
+                              {place}
+                            </Text>
+                          </View>
+                        ) : null}
+                        <View className="flex-row items-center mt-2">
+                          {operator.rating != null && operator.rating > 0 ? (
+                            <View className="flex-row items-center mr-3">
+                              <Ionicons name="star" size={13} color={theme.colors.warning} />
+                              <Text className="ml-1 text-xs font-semibold text-text dark:text-text-dark">
+                                {operator.rating.toFixed(1)}
+                              </Text>
+                            </View>
+                          ) : null}
+                          {vehicleCount != null ? (
+                            <Text className="text-xs text-muted dark:text-muted-dark">
+                              {t(TRANSLATION_KEYS.TRANSPORT.VEHICLE_COUNT, { count: vehicleCount })}
+                            </Text>
+                          ) : null}
+                        </View>
+                        {amenities.length > 0 ? (
+                          <Text className="mt-2 text-xs text-muted dark:text-muted-dark" numberOfLines={1}>
+                            {amenities.join(' · ')}
+                          </Text>
+                        ) : (
+                          <Text className="mt-2 text-xs font-semibold" style={{ color: primary }}>
+                            {t(TRANSLATION_KEYS.TRANSPORT.SEE_CARS)}
+                          </Text>
+                        )}
+                      </View>
+                      <View className="items-center justify-center pr-3">
+                        <Ionicons name="chevron-forward" size={18} color={primary} />
+                      </View>
+                    </Pressable>
+                  );
+                })
+              )}
+            </>
           )}
         </ScrollView>
       )}

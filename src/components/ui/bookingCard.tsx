@@ -225,7 +225,7 @@ export function BookingCard({ booking, onPress, showGenerateQr = false, showRoom
                 {booking.confirmationCode || booking.id?.substring(0, 16) || 'N/A'}
               </Text>
             </View>
-            {showGenerateQr ? (
+            {showGenerateQr && String(booking.status || '').toUpperCase() !== 'CANCELLED' ? (
               <Pressable
                 onPress={() => router.push(`/(tabs)/dashboard/${booking.id}/qr-generate`)}
                 accessibilityRole="button"

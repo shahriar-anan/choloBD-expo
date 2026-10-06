@@ -31,7 +31,8 @@ function groupByCompartment(seats: TransportSeat[]): { name: string; seats: Tran
   const order: string[] = [];
   const map = new Map<string, TransportSeat[]>();
   seats.forEach((seat) => {
-    const name = seat.compartmentName || 'Coach';
+    const raw = seat.compartmentName?.trim();
+    const name = !raw || /^coach$/i.test(raw) ? 'Cabin' : raw;
     if (!map.has(name)) {
       map.set(name, []);
       order.push(name);

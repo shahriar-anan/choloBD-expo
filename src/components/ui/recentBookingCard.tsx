@@ -132,7 +132,7 @@ export function RecentBookingCard({ item, onPress, onQrPress, compact = false }:
         </View>
         {onPress ? <Ionicons name="chevron-forward" size={16} color={muted} /> : null}
       </View>
-      {onQrPress && (item.kind === 'hotel' || item.kind === 'activity' || item.kind === 'transport') ? (
+      {onQrPress && String(item.status || '').toUpperCase() !== 'CANCELLED' && (item.kind === 'hotel' || item.kind === 'activity' || item.kind === 'transport') ? (
         <Pressable
           onPress={() => onQrPress(item)}
           accessibilityRole="button"

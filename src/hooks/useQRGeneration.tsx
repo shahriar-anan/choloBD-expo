@@ -14,7 +14,6 @@ export function useQRGeneration() {
       return data.data?.qrToken ?? null;
     } catch (e: any) {
       const errorMsg = e?.response?.data?.message ?? e?.message ?? 'Failed to generate QR code';
-      if (__DEV__) console.error('[useQRGeneration] Error', e?.response?.status, errorMsg);
       setError(errorMsg);
       throw e;
     } finally {

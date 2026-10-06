@@ -1,4 +1,10 @@
 import axios, { AxiosError, AxiosInstance, AxiosRequestConfig } from 'axios';
+
+declare module 'axios' {
+  interface AxiosRequestConfig {
+    silent404?: boolean;
+  }
+}
 import { getTokens, saveTokens, clearTokens } from '../../lib/secureStore';
 
 let api: AxiosInstance | null = null;
@@ -110,7 +116,8 @@ export function createApi(baseURL: string) {
     async (error: AxiosError) => {
       const original = error.config as AxiosRequestConfig & { _retry?: boolean };
       const canRefresh = error.response?.status === 401 && original && !original._retry;
-      if (!canRefresh) {
+      const silent404 = error.response?.status === 404 && original?.silent404 === true;
+      if (!canRefresh && !silent404) {
         console.error('[axios.error] ❌', {
           message: error.message,
           url: error.config?.url,

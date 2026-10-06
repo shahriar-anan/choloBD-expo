@@ -105,6 +105,7 @@ export default function TripPlannerIndex() {
   const surfaceColor = isDark ? theme.colors['surface-dark'] : theme.colors.surface;
   const borderColor = isDark ? theme.colors['border-dark'] : theme.colors.border;
   const onPrimary = isDark ? theme.colors['onPrimary-dark'] : theme.colors.onPrimary;
+  const accentWash = isDark ? 'rgba(93, 173, 226, 0.16)' : 'rgba(0, 102, 255, 0.10)';
 
   const handleBack = () => {
     if (params.fromHome === 'true') {
@@ -174,8 +175,8 @@ export default function TripPlannerIndex() {
 
   return (
     <SafeAreaView edges={['top', 'left', 'right']} className="flex-1 bg-background dark:bg-background-dark">
-      <View className="px-4 pb-2 flex-row items-center">
-        <TouchableOpacity onPress={handleBack} accessibilityRole="button" style={{ marginRight: 8, minWidth: 44, minHeight: 44, justifyContent: 'center' }}>
+      <View className="px-4 pt-1 pb-1">
+        <TouchableOpacity onPress={handleBack} accessibilityRole="button" accessibilityLabel={t(TRANSLATION_KEYS.COMMON.BACK)} style={{ alignSelf: 'flex-start', minWidth: 44, minHeight: 44, justifyContent: 'center' }}>
           <Ionicons name="chevron-back" size={24} color={primaryColor} />
         </TouchableOpacity>
         <Text className="text-3xl font-bold font-heading text-text dark:text-text-dark">
@@ -183,30 +184,45 @@ export default function TripPlannerIndex() {
         </Text>
       </View>
 
-      <View className="px-4 pb-3 flex-row" style={{ gap: 8 }}>
-        {(['mine', 'templates'] as HubTab[]).map((value) => {
-          const label = value === 'mine'
-            ? t(TRANSLATION_KEYS.TRIP_PLANNER.HUB_TAB_MINE)
-            : t(TRANSLATION_KEYS.TRIP_PLANNER.HUB_TAB_TEMPLATES);
-          const selected = tab === value;
+      <View className="px-4 pt-3 pb-3" style={{ flexDirection: 'row', gap: 8 }}>
+        {([
+          { id: 'mine' as HubTab, icon: 'create-outline' as const, label: t(TRANSLATION_KEYS.TRIP_PLANNER.HUB_TAB_MINE) },
+          { id: 'templates' as HubTab, icon: 'map-outline' as const, label: t(TRANSLATION_KEYS.TRIP_PLANNER.HUB_TAB_TEMPLATES) },
+        ]).map((item) => {
+          const selected = tab === item.id;
           return (
             <TouchableOpacity
-              key={value}
-              onPress={() => selectTab(value)}
+              key={item.id}
+              onPress={() => selectTab(item.id)}
+              accessibilityRole="button"
+              accessibilityState={{ selected }}
+              activeOpacity={0.85}
               style={{
                 flex: 1,
-                minHeight: 40,
-                borderRadius: 12,
+                minHeight: 44,
+                borderRadius: 14,
+                paddingHorizontal: 10,
+                paddingVertical: 10,
+                flexDirection: 'row',
                 alignItems: 'center',
                 justifyContent: 'center',
-                paddingHorizontal: 6,
                 backgroundColor: selected ? primaryColor : surfaceColor,
                 borderWidth: 1,
                 borderColor: selected ? primaryColor : borderColor,
               }}
             >
-              <Text style={{ fontSize: 13, fontWeight: '700', color: selected ? onPrimary : textColor, textAlign: 'center' }}>
-                {label}
+              <Ionicons name={item.icon} size={16} color={selected ? onPrimary : primaryColor} />
+              <Text
+                numberOfLines={1}
+                style={{
+                  marginLeft: 6,
+                  flexShrink: 1,
+                  fontSize: 13,
+                  fontWeight: '700',
+                  color: selected ? onPrimary : textColor,
+                }}
+              >
+                {item.label}
               </Text>
             </TouchableOpacity>
           );
@@ -355,29 +371,54 @@ export default function TripPlannerIndex() {
             <View>
               <TouchableOpacity
                 onPress={startBlank}
+                accessibilityRole="button"
+                activeOpacity={0.85}
                 style={{
-                  marginBottom: 16,
-                  minHeight: 48,
-                  borderRadius: 12,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  backgroundColor: primaryColor,
+                  marginTop: 4,
+                  marginBottom: 22,
+                  borderRadius: 20,
+                  borderWidth: 1,
+                  borderColor,
+                  backgroundColor: surfaceColor,
+                  overflow: 'hidden',
+                  ...theme.elevation.sm,
                 }}
               >
-                <Text style={{ color: onPrimary, fontWeight: '700', fontSize: 15 }}>
-                  {t(TRANSLATION_KEYS.TRIP_PLANNER.HUB_START_BLANK)}
-                </Text>
+                <View style={{ height: 4, backgroundColor: primaryColor }} />
+                <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 16 }}>
+                  <View
+                    style={{
+                      width: 48,
+                      height: 48,
+                      borderRadius: 16,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      backgroundColor: accentWash,
+                    }}
+                  >
+                    <Ionicons name="add" size={26} color={primaryColor} />
+                  </View>
+                  <View style={{ flex: 1, marginLeft: 14, marginRight: 10 }}>
+                    <Text style={{ fontSize: 16, fontWeight: '700', color: textColor }}>
+                      {t(TRANSLATION_KEYS.TRIP_PLANNER.HUB_START_BLANK)}
+                    </Text>
+                    <Text style={{ marginTop: 4, fontSize: 13, lineHeight: 18, color: mutedColor }}>
+                      {t(TRANSLATION_KEYS.TRIP_PLANNER.HUB_START_BLANK_DESC)}
+                    </Text>
+                  </View>
+                  <Ionicons name="arrow-forward" size={18} color={primaryColor} />
+                </View>
               </TouchableOpacity>
-              <Text style={{ fontSize: 18, fontWeight: '700', color: textColor, marginBottom: 4 }}>
-                {t(TRANSLATION_KEYS.TRIP_PLANNER.HUB_YOURS)}
-              </Text>
-              {!plans.error && plans.total > 0 ? (
-                <Text style={{ fontSize: 13, color: mutedColor, marginBottom: 12 }}>
-                  {t(TRANSLATION_KEYS.TRIP_PLANNER.HUB_RESULTS, { count: plans.total })}
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                <Text style={{ fontSize: 18, fontWeight: '700', color: textColor }}>
+                  {t(TRANSLATION_KEYS.TRIP_PLANNER.HUB_YOURS)}
                 </Text>
-              ) : (
-                <View style={{ height: 12 }} />
-              )}
+                {!plans.error && plans.total > 0 ? (
+                  <Text style={{ fontSize: 13, fontWeight: '600', color: mutedColor }}>
+                    {t(TRANSLATION_KEYS.TRIP_PLANNER.HUB_RESULTS, { count: plans.total })}
+                  </Text>
+                ) : null}
+              </View>
             </View>
           }
           ListEmptyComponent={

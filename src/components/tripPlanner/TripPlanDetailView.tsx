@@ -191,7 +191,7 @@ export function TripPlanDetailView({ trip, onEdit, onBack }: TripPlanDetailViewP
                           >
                             <Text
                               className={`text-xs font-semibold ${
-                                selected ? 'text-onPrimary' : 'text-text dark:text-text-dark'
+                                selected ? 'text-white' : 'text-text dark:text-text-dark'
                               }`}
                             >
                               {t(TRANSLATION_KEYS.TRIP_PLANNER.DAY_PLAN_DAY, { day: dayNumber })}

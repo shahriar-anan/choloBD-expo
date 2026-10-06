@@ -5,6 +5,23 @@ import { createApi, getApiInstance, ensureFreshAccessToken, setLogoutCallback } 
 import { saveTokens, clearTokens, saveUserIdAndRole, clearUserIdAndRole, getUserIdAndRole, saveUser, getUser, clearUser } from '../../lib/secureStore';
 import { API_BASE_URL } from '../../constants/api';
 import { OAuthProvider } from '../../constants/oauth';
+import { TRANSLATION_KEYS } from '../../constants/translationKeys';
+
+function authFailureMessage(error: unknown, fallback: string): string {
+  if (axios.isAxiosError(error)) {
+    const data: unknown = error.response?.data;
+    if (data && typeof data === 'object' && 'message' in data) {
+      const message = (data as { message?: unknown }).message;
+      if (typeof message === 'string' && message.trim()) {
+        return message.trim();
+      }
+    }
+    if (typeof data === 'string' && data.trim()) {
+      return data.trim();
+    }
+  }
+  return fallback;
+}
 
 // We'll export a function to initialize the API base URL from the app bootstrap
 export const configureApi = (baseURL: string) => {
@@ -50,43 +67,48 @@ export const initializeAuth = createAsyncThunk('auth/initialize', async (_, { re
   }
 });
 
-export const loginUser = createAsyncThunk('auth/login', async (payload: { email: string; password: string }, { rejectWithValue }) => {
+export const loginUser = createAsyncThunk<
+  { tokens: AuthTokens; user: AuthUser },
+  { email: string; password: string },
+  { rejectValue: string }
+>('auth/login', async (payload, { rejectWithValue }) => {
   try {
-    console.log('[loginUser] Starting login...', payload);
     const api = getApiInstance();
-    console.log('[loginUser] API instance obtained');
     const res = await api.post('/api/auth/login-jwt', payload);
-    console.log('[loginUser] Login response:', res.data);
     const data = res.data as ApiResponse<{ accessToken: string; refreshToken: string; user: AuthUser }>;
     await saveTokens({ accessToken: data.data.accessToken, refreshToken: data.data.refreshToken });
     await saveUserIdAndRole(data.data.user.id, data.data.user.role);
     await saveUser(data.data.user);
-    console.log('[loginUser] Success');
     return { tokens: { accessToken: data.data.accessToken, refreshToken: data.data.refreshToken }, user: data.data.user };
-  } catch (e: any) {
-    console.error('[loginUser] Error:', e?.response?.data || e.message);
-    return rejectWithValue(e?.response?.data || e.message);
+  } catch (error: unknown) {
+    const message = authFailureMessage(error, TRANSLATION_KEYS.AUTH.LOGIN.FAILED);
+    if (__DEV__) {
+      console.error('[loginUser] Error:', message);
+    }
+    return rejectWithValue(message);
   }
 });
 
-export const registerUser = createAsyncThunk('auth/register', async (payload: { email: string; password: string; userName: string; role: string }, { rejectWithValue }) => {
+export const registerUser = createAsyncThunk<
+  { tokens: AuthTokens; user: AuthUser },
+  { email: string; password: string; userName: string; role: string },
+  { rejectValue: string }
+>('auth/register', async (payload, { rejectWithValue }) => {
   try {
-    console.log('[registerUser] Starting register...', payload);
     // Use direct axios + API_BASE_URL to avoid triggering auth interceptors/refresh logic
     // The anonymous mobile registration endpoint is `/api/auth/register-jwt` (server expects this)
     const res = await axios.post(`${API_BASE_URL}/api/auth/register-jwt`, payload, { timeout: 10000 });
-    console.log('[registerUser] Register response:', res.data);
     const data = res.data as ApiResponse<{ accessToken: string; refreshToken: string; user: AuthUser }>;
     await saveTokens({ accessToken: data.data.accessToken, refreshToken: data.data.refreshToken });
     await saveUserIdAndRole(data.data.user.id, data.data.user.role);
     await saveUser(data.data.user);
-    console.log('[registerUser] Success');
     return { tokens: { accessToken: data.data.accessToken, refreshToken: data.data.refreshToken }, user: data.data.user };
-  } catch (e: any) {
-    console.error('[registerUser] Error:', e?.response?.data || e.message);
-    // Prefer server-provided message if present
-    const serverMsg = e?.response?.data?.message ?? e?.response?.data ?? e?.message;
-    return rejectWithValue(serverMsg);
+  } catch (error: unknown) {
+    const message = authFailureMessage(error, TRANSLATION_KEYS.AUTH.REGISTER.FAILED);
+    if (__DEV__) {
+      console.error('[registerUser] Error:', message);
+    }
+    return rejectWithValue(message);
   }
 });
 
@@ -128,6 +150,9 @@ const slice = createSlice({
     clearError(state) {
       state.error = null;
     },
+    setAuthUser(state, action: PayloadAction<AuthUser>) {
+      state.user = action.payload;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -158,9 +183,9 @@ const slice = createSlice({
         s.user = a.payload.user;
         s.isAuthenticated = true;
       })
-      .addCase(loginUser.rejected, (s, a: any) => {
+      .addCase(loginUser.rejected, (s, a) => {
         s.isLoading = false;
-        s.error = a.payload || String(a.error?.message || a.error);
+        s.error = a.payload || TRANSLATION_KEYS.AUTH.LOGIN.FAILED;
       })
       .addCase(registerUser.pending, (s) => {
         s.isLoading = true;
@@ -172,9 +197,9 @@ const slice = createSlice({
         s.user = a.payload.user;
         s.isAuthenticated = true;
       })
-      .addCase(registerUser.rejected, (s, a: any) => {
+      .addCase(registerUser.rejected, (s, a) => {
         s.isLoading = false;
-        s.error = a.payload || String(a.error?.message || a.error);
+        s.error = a.payload || TRANSLATION_KEYS.AUTH.REGISTER.FAILED;
       })
       .addCase(logoutUser.fulfilled, (s) => {
         s.user = null;
@@ -198,6 +223,6 @@ const slice = createSlice({
   },
 });
 
-export const { clearError } = slice.actions;
+export const { clearError, setAuthUser } = slice.actions;
 
 export default slice.reducer;

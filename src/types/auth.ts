@@ -14,6 +14,9 @@ export type AuthUser = {
   role: UserRole;
   imageUrl?: string;
   userStatus?: string;
+  firstName?: string | null;
+  lastName?: string | null;
+  phoneNumber?: string | null;
 };
 
 export type AuthTokens = {

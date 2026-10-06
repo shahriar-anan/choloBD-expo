@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, ActivityIndicator, Pressable, Alert, ScrollView } from 'react-native';
+import { View, Text, ActivityIndicator, Pressable, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -19,33 +19,26 @@ export default function BookingQRGeneratePage() {
   const [expiresAt, setExpiresAt] = useState<string | null>(null);
 
   useEffect(() => {
-    const load = async () => {
-      if (!bookingId) {
-        Alert.alert('Error', 'Booking ID is missing');
-        router.back();
-        return;
-      }
-
+    if (!bookingId) {
+      return;
+    }
+    let active = true;
+    void (async () => {
       try {
-        // eslint-disable-next-line no-console
-        console.log('[BookingQRGeneratePage] Generating QR for booking:', bookingId);
         const token = await generateQRToken(bookingId);
-        if (token) {
-          setQRToken(token);
-          // Set expiry to 10 minutes from now
-          const expiryTime = new Date();
-          expiryTime.setMinutes(expiryTime.getMinutes() + 10);
-          setExpiresAt(expiryTime.toISOString());
-        }
-      } catch (e) {
-        // eslint-disable-next-line no-console
-        console.error('[BookingQRGeneratePage] Generation error', e);
-        Alert.alert('Failed to Generate QR', error || 'Please try again');
+        if (!active || !token) return;
+        setQRToken(token);
+        const expiryTime = new Date();
+        expiryTime.setMinutes(expiryTime.getMinutes() + 10);
+        setExpiresAt(expiryTime.toISOString());
+      } catch {
+        if (!active) return;
       }
+    })();
+    return () => {
+      active = false;
     };
-
-    load();
-  }, [bookingId, generateQRToken, error]);
+  }, [bookingId, generateQRToken]);
 
   return (
     <SafeAreaView edges={["top", "bottom"]} className="flex-1 bg-background dark:bg-background-dark">
@@ -57,7 +50,7 @@ export default function BookingQRGeneratePage() {
         </Pressable>
       </View>
 
-      {loading ? (
+      {loading || (Boolean(bookingId) && !error && !qrToken) ? (
         <View className="items-center justify-center flex-1">
           <ActivityIndicator size="large" color={theme.colors.primary} />
           <Text className="mt-4 text-muted dark:text-muted-dark">Generating QR code...</Text>

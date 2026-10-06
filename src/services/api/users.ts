@@ -6,6 +6,21 @@ export async function getUserProfile(): Promise<any> {
   return res.data?.data ?? null;
 }
 
+export interface UpdateUserProfileData {
+  userName?: string;
+  email?: string;
+  firstName?: string | null;
+  lastName?: string | null;
+  phoneNumber?: string | null;
+  imageUrl?: string;
+}
+
+export async function updateUserProfile(data: UpdateUserProfileData): Promise<any> {
+  const api = getApiInstance();
+  const res = await api.put('/api/users/profile', data);
+  return res.data?.data ?? null;
+}
+
 /**
  * Hotels assigned to the signed-in hotel admin or hotel employee.
  * GET /api/hotels/my always returns an array.

@@ -5,8 +5,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from './useTheme';
 import theme from '../constants/theme';
 
-export const TAB_BAR_HEIGHT = 52;
-const TAB_BAR_FLOAT_GAP = 14;
+export const TAB_BAR_HEIGHT = 68;
+
+export function tabBarBottomOffset(bottomInset: number): number {
+    return Math.max(0, bottomInset - 18);
+}
 
 export function tabBarScreenStyle(isDark: boolean, bottomInset: number): ViewStyle {
     return {
@@ -15,7 +18,7 @@ export function tabBarScreenStyle(isDark: boolean, bottomInset: number): ViewSty
         end: 16,
         left: 16,
         right: 16,
-        bottom: bottomInset + TAB_BAR_FLOAT_GAP,
+        bottom: tabBarBottomOffset(bottomInset),
         height: TAB_BAR_HEIGHT,
         paddingTop: 4,
         paddingBottom: 4,
@@ -34,7 +37,7 @@ export function tabBarScreenStyle(isDark: boolean, bottomInset: number): ViewSty
 }
 
 export function tabBarClearance(bottomInset: number): number {
-    return TAB_BAR_HEIGHT + bottomInset + TAB_BAR_FLOAT_GAP + 12;
+    return TAB_BAR_HEIGHT + tabBarBottomOffset(bottomInset) + 12;
 }
 
 const hiddenTabBarStyle: ViewStyle = { display: 'none', height: 0, overflow: 'hidden' };

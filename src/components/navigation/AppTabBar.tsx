@@ -5,9 +5,9 @@ import { CommonActions } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import theme from '../../constants/theme';
 import { useTheme } from '../../hooks/useTheme';
+import { TAB_BAR_HEIGHT, tabBarBottomOffset } from '../../hooks/useHideTabBar';
 
-const PILL_HEIGHT = 52;
-const FLOAT_GAP = 6;
+const PILL_HEIGHT = TAB_BAR_HEIGHT;
 const SIDE_INSET = 4;
 
 function isHiddenItem(style: StyleProp<ViewStyle> | undefined): boolean {
@@ -33,7 +33,8 @@ export function AppTabBar({ state, descriptors, navigation }: BottomTabBarProps)
 
   const active = focusedOptions?.tabBarActiveTintColor ?? theme.colors.primary;
   const inactive = focusedOptions?.tabBarInactiveTintColor ?? theme.colors.muted;
-  const pill = isDark ? theme.colors['surface-dark'] : theme.colors.surface;
+  const pill = isDark ? '#102C2E' : theme.colors.surface;
+  const pillBorder = isDark ? '#1F4A4C' : theme.colors.border;
   return (
     <View
       pointerEvents="box-none"
@@ -41,7 +42,7 @@ export function AppTabBar({ state, descriptors, navigation }: BottomTabBarProps)
         position: 'absolute',
         left: SIDE_INSET,
         right: SIDE_INSET,
-        bottom: insets.bottom + FLOAT_GAP,
+        bottom: tabBarBottomOffset(insets.bottom),
         height: PILL_HEIGHT,
         backgroundColor: 'transparent',
       }}
@@ -54,7 +55,7 @@ export function AppTabBar({ state, descriptors, navigation }: BottomTabBarProps)
           flexDirection: 'row',
           alignItems: 'center',
           borderWidth: StyleSheet.hairlineWidth,
-          borderColor: isDark ? theme.colors['border-dark'] : theme.colors.border,
+          borderColor: pillBorder,
           shadowColor: '#000',
           shadowOffset: { width: 0, height: 2 },
           shadowOpacity: 0.12,

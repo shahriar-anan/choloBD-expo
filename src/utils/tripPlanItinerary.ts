@@ -45,12 +45,15 @@ export interface WizardStop {
   shortDescription: string;
   tourSpotId: string;
   tourSpotName?: string;
+  tourSpotImageUrl?: string;
   activitySpotId?: string;
   activitySpotName?: string;
+  activitySpotImageUrl?: string;
   transportOption?: string;
   hotelOption?: string;
   hotelId?: string;
   hotelName?: string;
+  hotelImageUrl?: string;
   activityCost?: number;
   hotelCost?: number;
   notes?: string;

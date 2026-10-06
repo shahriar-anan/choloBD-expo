@@ -120,10 +120,15 @@ export interface TransportTrip {
   busServiceTypes?: string[];
   transportImageUrl?: string | null;
   route?: TransportRouteRef;
+  layout?: {
+    id?: string;
+    name?: string | null;
+  };
   transport?: {
     id: string;
     name: string;
     transportType: CatalogTransportType;
+    images?: { url: string }[];
   };
 }
 

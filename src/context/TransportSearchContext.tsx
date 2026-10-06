@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useMemo, useState } from 'react';
-import { format, startOfDay } from 'date-fns';
+import { addDays, format, isBefore, parseISO, startOfDay } from 'date-fns';
 import { OnPlatformTransportType } from '../types/transports';
 import { TransportPlace, TransportSearchParams } from '../types/transportSearch';
 
@@ -16,6 +16,15 @@ const TransportSearchContext = createContext<TransportSearchContextValue | null>
 
 function defaultTravelDate(): string {
     return format(startOfDay(new Date()), 'yyyy-MM-dd');
+}
+
+function dayAfter(iso: string): string {
+    return format(addDays(parseISO(iso), 1), 'yyyy-MM-dd');
+}
+
+function returnIsAfterPickup(pickup: string, returnDate: string | null): boolean {
+    if (!returnDate) return false;
+    return isBefore(startOfDay(parseISO(pickup)), startOfDay(parseISO(returnDate)));
 }
 
 function initialParams(): TransportSearchParams {
@@ -35,14 +44,34 @@ export function TransportSearchProvider({ children }: { children: React.ReactNod
         params,
         setFrom: (from) => setParams((current) => ({ ...current, from })),
         setTo: (to) => setParams((current) => ({ ...current, to })),
-        setDate: (date) => setParams((current) => ({ ...current, date })),
+        setDate: (date) => setParams((current) => {
+            if (current.transportType !== 'CAR_RENTAL') {
+                return { ...current, date };
+            }
+            return {
+                ...current,
+                date,
+                returnDate: returnIsAfterPickup(date, current.returnDate)
+                    ? current.returnDate
+                    : dayAfter(date),
+            };
+        }),
         setReturnDate: (returnDate) => setParams((current) => ({ ...current, returnDate })),
         setTransportType: (transportType) =>
-            setParams((current) => ({
-                ...current,
-                transportType,
-                returnDate: transportType === 'BUS' ? current.returnDate : null,
-            })),
+            setParams((current) => {
+                if (transportType !== 'CAR_RENTAL') {
+                    return { ...current, transportType };
+                }
+                const pickup = current.date || format(startOfDay(new Date()), 'yyyy-MM-dd');
+                return {
+                    ...current,
+                    transportType,
+                    date: pickup,
+                    returnDate: returnIsAfterPickup(pickup, current.returnDate)
+                        ? current.returnDate
+                        : dayAfter(pickup),
+                };
+            }),
     }), [params]);
 
     return (

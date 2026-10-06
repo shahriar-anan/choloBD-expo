@@ -2,7 +2,7 @@
  * Phone layout of the web custom tour builder: details, itinerary, photos.
  */
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -13,12 +13,17 @@ import {
   Alert,
   Image,
   Platform,
+  KeyboardAvoidingView,
+  Keyboard,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as ImagePicker from 'expo-image-picker';
 import { Feather } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { TRANSLATION_KEYS } from '../../constants/translationKeys';
+import { useTheme } from '../../hooks/useTheme';
+import theme from '../../constants/theme';
 import { useFetchLocations } from '../../hooks/useFetchLocations';
 import { getApiInstance } from '../../services/api/axiosClient';
 import { unwrapList, catalogSegmentsToWizardStops } from '../../services/api/personalPlanMapping';
@@ -104,6 +109,10 @@ export function TripPlanCreateWizard({
   onCancel,
 }: TripPlanCreateWizardProps) {
   const { t } = useTranslation();
+  const { isDark } = useTheme();
+  const insets = useSafeAreaInsets();
+  const primaryColor = isDark ? theme.colors['primary-dark'] : theme.colors.primary;
+  const errorColor = isDark ? theme.colors['error-dark'] : theme.colors.error;
   const { locations, loading: locationsLoading } = useFetchLocations();
   const divisions = useMemo(
     () => locations.filter((location) => location.locationType === 'DIVISION'),
@@ -133,6 +142,31 @@ export function TripPlanCreateWizard({
   const [showDate, setShowDate] = useState(false);
   const [photos, setPhotos] = useState<{ uri: string; mimeType?: string | null; fileName?: string | null }[]>([]);
   const [saving, setSaving] = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const detailsScrollRef = useRef<ScrollView>(null);
+  const questionOffsets = useRef<Record<number, number>>({});
+  const wasUnlockedRef = useRef(false);
+  const descriptionFieldFocusedRef = useRef(false);
+
+  const registerQuestionOffset = useCallback((num: number, y: number) => {
+    questionOffsets.current[num] = y;
+  }, []);
+
+  const scrollToQuestion = useCallback((num: number) => {
+    requestAnimationFrame(() => {
+      const y = questionOffsets.current[num];
+      if (y !== undefined) {
+        detailsScrollRef.current?.scrollTo({ y: Math.max(0, y - 12), animated: true });
+      }
+    });
+  }, []);
+
+  const scrollDescriptionIntoView = useCallback(() => {
+    scrollToQuestion(7);
+    setTimeout(() => {
+      detailsScrollRef.current?.scrollToEnd({ animated: true });
+    }, Platform.OS === 'ios' ? 120 : 80);
+  }, [scrollToQuestion]);
 
   const budgetNumber = Number(totalBudget) || 0;
   const inferredEnd = inferEndDateString(startDate, duration);
@@ -152,6 +186,38 @@ export function TripPlanCreateWizard({
   const dayStops = stops
     .filter((stop) => stop.dayNumber === activeDay)
     .sort((a, b) => a.segmentOrder - b.segmentOrder);
+
+  const mutedColor = isDark ? theme.colors['muted-dark'] : theme.colors.muted;
+  const wizardFooterHeight = 76;
+  const scrollBottomPadding = 24 + (keyboardHeight > 0 ? keyboardHeight + wizardFooterHeight : wizardFooterHeight);
+
+  useEffect(() => {
+    if (step !== 0) return;
+    if (unlocked && !wasUnlockedRef.current) {
+      scrollToQuestion(5);
+    }
+    wasUnlockedRef.current = unlocked;
+  }, [unlocked, step, scrollToQuestion]);
+
+  useEffect(() => {
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+    const showSub = Keyboard.addListener(showEvent, (event) => {
+      setKeyboardHeight(event.endCoordinates.height);
+      if (step === 0 && descriptionFieldFocusedRef.current) {
+        setTimeout(() => {
+          detailsScrollRef.current?.scrollToEnd({ animated: true });
+        }, Platform.OS === 'ios' ? 80 : 40);
+      }
+    });
+    const hideSub = Keyboard.addListener(hideEvent, () => {
+      setKeyboardHeight(0);
+    });
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, [step]);
 
   useEffect(() => {
     if (mode !== 'create' || !templateId) return;
@@ -366,9 +432,9 @@ export function TripPlanCreateWizard({
                   if (index === 2 && itineraryReason) return;
                   setStep(index);
                 }}
-                className={`flex-1 py-2 rounded-full items-center ${selected ? 'bg-primary' : 'bg-surface dark:bg-surface-dark'}`}
+                className={`flex-1 py-2.5 rounded-full items-center ${selected ? 'bg-primary' : 'bg-surface dark:bg-surface-dark'}`}
               >
-                <Text className={`text-xs font-semibold ${selected ? 'text-onPrimary' : 'text-muted'}`}>
+                <Text className={`text-sm font-semibold ${selected ? 'text-white' : 'text-text dark:text-text-dark'}`}>
                   {index + 1}. {t(
                     index === 0
                       ? TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_STEP_DETAILS
@@ -383,51 +449,97 @@ export function TripPlanCreateWizard({
         </View>
       </View>
 
-      <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingBottom: 24 }} keyboardShouldPersistTaps="handled">
+      <KeyboardAvoidingView
+        className="flex-1"
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top + 88 : 0}
+      >
+        <ScrollView
+          ref={detailsScrollRef}
+          className="flex-1 px-4"
+          contentContainerStyle={{ paddingBottom: scrollBottomPadding, flexGrow: 1 }}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="interactive"
+          showsVerticalScrollIndicator={false}
+        >
         {cloning ? <ActivityIndicator className="mt-4" /> : null}
 
         {step === 0 ? (
           <View className="mt-4 gap-4">
-            <Question number={1} title={t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_Q_NAME)} hint={t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_Q_NAME_HINT)}>
+            <Question
+              number={1}
+              title={t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_Q_NAME)}
+              hint={t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_Q_NAME_HINT)}
+              onRegisterOffset={registerQuestionOffset}
+            >
               <TextInput
                 value={packageName}
                 onChangeText={setPackageName}
                 placeholder={t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_Q_NAME_PH)}
-                placeholderTextColor="#94A3B8"
-                className="border border-border dark:border-border-dark rounded-lg px-3 py-3 text-text dark:text-text-dark"
+                placeholderTextColor={mutedColor}
+                returnKeyType="next"
+                onSubmitEditing={() => {
+                  if (packageName.trim().length >= 2) scrollToQuestion(2);
+                }}
+                onEndEditing={() => {
+                  if (packageName.trim().length >= 2) scrollToQuestion(2);
+                }}
+                className="border border-border dark:border-border-dark rounded-xl px-3 py-3.5 text-text dark:text-text-dark bg-surface dark:bg-surface-dark"
               />
             </Question>
-            <Question number={2} title={t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_Q_BUDGET)} hint={t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_Q_BUDGET_HINT)}>
+            <Question
+              number={2}
+              title={t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_Q_BUDGET)}
+              hint={t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_Q_BUDGET_HINT)}
+              onRegisterOffset={registerQuestionOffset}
+            >
               <TextInput
                 value={totalBudget}
                 onChangeText={setTotalBudget}
                 keyboardType="numeric"
                 placeholder="15000"
-                placeholderTextColor="#94A3B8"
-                className="border border-border dark:border-border-dark rounded-lg px-3 py-3 text-text dark:text-text-dark"
+                placeholderTextColor={mutedColor}
+                returnKeyType="done"
+                onSubmitEditing={() => {
+                  if ((Number(totalBudget) || 0) > 0) scrollToQuestion(3);
+                }}
+                onEndEditing={() => {
+                  if ((Number(totalBudget) || 0) > 0) scrollToQuestion(3);
+                }}
+                className="border border-border dark:border-border-dark rounded-xl px-3 py-3.5 text-text dark:text-text-dark bg-surface dark:bg-surface-dark"
               />
-              {budgetNumber > 0 ? <Text className="text-primary mt-1">{formatTaka(budgetNumber)}</Text> : null}
+              {budgetNumber > 0 ? <Text className="text-primary mt-2 font-medium">{formatTaka(budgetNumber)}</Text> : null}
             </Question>
             <Question
               number={3}
               title={t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_Q_DIVISION)}
               hint={t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_Q_DIVISION_HINT)}
+              onRegisterOffset={registerQuestionOffset}
             >
-              {locationsLoading ? <ActivityIndicator /> : null}
-              {divisions.map((division) => {
-                const selected = locationId === division.id;
-                return (
-                  <TouchableOpacity
-                    key={division.id}
-                    onPress={() => setLocationId(division.id)}
-                    className={`px-3 py-2 rounded-lg mb-2 ${selected ? 'bg-primary' : 'bg-surface dark:bg-surface-dark'}`}
-                  >
-                    <Text className={selected ? 'text-onPrimary' : 'text-text dark:text-text-dark'}>{division.name}</Text>
-                  </TouchableOpacity>
-                );
-              })}
+              {locationsLoading ? <ActivityIndicator className="my-2" color={primaryColor} /> : null}
+              <View className="flex-row flex-wrap gap-2">
+                {divisions.map((division) => {
+                  const selected = locationId === division.id;
+                  return (
+                    <TouchableOpacity
+                      key={division.id}
+                      onPress={() => {
+                        setLocationId(division.id);
+                        scrollToQuestion(4);
+                      }}
+                      className={`px-3.5 py-2 rounded-full border ${
+                        selected ? 'bg-primary border-primary' : 'bg-surface dark:bg-surface-dark border-border dark:border-border-dark'
+                      }`}
+                    >
+                      <Text className={`text-sm font-semibold ${selected ? 'text-white' : 'text-text dark:text-text-dark'}`}>
+                        {division.name}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
               {locationId ? (
-                <Text className="text-xs text-muted mt-1">
+                <Text className="text-xs text-muted dark:text-muted-dark mt-2">
                   {t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_SPOT_COUNTS, {
                     tours: tourSpots.length,
                     activities: activitySpots.length,
@@ -435,17 +547,25 @@ export function TripPlanCreateWizard({
                 </Text>
               ) : null}
             </Question>
-            <Question number={4} title={t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_Q_TYPE)} hint={t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_Q_TYPE_HINT)}>
+            <Question
+              number={4}
+              title={t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_Q_TYPE)}
+              hint={t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_Q_TYPE_HINT)}
+              onRegisterOffset={registerQuestionOffset}
+            >
               <View className="flex-row flex-wrap gap-2">
                 {TOUR_TYPE_VALUES.map((value) => {
                   const selected = tourType === value;
                   return (
                     <TouchableOpacity
                       key={value}
-                      onPress={() => setTourType(value)}
-                      className={`px-3 py-2 rounded-full ${selected ? 'bg-primary' : 'bg-surface dark:bg-surface-dark'}`}
+                      onPress={() => {
+                        setTourType(value);
+                        scrollToQuestion(5);
+                      }}
+                      className={`px-3.5 py-2 rounded-full border ${selected ? 'bg-primary border-primary' : 'bg-surface dark:bg-surface-dark border-border dark:border-border-dark'}`}
                     >
-                      <Text className={selected ? 'text-onPrimary text-xs' : 'text-text dark:text-text-dark text-xs'}>
+                      <Text className={`text-sm font-semibold ${selected ? 'text-white' : 'text-text dark:text-text-dark'}`}>
                         {formatEnumLabel(value)}
                       </Text>
                     </TouchableOpacity>
@@ -455,9 +575,14 @@ export function TripPlanCreateWizard({
             </Question>
             {unlocked ? (
               <>
-                <Question number={5} title={t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_Q_DURATION)} hint={t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_Q_DURATION_HINT)}>
+                <Question
+                  number={5}
+                  title={t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_Q_DURATION)}
+                  hint={t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_Q_DURATION_HINT)}
+                  onRegisterOffset={registerQuestionOffset}
+                >
                   <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                    <View className="flex-row gap-2">
+                    <View className="flex-row gap-2 py-1">
                       {Array.from({ length: MAX_DURATION - MIN_DURATION + 1 }, (_, index) => index + 1).map((value) => {
                         const selected = duration === value;
                         return (
@@ -467,10 +592,13 @@ export function TripPlanCreateWizard({
                               setDuration(value);
                               setStops((current) => clampDaySegmentsToDuration(current, value));
                               setActiveDay(1);
+                              scrollToQuestion(6);
                             }}
-                            className={`w-10 h-10 rounded-full items-center justify-center ${selected ? 'bg-primary' : 'bg-surface dark:bg-surface-dark'}`}
+                            className={`w-11 h-11 rounded-full items-center justify-center border ${
+                              selected ? 'bg-primary border-primary' : 'bg-surface dark:bg-surface-dark border-border dark:border-border-dark'
+                            }`}
                           >
-                            <Text className={selected ? 'text-onPrimary font-semibold' : 'text-text dark:text-text-dark'}>
+                            <Text className={`font-semibold ${selected ? 'text-white' : 'text-text dark:text-text-dark'}`}>
                               {value}
                             </Text>
                           </TouchableOpacity>
@@ -479,10 +607,15 @@ export function TripPlanCreateWizard({
                     </View>
                   </ScrollView>
                 </Question>
-                <Question number={6} title={t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_Q_START)} hint={t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_Q_START_HINT)}>
+                <Question
+                  number={6}
+                  title={t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_Q_START)}
+                  hint={t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_Q_START_HINT)}
+                  onRegisterOffset={registerQuestionOffset}
+                >
                   <TouchableOpacity
                     onPress={() => setShowDate(true)}
-                    className="border border-border dark:border-border-dark rounded-lg px-3 py-3"
+                    className="border border-border dark:border-border-dark rounded-xl px-3 py-3.5 bg-surface dark:bg-surface-dark"
                   >
                     <Text className="text-text dark:text-text-dark">
                       {startDate ? formatDisplayDate(startDate) : t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_PICK_DATE)}
@@ -495,24 +628,40 @@ export function TripPlanCreateWizard({
                       display={Platform.OS === 'ios' ? 'spinner' : 'default'}
                       onChange={(_, date) => {
                         if (Platform.OS !== 'ios') setShowDate(false);
-                        if (date) setStartDate(toDateInputValue(date));
+                        if (date) {
+                          setStartDate(toDateInputValue(date));
+                          scrollToQuestion(7);
+                        }
                       }}
                     />
                   ) : null}
                   {inferredEnd ? (
-                    <Text className="text-xs text-muted mt-2">
+                    <Text className="text-xs text-muted dark:text-muted-dark mt-2">
                       {t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_END_INFERRED, { date: formatDisplayDate(inferredEnd) })}
                     </Text>
                   ) : null}
                 </Question>
-                <Question number={7} title={t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_Q_DESC)} hint={t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_Q_DESC_HINT)}>
+                <Question
+                  number={7}
+                  title={t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_Q_DESC)}
+                  hint={t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_Q_DESC_HINT)}
+                  onRegisterOffset={registerQuestionOffset}
+                >
                   <TextInput
                     value={shortDescription}
                     onChangeText={setShortDescription}
                     multiline
+                    textAlignVertical="top"
                     placeholder={t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_Q_DESC_PH)}
-                    placeholderTextColor="#94A3B8"
-                    className="border border-border dark:border-border-dark rounded-lg px-3 py-3 text-text dark:text-text-dark min-h-[96px]"
+                    placeholderTextColor={mutedColor}
+                    onFocus={() => {
+                      descriptionFieldFocusedRef.current = true;
+                      scrollDescriptionIntoView();
+                    }}
+                    onBlur={() => {
+                      descriptionFieldFocusedRef.current = false;
+                    }}
+                    className="border border-border dark:border-border-dark rounded-xl px-3 py-3.5 text-text dark:text-text-dark min-h-[112px] bg-surface dark:bg-surface-dark"
                   />
                 </Question>
               </>
@@ -522,11 +671,11 @@ export function TripPlanCreateWizard({
 
         {step === 1 ? (
           <View className="mt-4">
-            <View className="rounded-xl p-3 bg-surface dark:bg-surface-dark mb-3">
-              <Text className="font-semibold text-text dark:text-text-dark mb-2">
+            <View className="rounded-2xl p-4 mb-3 border border-border dark:border-border-dark bg-surface-2 dark:bg-surface-dark">
+              <Text className="text-base font-semibold text-text dark:text-text-dark mb-2">
                 {t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_RULES_TITLE)}
               </Text>
-              <Text className="text-xs text-muted dark:text-muted-dark leading-5">
+              <Text className="text-sm text-muted dark:text-muted-dark leading-5">
                 {t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_RULES_BODY)}
               </Text>
             </View>
@@ -535,7 +684,7 @@ export function TripPlanCreateWizard({
                 {t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_MISSING_DAYS, { days: missingDays.join(', ') })}
               </Text>
             ) : null}
-            {itineraryReason ? <Text className="text-xs text-muted mb-3">{itineraryReason}</Text> : null}
+            {itineraryReason ? <Text className="text-sm text-muted mb-3">{itineraryReason}</Text> : null}
             {basedOnPackageId && !checklistDismissed ? (
               <View className="rounded-xl p-3 border border-primary mb-3">
                 <View className="flex-row justify-between">
@@ -543,10 +692,10 @@ export function TripPlanCreateWizard({
                     {t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_TEMPLATE_LOADED)}
                   </Text>
                   <TouchableOpacity onPress={() => setChecklistDismissed(true)}>
-                    <Text className="text-xs text-muted">{t(TRANSLATION_KEYS.COMMON.CLOSE)}</Text>
+                    <Text className="text-sm text-muted">{t(TRANSLATION_KEYS.COMMON.CLOSE)}</Text>
                   </TouchableOpacity>
                 </View>
-                <Text className="text-xs text-muted mt-1">
+                <Text className="text-sm text-muted mt-1">
                   {t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_TEMPLATE_HINT)}
                 </Text>
               </View>
@@ -561,11 +710,17 @@ export function TripPlanCreateWizard({
                     <TouchableOpacity
                       key={day}
                       onPress={() => setActiveDay(day)}
-                      className={`px-3 py-2 rounded-lg ${selected ? 'bg-primary' : 'bg-surface dark:bg-surface-dark'}`}
+                      className={`px-4 py-2.5 rounded-full border ${
+                        selected
+                          ? 'bg-primary border-primary'
+                          : 'bg-surface dark:bg-surface-dark border-border dark:border-border-dark'
+                      }`}
                     >
-                      <Text className={selected ? 'text-onPrimary text-xs font-semibold' : 'text-text dark:text-text-dark text-xs'}>
+                      <Text
+                        className={`text-sm font-semibold ${selected ? 'text-white' : 'text-text dark:text-text-dark'}`}
+                      >
                         {t(TRANSLATION_KEYS.TRIP_PLANNER.DAY_PLAN_DAY, { day })}
-                        {empty ? ' ·' : ''}
+                        {empty ? ` · ${t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_DAY_EMPTY_TAB)}` : ''}
                       </Text>
                     </TouchableOpacity>
                   );
@@ -573,29 +728,45 @@ export function TripPlanCreateWizard({
               </View>
             </ScrollView>
             {dayStops.map((stop, index) => (
-              <View key={stop.id} className="rounded-xl p-3 mb-2 bg-surface dark:bg-surface-dark">
+              <View
+                key={stop.id}
+                className="rounded-2xl p-3 mb-2 border border-border dark:border-border-dark bg-surface-2 dark:bg-surface-dark"
+              >
                 <TouchableOpacity onPress={() => setEditor(stop)}>
-                  <Text className="font-semibold text-text dark:text-text-dark">
+                  <Text className="text-base font-semibold text-text dark:text-text-dark">
                     {t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_STOP_LABEL, { order: stop.segmentOrder || index + 1 })}
                   </Text>
-                  <Text className="text-sm text-text dark:text-text-dark mt-1">
+                  <Text className="text-base text-text dark:text-text-dark mt-1">
                     {stop.shortDescription || stop.tourSpotName || t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_STOP_EMPTY)}
                   </Text>
-                  <Text className="text-xs text-muted mt-1">
-                    {[stop.tourSpotName, stop.activitySpotName, formatEnumLabel(stop.transportOption), index === dayStops.length - 1 ? stop.hotelName || formatEnumLabel(stop.hotelOption) : '']
-                      .filter(Boolean)
-                      .join(' · ')}
-                  </Text>
+                  <WizardStopPlacePreview stop={stop} isLastOnDay={index === dayStops.length - 1} />
+                  {stop.transportOption ? (
+                    <Text className="text-xs text-muted dark:text-muted-dark mt-2">
+                      {formatEnumLabel(stop.transportOption)}
+                    </Text>
+                  ) : null}
                 </TouchableOpacity>
-                <View className="flex-row gap-4 mt-2">
-                  <TouchableOpacity onPress={() => commitStops(moveStopWithinDay(stops, stop.id, 'up'))}>
-                    <Text className="text-xs text-primary">{t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_MOVE_UP)}</Text>
+                <View className="flex-row items-center gap-3 mt-3">
+                  <TouchableOpacity
+                    onPress={() => commitStops(moveStopWithinDay(stops, stop.id, 'up'))}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    className="p-2"
+                  >
+                    <Feather name="arrow-up" size={20} color={primaryColor} />
                   </TouchableOpacity>
-                  <TouchableOpacity onPress={() => commitStops(moveStopWithinDay(stops, stop.id, 'down'))}>
-                    <Text className="text-xs text-primary">{t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_MOVE_DOWN)}</Text>
+                  <TouchableOpacity
+                    onPress={() => commitStops(moveStopWithinDay(stops, stop.id, 'down'))}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    className="p-2"
+                  >
+                    <Feather name="arrow-down" size={20} color={primaryColor} />
                   </TouchableOpacity>
-                  <TouchableOpacity onPress={() => commitStops(removeStop(stops, stop.id))}>
-                    <Text className="text-xs text-error">{t(TRANSLATION_KEYS.COMMON.DELETE)}</Text>
+                  <TouchableOpacity
+                    onPress={() => commitStops(removeStop(stops, stop.id))}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    className="p-2 ml-auto"
+                  >
+                    <Feather name="trash-2" size={20} color={errorColor} />
                   </TouchableOpacity>
                 </View>
               </View>
@@ -603,7 +774,7 @@ export function TripPlanCreateWizard({
             <TouchableOpacity onPress={openAdd} className="border border-dashed border-primary rounded-lg py-3 items-center mt-1">
               <Text className="text-primary font-semibold">{t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_ADD_STOP)}</Text>
             </TouchableOpacity>
-            <Text className="text-xs text-muted mt-3">
+            <Text className="text-sm text-muted mt-3">
               {t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_LIVE_TOTAL, {
                 total: formatTaka(liveTotal),
                 budget: formatTaka(budgetNumber),
@@ -639,33 +810,34 @@ export function TripPlanCreateWizard({
         ) : null}
       </ScrollView>
 
-      <View className="px-4 py-3 border-t border-border dark:border-border-dark flex-row gap-3">
-        <TouchableOpacity
-          onPress={() => (step === 0 ? onCancel() : setStep((current) => current - 1))}
-          className="flex-1 py-3 rounded-lg items-center bg-surface dark:bg-surface-dark"
-        >
-          <Text className="font-semibold text-text dark:text-text-dark">
-            {step === 0 ? t(TRANSLATION_KEYS.COMMON.CANCEL) : t(TRANSLATION_KEYS.COMMON.BACK)}
-          </Text>
-        </TouchableOpacity>
-        {step < 2 ? (
-          <TouchableOpacity onPress={goNext} className="flex-1 py-3 rounded-lg items-center bg-primary">
-            <Text className="font-semibold text-onPrimary">{t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_CONTINUE)}</Text>
+        <View className="px-4 py-3 border-t border-border dark:border-border-dark flex-row gap-3 bg-background dark:bg-background-dark">
+          <TouchableOpacity
+            onPress={() => (step === 0 ? onCancel() : setStep((current) => current - 1))}
+            className="flex-1 py-3 rounded-lg items-center bg-surface dark:bg-surface-dark"
+          >
+            <Text className="font-semibold text-text dark:text-text-dark">
+              {step === 0 ? t(TRANSLATION_KEYS.COMMON.CANCEL) : t(TRANSLATION_KEYS.COMMON.BACK)}
+            </Text>
           </TouchableOpacity>
-        ) : (
-          <TouchableOpacity onPress={savePlan} disabled={saving} className="flex-1 py-3 rounded-lg items-center bg-primary">
-            {saving ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text className="font-semibold text-onPrimary">
-                {mode === 'edit'
-                  ? t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_SAVE_CHANGES)
-                  : t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_CREATE_BTN)}
-              </Text>
-            )}
-          </TouchableOpacity>
-        )}
-      </View>
+          {step < 2 ? (
+            <TouchableOpacity onPress={goNext} className="flex-1 py-3 rounded-lg items-center bg-primary">
+              <Text className="font-semibold text-white">{t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_CONTINUE)}</Text>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity onPress={savePlan} disabled={saving} className="flex-1 py-3 rounded-lg items-center bg-primary">
+              {saving ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text className="font-semibold text-white">
+                  {mode === 'edit'
+                    ? t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_SAVE_CHANGES)
+                    : t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_CREATE_BTN)}
+                </Text>
+              )}
+            </TouchableOpacity>
+          )}
+        </View>
+      </KeyboardAvoidingView>
 
       {editor ? (
         <StopEditorSheet
@@ -687,26 +859,88 @@ export function TripPlanCreateWizard({
   );
 }
 
+function WizardStopPlacePreview({
+  stop,
+  isLastOnDay,
+}: {
+  stop: WizardStop;
+  isLastOnDay: boolean;
+}) {
+  const { t } = useTranslation();
+  const { isDark } = useTheme();
+  const mutedColor = isDark ? theme.colors['muted-dark'] : theme.colors.muted;
+  const rows = [
+    {
+      label: t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_STOP_KIND_TOUR),
+      name: stop.tourSpotName,
+      imageUrl: stop.tourSpotImageUrl,
+    },
+    {
+      label: t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_STOP_KIND_ACTIVITY),
+      name: stop.activitySpotName,
+      imageUrl: stop.activitySpotImageUrl,
+    },
+    ...(isLastOnDay
+      ? [
+          {
+            label: t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_STOP_KIND_HOTEL),
+            name: stop.hotelName || (stop.hotelOption ? formatEnumLabel(stop.hotelOption) : undefined),
+            imageUrl: stop.hotelImageUrl,
+          },
+        ]
+      : []),
+  ].filter((row) => row.name);
+
+  if (rows.length === 0) return null;
+
+  return (
+    <View className="mt-2 gap-1.5">
+      {rows.map((row) => (
+        <View key={row.label} className="flex-row items-center">
+          <View className="w-10 h-10 rounded-lg overflow-hidden bg-background dark:bg-background-dark mr-2">
+            {row.imageUrl ? (
+              <Image source={{ uri: row.imageUrl }} className="w-full h-full" resizeMode="cover" />
+            ) : (
+              <View className="flex-1 items-center justify-center">
+                <Feather name="image" size={16} color={mutedColor} />
+              </View>
+            )}
+          </View>
+          <View className="flex-1">
+            <Text className="text-[10px] uppercase text-muted dark:text-muted-dark font-semibold">{row.label}</Text>
+            <Text className="text-sm text-text dark:text-text-dark" numberOfLines={1}>{row.name}</Text>
+          </View>
+        </View>
+      ))}
+    </View>
+  );
+}
+
 function Question({
   number,
   title,
   hint,
   children,
+  onRegisterOffset,
 }: {
   number: number;
   title: string;
   hint?: string;
   children: React.ReactNode;
+  onRegisterOffset?: (num: number, y: number) => void;
 }) {
   return (
-    <View className="rounded-2xl p-3 bg-surface dark:bg-surface-dark">
+    <View
+      onLayout={(event) => onRegisterOffset?.(number, event.nativeEvent.layout.y)}
+      className="rounded-2xl p-4 border border-border dark:border-border-dark bg-surface-2 dark:bg-surface-dark"
+    >
       <View className="flex-row gap-3">
-        <View className="w-7 h-7 rounded-full bg-primary items-center justify-center">
-          <Text className="text-onPrimary text-xs font-bold">{number}</Text>
+        <View className="w-8 h-8 rounded-full bg-primary items-center justify-center">
+          <Text className="text-sm font-bold text-white">{number}</Text>
         </View>
         <View className="flex-1">
-          <Text className="font-semibold text-text dark:text-text-dark">{title}</Text>
-          {hint ? <Text className="text-xs text-muted dark:text-muted-dark mt-1 mb-2">{hint}</Text> : null}
+          <Text className="text-base font-semibold text-text dark:text-text-dark">{title}</Text>
+          {hint ? <Text className="text-xs text-muted dark:text-muted-dark mt-1 mb-3 leading-4">{hint}</Text> : null}
           {children}
         </View>
       </View>

@@ -5,6 +5,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { ServiceAdminDashboard } from '../../../components/interface/ServiceAdminDashboard';
 import { UserDashboard } from '../../../components/interface/UserDashboard';
 import { useDashboardLogic } from '../../../hooks/useDashboardLogic';
+import { profileDisplayName } from '../../../utilities/profileImage';
 
 export default function DashboardPage() {
   const {
@@ -63,7 +64,7 @@ export default function DashboardPage() {
     return (
       <ServiceAdminDashboard
         hotelOperator
-        userName={auth.user?.userName}
+        userName={profileDisplayName(auth.user) || auth.user?.userName}
         email={auth.user?.email}
         imageUrl={profileImageUrl || auth.user?.imageUrl}
         role={auth.user?.role}
@@ -77,7 +78,7 @@ export default function DashboardPage() {
   if (auth.user?.role === 'SERVICE_ADMIN') {
     return (
       <ServiceAdminDashboard
-        userName={auth.user?.userName}
+        userName={profileDisplayName(auth.user) || auth.user?.userName}
         email={auth.user?.email}
         imageUrl={profileImageUrl || auth.user?.imageUrl}
         role={auth.user?.role}
@@ -89,7 +90,7 @@ export default function DashboardPage() {
 
   return (
     <UserDashboard
-      userName={auth.user?.userName}
+      userName={profileDisplayName(auth.user) || auth.user?.userName}
       email={auth.user?.email}
       imageUrl={profileImageUrl || auth.user?.imageUrl}
       userStatus={profileStatus || auth.user?.userStatus}

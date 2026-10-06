@@ -70,6 +70,47 @@ function sortSeats(seats: TransportSeat[]): TransportSeat[] {
   });
 }
 
+function variantFromColumns(columns: string[]): CabinVariant {
+  const max = columns.reduce((highest, column) => {
+    const value = Number(column);
+    return Number.isNaN(value) ? highest : Math.max(highest, value);
+  }, 0);
+  return max <= 3 ? 'ac' : 'nonAc';
+}
+
+/** Group by stored row/column so AC stays 2+1 and Non-AC stays 2+2 even if class type is missing. */
+function layoutFromRowLabels(seats: TransportSeat[]): SeatRowLayout[] | null {
+  const positioned = seats.filter((seat) => seat.rowLabel && seat.columnLabel);
+  if (positioned.length !== seats.length || positioned.length === 0) return null;
+
+  const byRow = new Map<string, TransportSeat[]>();
+  for (const seat of positioned) {
+    const row = seat.rowLabel as string;
+    const bucket = byRow.get(row) ?? [];
+    bucket.push(seat);
+    byRow.set(row, bucket);
+  }
+
+  const rowKeys = [...byRow.keys()].sort((a, b) => a.localeCompare(b));
+  return rowKeys.map((rowKey) => {
+    const ordered = [...(byRow.get(rowKey) ?? [])].sort(
+      (a, b) => Number(a.columnLabel) - Number(b.columnLabel)
+    );
+    const variant = variantFromColumns(ordered.map((seat) => seat.columnLabel as string));
+    const leftCount = variant === 'ac' ? 1 : 2;
+    const laidOut: LaidOutSeat[] = ordered.map((seat) => ({
+      ...seat,
+      displayLabel: seat.seatLabel,
+    }));
+    return {
+      rowKey,
+      variant,
+      left: laidOut.slice(0, leftCount),
+      right: laidOut.slice(leftCount),
+    };
+  });
+}
+
 function chunkLayout(seats: TransportSeat[], variant: CabinVariant, keyPrefix: string): SeatRowLayout[] {
   const perRow = variant === 'ac' ? 3 : 4;
   const leftCount = variant === 'ac' ? 1 : 2;
@@ -94,6 +135,9 @@ function chunkLayout(seats: TransportSeat[], variant: CabinVariant, keyPrefix: s
 }
 
 export function layoutDeck(seats: TransportSeat[]): SeatRowLayout[] {
+  const fromLabels = layoutFromRowLabels(seats);
+  if (fromLabels) return fromLabels;
+
   const ac = seats.filter((seat) => cabinVariantForSeat(seat) === 'ac');
   const nonAc = seats.filter((seat) => cabinVariantForSeat(seat) === 'nonAc');
   if (ac.length > 0 && nonAc.length > 0) {

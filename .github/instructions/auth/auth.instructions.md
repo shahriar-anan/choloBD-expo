@@ -25,7 +25,7 @@ Follow these patterns exactly when modifying or extending the auth system.
 ```
 src/app/(auth)/
 ├── login.tsx     — Email/password login form
-└── register.tsx  — Registration form with role selection
+└── register.tsx  — Traveler registration (always role USER)
 ```
 
 There is no `_layout.tsx` in `(auth)/` — the root `_layout.tsx` handles this group.
@@ -108,61 +108,23 @@ Do not use `AsyncStorage` for any auth data.
 Defined in `src/validators/auth.ts`. Never define login or register validation inline.
 
 ```ts
-// Login
-export const loginSchema = z.object({
-  email: z.string().min(1).email(),
-  password: z.string().min(6),
-});
-export type LoginForm = z.infer<typeof loginSchema>;
-
-// Register
-export const registerSchema = z.object({
-  userName: z.string().min(1),
-  email: z.string().min(1).email(),
-  password: z.string().min(6),
-  confirm: z.string().min(6),
-  role: z.enum(['MASTER_ADMIN', 'SERVICE_ADMIN', 'EMPLOYEE', 'USER']),
-}).refine((d) => d.password === d.confirm, { path: ['confirm'] });
-export type RegisterForm = z.infer<typeof registerSchema>;
+// Messages are translation keys, not English sentences.
+// Login: email + password (required, then min 6).
+// Register: userName, email, password, confirm. No role field.
+// Mobile signup always dispatches role: 'USER'. Do not offer admin roles on this form.
 ```
 
 ---
 
 ## Route File Pattern
 
-Both `login.tsx` and `register.tsx` follow this exact pattern:
+Both screens use `Controller` from react-hook-form (`mode: 'onSubmit'`, `reValidateMode: 'onChange'`) with `AuthScreen`, `AuthField`, and `AuthButton`. Do not wire fields with `register` + `setValue`.
 
-```tsx
-export default function Login() {
-  const dispatch = useDispatch<AppDispatch>();
-  const auth = useSelector((s: RootState) => s.auth);
-  const { isDark } = useTheme();
-  const { t } = useTranslation();
-
-  // 1. Hook up react-hook-form with zodResolver
-  const { register, setValue, handleSubmit, formState: { errors } } = useForm<LoginForm>({
-    resolver: zodResolver(loginSchema),
-  });
-
-  // 2. Register fields manually (RN has no native onChange)
-  useEffect(() => { register('email'); register('password'); }, [register]);
-
-  // 3. Dispatch thunk on submit
-  const onSubmit = (values: LoginForm) => void dispatch(loginUser(values));
-
-  // 4. Redirect on successful auth
-  useEffect(() => {
-    if (auth.isAuthenticated) router.replace('/(tabs)/dashboard');
-  }, [auth.isAuthenticated, auth.isLoading, auth.error]);
-
-  // 5. Clear error on unmount
-  useEffect(() => () => { void dispatch(clearError()); }, []);
-}
-```
-
-- Auth routes redirect to `/(tabs)/dashboard` on `isAuthenticated === true`.
-- Always use `router.replace` (not `push`) for auth redirects to prevent back-navigation to login.
-- Field values are set via `setValue` with `onChangeText` — not with `Controller` from react-hook-form.
+- Trim and lowercase email before dispatch. Do not trim passwords.
+- Signup dispatches `role: 'USER'` only.
+- On success, `router.replace(await resolveRoleHome(role, id))`. Do not `push`.
+- Clear `auth.error` when a field changes, and on unmount.
+- Google and Facebook render only when the matching hook's `isReady` is true.
 
 ---
 
@@ -216,14 +178,15 @@ useEffect(() => {
 }, [auth.isAuthenticated, auth.tokens, auth.isInitializing, splashDone]);
 ```
 
-Do not add additional redirect watchers in individual screens. Centralize auth redirects here.
+Login and register still `router.replace` to `resolveRoleHome` after a successful submit. Do not add other redirect watchers in individual screens. The signed-out redirect stays here.
 
 ---
 
 ## Error Handling
 
-- `authSlice` sets `state.error` on `rejected` thunks.
-- Display `auth.error` inline in the form (e.g. below the submit button), not via `Alert.alert`.
+- `loginUser` and `registerUser` reject with a string. Prefer `response.data.message`. If that is missing, store `auth.login.failed` or `auth.register.failed`.
+- Do not log the login or register payload. Log the failure message only, and only in `__DEV__`.
+- Display `auth.error` in `AuthErrorBanner` under the submit button, not via `Alert.alert`. Translate known server sentences. Otherwise show the server string.
 - Always dispatch `clearError()` on screen unmount to prevent stale errors showing on re-mount.
 - The slice clears `error` to `null` on every `pending` dispatch.
 

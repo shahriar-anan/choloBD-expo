@@ -2,7 +2,7 @@
  * Full-screen stop editor used by the personal trip wizard.
  */
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
   Modal,
   View,
@@ -11,20 +11,22 @@ import {
   TouchableOpacity,
   ScrollView,
   SafeAreaView,
-  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
-import { Feather } from '@expo/vector-icons';
+import { Feather, Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { TRANSLATION_KEYS } from '../../constants/translationKeys';
-import { getApiInstance } from '../../services/api/axiosClient';
-import { unwrapList } from '../../services/api/personalPlanMapping';
+import { useTheme } from '../../hooks/useTheme';
+import theme from '../../constants/theme';
 import {
-  HOTEL_VALUES,
   TRANSPORT_VALUES,
   WizardStop,
   formatEnumLabel,
-  formatTaka,
 } from '../../utils/tripPlanItinerary';
+import { CatalogPickerModal } from './CatalogPickerModal';
+import { CatalogPickKind, CatalogPickResult } from './catalogPickerTypes';
+import { SelectedPlaceRow } from './SelectedPlaceRow';
 
 export interface NamedOption {
   id: string;
@@ -42,139 +44,7 @@ interface StopEditorSheetProps {
   onSave: (stop: WizardStop) => void;
 }
 
-function readCost(raw: any): number {
-  const roomPrice = Array.isArray(raw?.roomTypes)
-    ? raw.roomTypes.map((room: any) => Number(room?.pricePerNight)).find((price: number) => Number.isFinite(price))
-    : undefined;
-  const value = raw?.entryFee ?? raw?.entryCost ?? raw?.cost ?? roomPrice ?? raw?.pricePerNight ?? raw?.basePrice;
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : 0;
-}
-
-function toNamed(raw: any): NamedOption {
-  return {
-    id: raw.id,
-    name: raw.name || 'Untitled',
-    cost: readCost(raw),
-    locationId: raw.locationId || raw.location?.id,
-  };
-}
-
-function DivisionSearchList({
-  label,
-  endpoint,
-  divisionId,
-  hotelType,
-  selectedId,
-  selectedName,
-  onSelect,
-  allowClear,
-  placeholder,
-  suggestOnType = false,
-}: {
-  label: string;
-  endpoint: string;
-  divisionId: string;
-  hotelType?: string;
-  selectedId?: string;
-  selectedName?: string;
-  onSelect: (option: NamedOption | null) => void;
-  allowClear?: boolean;
-  placeholder: string;
-  suggestOnType?: boolean;
-}) {
-  const { t } = useTranslation();
-  const [query, setQuery] = useState('');
-  const [options, setOptions] = useState<NamedOption[]>([]);
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    if (!divisionId || (suggestOnType && !query.trim())) {
-      setOptions([]);
-      setLoading(false);
-      return;
-    }
-    let cancelled = false;
-    const handle = setTimeout(() => {
-      (async () => {
-        setLoading(true);
-        try {
-          const api = getApiInstance();
-          const res = await api.get(endpoint, {
-            params: {
-              divisionId,
-              limit: 50,
-              ...(query.trim() ? { name: query.trim() } : {}),
-              ...(hotelType ? { hotelType } : {}),
-            },
-          });
-          if (!cancelled) setOptions(unwrapList<any>(res.data?.data).map(toNamed));
-        } catch {
-          if (!cancelled) setOptions([]);
-        } finally {
-          if (!cancelled) setLoading(false);
-        }
-      })();
-    }, 300);
-    return () => {
-      cancelled = true;
-      clearTimeout(handle);
-    };
-  }, [divisionId, endpoint, hotelType, query, suggestOnType]);
-
-  return (
-    <View className="mb-4">
-      <Text className="text-sm font-semibold text-text dark:text-text-dark mb-2">{label}</Text>
-      {selectedName ? (
-        <Text className="text-xs text-primary mb-2">
-          {t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_SELECTED)}: {selectedName}
-        </Text>
-      ) : null}
-      <TextInput
-        value={query}
-        onChangeText={setQuery}
-        placeholder={placeholder}
-        placeholderTextColor="#94A3B8"
-        autoCorrect={false}
-        className="border border-border dark:border-border-dark rounded-lg px-3 py-2 text-text dark:text-text-dark mb-2"
-      />
-      {allowClear && selectedId ? (
-        <TouchableOpacity onPress={() => onSelect(null)} className="mb-2">
-          <Text className="text-xs text-primary">{t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_CLEAR_CATALOG)}</Text>
-        </TouchableOpacity>
-      ) : null}
-      {loading && (!suggestOnType || query.trim()) ? <ActivityIndicator className="my-2" /> : null}
-      {!divisionId ? (
-        <Text className="text-xs text-muted dark:text-muted-dark">
-          {t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_SEARCH_NEED_DIVISION)}
-        </Text>
-      ) : null}
-      {options.map((option) => {
-        const selected = option.id === selectedId;
-        return (
-          <TouchableOpacity
-            key={option.id}
-            onPress={() => {
-              onSelect(option);
-              if (suggestOnType) setQuery('');
-            }}
-            className={`px-3 py-2 rounded-lg mb-1 ${selected ? 'bg-primary' : 'bg-surface dark:bg-surface-dark'}`}
-          >
-            <Text className={selected ? 'text-onPrimary font-semibold' : 'text-text dark:text-text-dark'}>
-              {option.name}
-              {option.cost ? ` · ${formatTaka(option.cost)}` : ''}
-            </Text>
-          </TouchableOpacity>
-        );
-      })}
-      {!loading && divisionId && (!suggestOnType || query.trim()) && options.length === 0 ? (
-        <Text className="text-xs text-muted dark:text-muted-dark">
-          {t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_SEARCH_EMPTY)}
-        </Text>
-      ) : null}
-    </View>
-  );
-}
+type PickerState = { kind: CatalogPickKind } | null;
 
 export function StopEditorSheet({
   visible,
@@ -185,12 +55,16 @@ export function StopEditorSheet({
   onSave,
 }: StopEditorSheetProps) {
   const { t } = useTranslation();
+  const { isDark } = useTheme();
+  const mutedColor = isDark ? theme.colors['muted-dark'] : theme.colors.muted;
   const [draft, setDraft] = useState<WizardStop>(stop);
   const [error, setError] = useState<string | null>(null);
+  const [picker, setPicker] = useState<PickerState>(null);
 
   React.useEffect(() => {
     setDraft(stop);
     setError(null);
+    setPicker(null);
   }, [stop, visible]);
 
   const save = () => {
@@ -209,161 +83,237 @@ export function StopEditorSheet({
       hotelId: isLastStop ? draft.hotelId : '',
       hotelName: isLastStop ? draft.hotelName : undefined,
       hotelCost: isLastStop ? draft.hotelCost : 0,
+      hotelImageUrl: isLastStop ? draft.hotelImageUrl : undefined,
     });
   };
 
+  const applyCatalogPick = (kind: CatalogPickKind, pick: CatalogPickResult) => {
+    if (kind === 'tourSpot') {
+      setDraft((prev) => ({
+        ...prev,
+        tourSpotId: pick.id,
+        tourSpotName: pick.name,
+        tourSpotImageUrl: pick.imageUrl,
+        shortDescription:
+          prev.shortDescription.trim().length < 2 ? pick.name.slice(0, 200) : prev.shortDescription,
+      }));
+      return;
+    }
+    if (kind === 'activity') {
+      setDraft((prev) => ({
+        ...prev,
+        activitySpotId: pick.id,
+        activitySpotName: pick.name,
+        activitySpotImageUrl: pick.imageUrl,
+        activityCost: pick.cost ?? 0,
+      }));
+      return;
+    }
+    setDraft((prev) => ({
+      ...prev,
+      hotelId: pick.id,
+      hotelName: pick.name,
+      hotelImageUrl: pick.imageUrl,
+      hotelCost: pick.cost ?? 0,
+      hotelOption: pick.hotelType || prev.hotelOption,
+    }));
+  };
+
+  const transportChip = (value: string) => {
+    const selected = draft.transportOption === value;
+    return (
+      <TouchableOpacity
+        key={value}
+        onPress={() =>
+          setDraft((prev) => ({
+            ...prev,
+            transportOption: selected ? '' : value,
+          }))
+        }
+        className={`flex-row items-center px-3 py-2.5 rounded-full border ${
+          selected ? 'bg-primary border-primary' : 'bg-surface dark:bg-surface-dark border-border dark:border-border-dark'
+        }`}
+      >
+        {selected ? <Ionicons name="checkmark" size={14} color="#fff" style={{ marginRight: 4 }} /> : null}
+        <Text className={selected ? 'text-white text-sm font-medium' : 'text-text dark:text-text-dark text-sm'}>
+          {formatEnumLabel(value)}
+        </Text>
+      </TouchableOpacity>
+    );
+  };
+
   return (
-    <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
-      <SafeAreaView className="flex-1 bg-background dark:bg-background-dark">
-        <View className="px-4 py-3 flex-row items-center justify-between border-b border-border dark:border-border-dark">
-          <Text className="text-lg font-bold text-text dark:text-text-dark">
-            {t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_STOP_TITLE, {
-              day: draft.dayNumber,
-              order: draft.segmentOrder,
-            })}
-          </Text>
-          <TouchableOpacity onPress={onClose}>
-            <Feather name="x" size={22} color="#64748B" />
-          </TouchableOpacity>
-        </View>
-        <ScrollView className="flex-1 px-4 pt-4" keyboardShouldPersistTaps="handled">
-          <Text className="text-sm font-semibold text-text dark:text-text-dark mb-2">
-            {t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_STOP_DESC)}
-          </Text>
-          <TextInput
-            value={draft.shortDescription}
-            onChangeText={(shortDescription) => setDraft((prev) => ({ ...prev, shortDescription }))}
-            multiline
-            placeholder={t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_STOP_DESC_PH)}
-            placeholderTextColor="#94A3B8"
-            className="border border-border dark:border-border-dark rounded-lg px-3 py-3 text-text dark:text-text-dark mb-4 min-h-[88px]"
-          />
-          <DivisionSearchList
-            label={t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_TOUR_SPOT)}
-            endpoint="/api/tour-spots"
-            divisionId={divisionId}
-            placeholder={t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_SEARCH_SPOTS)}
-            suggestOnType
-            selectedId={draft.tourSpotId}
-            selectedName={draft.tourSpotName}
-            onSelect={(option) =>
-              setDraft((prev) => ({
-                ...prev,
-                tourSpotId: option?.id || '',
-                tourSpotName: option?.name,
-              }))
-            }
-          />
-          <DivisionSearchList
-            label={t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_ACTIVITY)}
-            endpoint="/api/activity-spots"
-            divisionId={divisionId}
-            placeholder={t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_SEARCH_ACTIVITIES)}
-            suggestOnType
-            selectedId={draft.activitySpotId}
-            selectedName={draft.activitySpotName}
-            allowClear
-            onSelect={(option) =>
-              setDraft((prev) => ({
-                ...prev,
-                activitySpotId: option?.id,
-                activitySpotName: option?.name,
-                activityCost: option?.cost || 0,
-              }))
-            }
-          />
-          <Text className="text-sm font-semibold text-text dark:text-text-dark mb-2">
-            {t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_TRANSPORT)}
-          </Text>
-          <View className="flex-row flex-wrap gap-2 mb-4">
-            {TRANSPORT_VALUES.map((value) => {
-              const selected = draft.transportOption === value;
-              return (
-                <TouchableOpacity
-                  key={value}
-                  onPress={() =>
+    <>
+      <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
+        <SafeAreaView className="flex-1 bg-background dark:bg-background-dark">
+          <View className="px-4 py-3 flex-row items-center border-b border-border dark:border-border-dark">
+            <Text className="flex-1 text-lg font-bold text-text dark:text-text-dark" numberOfLines={1}>
+              {t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_STOP_TITLE, {
+                day: draft.dayNumber,
+                order: draft.segmentOrder,
+              })}
+            </Text>
+            <TouchableOpacity onPress={onClose} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
+              <Feather name="x" size={24} color={mutedColor} />
+            </TouchableOpacity>
+          </View>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            className="flex-1"
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 8 : 0}
+          >
+            <ScrollView
+              className="flex-1 px-4 pt-4"
+              keyboardShouldPersistTaps="handled"
+              automaticallyAdjustKeyboardInsets
+              contentContainerStyle={{ paddingBottom: 16 }}
+            >
+              <Text className="text-sm font-semibold text-text dark:text-text-dark mb-2">
+                {t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_STOP_DESC)}
+              </Text>
+              <TextInput
+                value={draft.shortDescription}
+                onChangeText={(shortDescription) => setDraft((prev) => ({ ...prev, shortDescription }))}
+                multiline
+                textAlignVertical="top"
+                placeholder={t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_STOP_DESC_PH)}
+                placeholderTextColor={mutedColor}
+                className="border border-border dark:border-border-dark rounded-xl px-3 py-3 text-text dark:text-text-dark mb-4 min-h-[96px] bg-surface dark:bg-surface-dark"
+              />
+
+              <View className="rounded-2xl p-3 mb-4 bg-surface dark:bg-surface-dark">
+                <Text className="text-sm font-bold text-text dark:text-text-dark mb-1">
+                  {t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_PLACES_SECTION)}
+                </Text>
+                <SelectedPlaceRow
+                  label={t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_TOUR_SPOT)}
+                  required
+                  emptyLabel={t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_CHOOSE_TOUR_SPOT)}
+                  emptyIcon="map-outline"
+                  value={
+                    draft.tourSpotId
+                      ? {
+                          id: draft.tourSpotId,
+                          name: draft.tourSpotName,
+                          imageUrl: draft.tourSpotImageUrl,
+                          subtitle: draft.tourSpotName,
+                        }
+                      : undefined
+                  }
+                  onPressChoose={() => setPicker({ kind: 'tourSpot' })}
+                  onPressChange={() => setPicker({ kind: 'tourSpot' })}
+                />
+                <SelectedPlaceRow
+                  label={t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_ACTIVITY)}
+                  emptyLabel={t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_CHOOSE_ACTIVITY)}
+                  emptyIcon="bicycle-outline"
+                  value={
+                    draft.activitySpotId
+                      ? {
+                          id: draft.activitySpotId,
+                          name: draft.activitySpotName,
+                          imageUrl: draft.activitySpotImageUrl,
+                          cost: draft.activityCost,
+                        }
+                      : undefined
+                  }
+                  onPressChoose={() => setPicker({ kind: 'activity' })}
+                  onPressChange={() => setPicker({ kind: 'activity' })}
+                  onPressRemove={() =>
                     setDraft((prev) => ({
                       ...prev,
-                      transportOption: selected ? '' : value,
+                      activitySpotId: undefined,
+                      activitySpotName: undefined,
+                      activitySpotImageUrl: undefined,
+                      activityCost: 0,
                     }))
                   }
-                  className={`px-3 py-2 rounded-full ${selected ? 'bg-primary' : 'bg-surface dark:bg-surface-dark'}`}
-                >
-                  <Text className={selected ? 'text-onPrimary text-xs' : 'text-text dark:text-text-dark text-xs'}>
-                    {formatEnumLabel(value)}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-          {isLastStop ? (
-            <>
-              <Text className="text-sm font-semibold text-text dark:text-text-dark mb-2">
-                {t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_HOTEL_TYPE)}
-              </Text>
-              <View className="flex-row flex-wrap gap-2 mb-4">
-                {HOTEL_VALUES.map((value) => {
-                  const selected = draft.hotelOption === value;
-                  return (
-                    <TouchableOpacity
-                      key={value}
-                      onPress={() =>
-                        setDraft((prev) => ({
-                          ...prev,
-                          hotelOption: selected ? '' : value,
-                        }))
-                      }
-                      className={`px-3 py-2 rounded-full ${selected ? 'bg-primary' : 'bg-surface dark:bg-surface-dark'}`}
-                    >
-                      <Text className={selected ? 'text-onPrimary text-xs' : 'text-text dark:text-text-dark text-xs'}>
-                        {formatEnumLabel(value)}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
+                />
+                {isLastStop ? (
+                  <SelectedPlaceRow
+                    label={t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_HOTEL)}
+                    emptyLabel={t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_CHOOSE_HOTEL)}
+                    emptyIcon="bed-outline"
+                    value={
+                      draft.hotelId
+                        ? {
+                            id: draft.hotelId,
+                            name: draft.hotelName,
+                            imageUrl: draft.hotelImageUrl,
+                            subtitle: draft.hotelOption ? formatEnumLabel(draft.hotelOption) : undefined,
+                            cost: draft.hotelCost,
+                          }
+                        : undefined
+                    }
+                    onPressChoose={() => setPicker({ kind: 'hotel' })}
+                    onPressChange={() => setPicker({ kind: 'hotel' })}
+                    onPressRemove={() =>
+                      setDraft((prev) => ({
+                        ...prev,
+                        hotelId: '',
+                        hotelName: undefined,
+                        hotelImageUrl: undefined,
+                        hotelCost: 0,
+                      }))
+                    }
+                  />
+                ) : (
+                  <SelectedPlaceRow
+                    label={t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_HOTEL)}
+                    emptyLabel=""
+                    emptyIcon="bed-outline"
+                    disabled
+                    disabledHint={t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_HOTEL_LAST_ONLY)}
+                    onPressChoose={() => {}}
+                    onPressChange={() => {}}
+                  />
+                )}
               </View>
-              <DivisionSearchList
-                label={t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_HOTEL)}
-                endpoint="/api/hotels"
-                divisionId={divisionId}
-                hotelType={draft.hotelOption || undefined}
-                placeholder={t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_SEARCH_HOTELS)}
-                selectedId={draft.hotelId}
-                selectedName={draft.hotelName}
-                allowClear
-                onSelect={(option) =>
-                  setDraft((prev) => ({
-                    ...prev,
-                    hotelId: option?.id || '',
-                    hotelName: option?.name,
-                    hotelCost: option?.cost || 0,
-                  }))
-                }
+
+              <Text className="text-sm font-semibold text-text dark:text-text-dark mb-2">
+                {t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_TRANSPORT)}
+              </Text>
+              <View className="flex-row flex-wrap gap-2 mb-4">{TRANSPORT_VALUES.map(transportChip)}</View>
+
+              <Text className="text-sm font-semibold text-text dark:text-text-dark mb-2">
+                {t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_NOTES)}
+              </Text>
+              <TextInput
+                value={draft.notes || ''}
+                onChangeText={(notes) => setDraft((prev) => ({ ...prev, notes }))}
+                multiline
+                textAlignVertical="top"
+                placeholder={t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_NOTES_PH)}
+                placeholderTextColor={mutedColor}
+                className="border border-border dark:border-border-dark rounded-xl px-3 py-3 text-text dark:text-text-dark mb-2 min-h-[80px] bg-surface dark:bg-surface-dark"
               />
-            </>
-          ) : (
-            <Text className="text-xs text-muted dark:text-muted-dark mb-4">
-              {t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_HOTEL_LAST_ONLY)}
-            </Text>
-          )}
-          <Text className="text-sm font-semibold text-text dark:text-text-dark mb-2">
-            {t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_NOTES)}
-          </Text>
-          <TextInput
-            value={draft.notes || ''}
-            onChangeText={(notes) => setDraft((prev) => ({ ...prev, notes }))}
-            multiline
-            placeholderTextColor="#94A3B8"
-            className="border border-border dark:border-border-dark rounded-lg px-3 py-3 text-text dark:text-text-dark mb-4"
-          />
-          {error ? <Text className="text-error mb-3">{error}</Text> : null}
-        </ScrollView>
-        <View className="px-4 py-3 border-t border-border dark:border-border-dark">
-          <TouchableOpacity onPress={save} className="bg-primary rounded-lg py-3 items-center">
-            <Text className="text-onPrimary font-semibold">{t(TRANSLATION_KEYS.COMMON.SAVE)}</Text>
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
-    </Modal>
+            </ScrollView>
+          </KeyboardAvoidingView>
+          <View className="px-4 py-3 border-t border-border dark:border-border-dark">
+            {error ? <Text className="text-error text-sm mb-2 text-center">{error}</Text> : null}
+            <TouchableOpacity onPress={save} className="bg-primary rounded-xl py-3.5 items-center">
+              <Text className="text-onPrimary font-semibold">{t(TRANSLATION_KEYS.COMMON.SAVE)}</Text>
+            </TouchableOpacity>
+          </View>
+        </SafeAreaView>
+      </Modal>
+
+      {picker ? (
+        <CatalogPickerModal
+          visible
+          kind={picker.kind}
+          divisionId={divisionId}
+          selectedId={
+            picker.kind === 'tourSpot'
+              ? draft.tourSpotId
+              : picker.kind === 'activity'
+                ? draft.activitySpotId
+                : draft.hotelId
+          }
+          onClose={() => setPicker(null)}
+          onSelect={(pick) => applyCatalogPick(picker.kind, pick)}
+        />
+      ) : null}
+    </>
   );
 }
