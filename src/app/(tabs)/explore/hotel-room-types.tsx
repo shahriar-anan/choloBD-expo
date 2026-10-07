@@ -13,6 +13,7 @@ import { useHotelSearch } from '../../../context/HotelSearchContext';
 import { useExplore } from './_provider';
 import { TRANSLATION_KEYS } from '../../../constants/translationKeys';
 import { bedLine, formatMoney, nightsBetween, shortRangeLabel } from '../../../utilities/hotelSearch';
+import { goBack } from '../../../utilities/navigation';
 
 export default function HotelRoomTypesPage() {
     const router = useRouter();
@@ -86,7 +87,7 @@ export default function HotelRoomTypesPage() {
             <GradientAppBar
                 title={hotel?.name || 'Rooms'}
                 subtitle={subtitle}
-                onBack={() => router.back()}
+                onBack={() => goBack(router)}
                 rightIcon="pencil"
                 rightLabel="Edit dates and rooms"
                 onRightPress={() => router.push('/(tabs)/explore/hotel-dates')}

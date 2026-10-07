@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -12,6 +12,7 @@ import { TRANSLATION_KEYS } from '../../../constants/translationKeys';
 import { getTransportById, getTransportVehicles } from '../../../services/api/transports';
 import { TransportOperator, TransportVehicle } from '../../../types/transports';
 import { formatMoney, longDayLabel, nightsBetween } from '../../../utilities/hotelSearch';
+import { goBack } from '../../../utilities/navigation';
 
 function toPickupIso(date: string): string {
   return new Date(`${date}T10:00:00`).toISOString();
@@ -68,7 +69,7 @@ export default function TransportRentalPage() {
         ]);
         if (!cancelled) {
           setOperator(transport);
-          setVehicles(rows);
+          setVehicles(rows.filter((row) => row.isAvailable !== false));
         }
       } catch (error: unknown) {
         if (!cancelled) {
@@ -113,7 +114,7 @@ export default function TransportRentalPage() {
       <GradientAppBar
         title={t(TRANSLATION_KEYS.TRANSPORT.VEHICLES_TITLE)}
         subtitle={operator?.name}
-        onBack={() => router.back()}
+        onBack={() => goBack(router)}
       />
       {loading ? (
         <View className="items-center justify-center flex-1">
@@ -183,12 +184,16 @@ export default function TransportRentalPage() {
                   style={{ opacity: available ? 1 : 0.7 }}
                 >
                   <View className="flex-row">
+                    {vehicle.imageUrl ? (
+                      <Image source={{ uri: vehicle.imageUrl }} style={{ width: 72, height: 72, borderRadius: 16 }} resizeMode="cover" />
+                    ) : (
                     <View
                       className="items-center justify-center w-14 h-14 rounded-2xl"
                       style={{ backgroundColor: `${primary}14` }}
                     >
                       <Ionicons name="car-sport" size={26} color={primary} />
                     </View>
+                    )}
                     <View className="flex-1 ml-3">
                       <Text className="text-base font-bold text-text dark:text-text-dark" numberOfLines={1}>
                         {vehicle.name || category || plate || t(TRANSLATION_KEYS.TRANSPORT.RENTAL)}

@@ -16,6 +16,7 @@ import {
   Modal,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { KeyboardAwareScroll } from '../ui/KeyboardAwareScroll';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
@@ -232,7 +233,7 @@ export function TourBuilderForm({
   });
 
   return (
-    <ScrollView style={[styles.container, dynamicStyles.container]}>
+    <KeyboardAwareScroll style={[styles.container, dynamicStyles.container]}>
       {errorMessage && (
         <View className="p-3 mx-4 mb-4 border rounded-lg" style={[dynamicStyles.errorAlert, { borderColor: errorColor }]}>
           <View className="flex-row items-center gap-2">
@@ -743,7 +744,7 @@ export function TourBuilderForm({
           </TouchableOpacity>
         )}
       </View>
-    </ScrollView>
+    </KeyboardAwareScroll>
   );
 }
 

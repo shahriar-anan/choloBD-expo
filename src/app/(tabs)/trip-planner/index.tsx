@@ -32,6 +32,7 @@ import type { TripPlan } from '../../../types/trips';
 import { TOUR_TYPE_VALUES } from '../../../utils/tripPlanItinerary';
 import { formatTaka } from '../../../utils/tripPlanItinerary';
 import { formatBdt } from '../../../utils/money';
+import { goBack } from '../../../utilities/navigation';
 
 type HubTab = 'mine' | 'templates';
 
@@ -112,7 +113,7 @@ export default function TripPlannerIndex() {
       router.replace('/(tabs)');
       return;
     }
-    router.back();
+    goBack(router);
   };
 
   const selectTab = (next: HubTab) => {

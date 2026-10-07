@@ -6,6 +6,7 @@ import React from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { TripPlanCreateWizard } from '../../../components/tripPlanner/TripPlanCreateWizard';
+import { goBack } from '../../../utilities/navigation';
 
 function readParam(value: string | string[] | undefined): string | undefined {
   const raw = Array.isArray(value) ? value[0] : value;
@@ -21,7 +22,7 @@ export default function TripPlannerCreate() {
       <TripPlanCreateWizard
         mode="create"
         templateId={readParam(params.templateId)}
-        onCancel={() => router.back()}
+        onCancel={() => goBack(router)}
         onSaved={(plan) => router.replace(`/(tabs)/trip-planner/${plan.id}`)}
       />
     </SafeAreaView>

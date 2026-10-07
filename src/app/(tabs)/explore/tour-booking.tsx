@@ -4,7 +4,8 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { View, ScrollView, Text, Modal, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, Modal, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { KeyboardAwareScroll } from '../../../components/ui/KeyboardAwareScroll';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -18,6 +19,7 @@ import { useTheme } from '../../../hooks/useTheme';
 import { theme } from '../../../constants/theme';
 import { TRANSLATION_KEYS } from '../../../constants/translationKeys';
 import { roleBookings } from '../../../utilities/travelerShell';
+import { goBack } from '../../../utilities/navigation';
 
 console.log('[TourBookingPage] Component loaded');
 
@@ -82,7 +84,7 @@ export default function TourBookingPage() {
   };
 
   const handleBack = () => {
-    router.back();
+    goBack(router);
   };
 
   if (detailLoading || !tourPackage) {
@@ -121,7 +123,7 @@ export default function TourBookingPage() {
 
   return (
     <SafeAreaView className="flex-1 bg-background dark:bg-background-dark">
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+      <KeyboardAwareScroll className="flex-1" showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View className="px-6 pt-4 pb-4 flex-row items-center">
           <Ionicons name="chevron-back" size={24} color={primaryColor} onPress={handleBack} />
@@ -151,7 +153,7 @@ export default function TourBookingPage() {
             submitting={purchaseLoading}
           />
         </View>
-      </ScrollView>
+      </KeyboardAwareScroll>
 
       {/* Success Modal */}
       <Modal

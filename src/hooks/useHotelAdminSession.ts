@@ -4,6 +4,7 @@ import { RootState } from '../store/store';
 import {
   isHotelEmployee,
   isHotelServiceAdmin,
+  isTransportServiceAdmin,
   loadOperatorAssignment,
   readOperatorAssignment,
   subscribeOperatorAssignment,
@@ -41,6 +42,7 @@ export function useHotelAdminSession() {
     pending,
     isHotelAdmin: isHotelServiceAdmin(role, known?.serviceType),
     isHotelEmployee: isHotelEmployee(role, known?.employeeServiceType),
+    isTransportAdmin: isTransportServiceAdmin(role, known?.serviceType),
     role,
   };
 }

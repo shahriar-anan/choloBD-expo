@@ -5,5 +5,12 @@ import { TRANSLATION_KEYS } from '../../../constants/translationKeys';
 
 export default function HelpScreen() {
   const { t } = useTranslation();
-  return <ProfilePlaceholder title={t(TRANSLATION_KEYS.PROFILE.HELP)} />;
+
+  return (
+    <ProfilePlaceholder
+      title={t(TRANSLATION_KEYS.PROFILE.HELP)}
+      body={t(TRANSLATION_KEYS.PROFILE.HELP_BODY)}
+      icon="help-circle-outline"
+    />
+  );
 }

@@ -9,6 +9,7 @@ import { theme } from '../constants/theme';
 import { TRANSLATION_KEYS } from '../constants/translationKeys';
 import { TourSpotDetailView } from '../components/tourSpots';
 import { getTourSpotDetail } from '../services/api/tourSpots';
+import { goBack } from '../utilities/navigation';
 
 export default function TourSpotDetailPage() {
   const router = useRouter();
@@ -43,7 +44,7 @@ export default function TourSpotDetailPage() {
   };
 
   const handleBack = () => {
-    router.back();
+    goBack(router);
   };
 
   const handleRetry = () => {

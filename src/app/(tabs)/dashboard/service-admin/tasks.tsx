@@ -1,5 +1,6 @@
 import React, { useCallback, useState } from 'react';
-import { View, Text, ScrollView, Pressable, ActivityIndicator, TextInput, Alert } from 'react-native';
+import { View, Text, Pressable, ActivityIndicator, TextInput, Alert } from 'react-native';
+import { KeyboardAwareScroll } from '../../../../components/ui/KeyboardAwareScroll';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -20,6 +21,7 @@ import {
   HotelTaskRow,
   staffDisplayName,
 } from '../../../../services/api/hotelDesk';
+import { goBack } from '../../../../utilities/navigation';
 
 export default function CleaningTasksPage() {
   const router = useRouter();
@@ -123,8 +125,8 @@ export default function CleaningTasksPage() {
 
   return (
     <SafeAreaView edges={['top', 'bottom']} className="flex-1 bg-background dark:bg-background-dark">
-      <ScrollView className="flex-1" contentContainerStyle={{ padding: 24 }}>
-        <Pressable onPress={() => router.back()} accessibilityRole="button" style={{ padding: 6 }}>
+      <KeyboardAwareScroll className="flex-1" contentContainerStyle={{ padding: 24 }}>
+        <Pressable onPress={() => goBack(router)} accessibilityRole="button" style={{ padding: 6 }}>
           <Ionicons name="chevron-back" size={24} color={textColor} />
         </Pressable>
         <Text className="mt-2 text-2xl font-bold text-text dark:text-text-dark">
@@ -233,7 +235,7 @@ export default function CleaningTasksPage() {
             );
           })}
         </View>
-      </ScrollView>
+      </KeyboardAwareScroll>
     </SafeAreaView>
   );
 }

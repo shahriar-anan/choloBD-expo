@@ -24,6 +24,13 @@ export function isHotelEmployee(
   return String(role || '').toUpperCase() === 'EMPLOYEE' && employeeServiceType === 'HOTEL_BOOKING';
 }
 
+export function isTransportServiceAdmin(
+  role: string | null | undefined,
+  serviceType: string | null | undefined,
+): boolean {
+  return String(role || '').toUpperCase() === 'SERVICE_ADMIN' && serviceType === 'TRANSPORT_SERVICE';
+}
+
 export function readOperatorAssignment(userId: string | null | undefined): OperatorAssignment | null {
   if (!userId || cached?.userId !== userId) {
     return null;

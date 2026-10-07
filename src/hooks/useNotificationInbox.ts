@@ -9,10 +9,12 @@ import { AppNotification } from '../types/notification';
 
 interface InboxOptions {
   traveler?: boolean;
+  transportOperator?: boolean;
 }
 
 export function useNotificationInbox(options?: InboxOptions) {
   const traveler = options?.traveler === true;
+  const transportOperator = options?.transportOperator === true;
   const router = useRouter();
   const [items, setItems] = useState<AppNotification[]>([]);
   const [loading, setLoading] = useState(true);
@@ -68,6 +70,14 @@ export function useNotificationInbox(options?: InboxOptions) {
       return;
     }
 
+    if ((entityType === 'TRANSPORT_BOOKING' || entityType === 'TRANSPORT_SERVICE') && entityId && transportOperator) {
+      router.push({
+        pathname: '/(tabs)/dashboard/transport-admin/bookings/[bookingId]',
+        params: { bookingId: entityId },
+      });
+      return;
+    }
+
     if (entityType === 'HOTEL_TASK') {
       router.push('/(tabs)/dashboard/service-admin/tasks');
       return;
@@ -79,7 +89,7 @@ export function useNotificationInbox(options?: InboxOptions) {
     if (entityType === 'PACKAGE_BOOKING') {
       router.push('/(tabs)/dashboard');
     }
-  }, [router, traveler]);
+  }, [router, traveler, transportOperator]);
 
   const markAllRead = useCallback(async () => {
     setMarkingAll(true);

@@ -12,6 +12,7 @@ import { ErrorAlert } from '../components/tourBuilder/ErrorAlert';
 import { useTheme } from '../hooks/useTheme';
 import { theme } from '../constants/theme';
 import { TRANSLATION_KEYS } from '../constants/translationKeys';
+import { goBack } from '../utilities/navigation';
 
 export default function TourPackageDetailPage() {
   const router = useRouter();
@@ -37,7 +38,7 @@ export default function TourPackageDetailPage() {
   }, [id]);
 
   const handleBack = () => {
-    router.back();
+    goBack(router);
   };
 
   const handleBookTour = () => {

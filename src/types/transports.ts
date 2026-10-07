@@ -148,6 +148,7 @@ export interface TransportSeat {
   columnLabel?: string | null;
   isActive: boolean;
   isAvailable: boolean;
+  operatorManaged?: boolean;
   compartmentName?: string;
   transportClass?: TransportClassRef;
 }
@@ -164,6 +165,7 @@ export interface TransportVehicle {
   transportClassId: string;
   name?: string | null;
   licensePlate?: string | null;
+  imageUrl?: string | null;
   vehicleStatus?: string;
   isActive?: boolean;
   isAvailable?: boolean;
@@ -291,6 +293,97 @@ export interface TransportBooking {
     phoneNumber?: string;
     images?: { url: string }[];
   } | null;
+  user?: {
+    id: string;
+    email?: string;
+    firstName?: string | null;
+    lastName?: string | null;
+    userName?: string;
+    phoneNumber?: string | null;
+  } | null;
+}
+
+export interface TransportLayoutRef {
+  id: string;
+  name: string;
+  imageUrl?: string | null;
+  isActive?: boolean;
+  compartments?: Array<{
+    id: string;
+    name: string;
+    seats?: Array<{
+      id: string;
+      seatLabel: string;
+      transportClassId?: string;
+      rowLabel?: string | null;
+      columnLabel?: string | null;
+      isActive?: boolean;
+      transportClass?: TransportClassRef;
+    }>;
+  }>;
+  _count?: { trips?: number };
+}
+
+export interface CreateTransportClassPayload {
+  transportId: string;
+  name: string;
+  basePrice: number;
+  busServiceType?: string;
+  vehicleRentalCategory?: string;
+}
+
+export interface CreateTransportLayoutSeatPayload {
+  seatLabel: string;
+  transportClassId: string;
+  rowLabel?: string;
+  columnLabel?: string;
+}
+
+export interface CreateTransportLayoutPayload {
+  transportId: string;
+  name: string;
+  imageUrl?: string;
+  transportClassId?: string;
+  seatCount?: number;
+  compartmentName?: string;
+  seats?: CreateTransportLayoutSeatPayload[];
+}
+
+export interface UpdateTransportLayoutPayload {
+  name?: string;
+  imageUrl?: string | null;
+  isActive?: boolean;
+}
+
+export interface CreateTransportRoutePayload {
+  transportId: string;
+  originLocationId: string;
+  destinationLocationId: string;
+  name?: string;
+}
+
+export interface CreateTransportRouteStopPayload {
+  locationId: string;
+  name: string;
+  stopOrder: number;
+  arrivalOffsetMinutes?: number;
+}
+
+export interface CreateTransportTripPayload {
+  transportId: string;
+  transportRouteId: string;
+  layoutId: string;
+  departureDateTime: string;
+  arrivalDateTime: string;
+  coachLabel?: string;
+}
+
+export interface CreateTransportVehiclePayload {
+  transportId: string;
+  transportClassId: string;
+  name?: string;
+  licensePlate?: string;
+  imageUrl?: string;
 }
 
 export interface TransportBookingListPage {
@@ -306,6 +399,8 @@ export interface TransportBookingListFilters {
   status?: string;
   paymentStatus?: string;
   confirmationCode?: string;
+  departureFrom?: string;
+  departureTo?: string;
   page?: number;
   limit?: number;
 }

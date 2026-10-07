@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { GradientAppBar, PillButton, Stepper } from '../../../components/hotelSearch/HotelFlowChrome';
 import { useHotelSearch } from '../../../context/HotelSearchContext';
+import { goBack } from '../../../utilities/navigation';
 
 export default function HotelRoomCountPage() {
     const router = useRouter();
@@ -13,7 +14,7 @@ export default function HotelRoomCountPage() {
 
     return (
         <SafeAreaView className="flex-1 bg-background dark:bg-background-dark">
-            <GradientAppBar title={title} onBack={() => router.back()} />
+            <GradientAppBar title={title} onBack={() => goBack(router)} />
             <View className="flex-1 px-6 pt-6">
                 <Text className="text-lg font-bold text-text dark:text-text-dark">Rooms</Text>
                 <Text className="mt-1 mb-6 text-sm text-muted dark:text-muted-dark">How many rooms do you need?</Text>
@@ -30,7 +31,7 @@ export default function HotelRoomCountPage() {
                     label="Confirm"
                     onPress={() => {
                         setRoomCount(count);
-                        router.back();
+                        goBack(router);
                     }}
                 />
             </View>

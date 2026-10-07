@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, ScrollView, ActivityIndicator, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { goBack } from '../../../../utilities/navigation';
 import { useTranslation } from 'react-i18next';
 import { AdminCard } from '../../../../components/ui/adminCard';
 import { useSelector } from 'react-redux';
@@ -76,7 +78,15 @@ export default function ServiceAdminIndex() {
     <SafeAreaView edges={["top", "bottom"]} className="flex-1 bg-background dark:bg-background-dark">
       <ScrollView showsVerticalScrollIndicator={false} className="flex-1">
         <View className="px-6 pt-6 pb-8">
-          <Text className="text-2xl font-bold text-text dark:text-text-dark">{t(TRANSLATION_KEYS.DASHBOARD.SERVICE_ADMIN.HOTELS_TITLE)}</Text>
+          <Pressable
+            onPress={() => goBack(router)}
+            style={{ padding: 6, marginLeft: -6, alignSelf: 'flex-start' }}
+            accessibilityRole="button"
+            accessibilityLabel={t(TRANSLATION_KEYS.COMMON.BACK)}
+          >
+            <Ionicons name="chevron-back" size={24} color={isDark ? theme.colors['text-dark'] : theme.colors.text} />
+          </Pressable>
+          <Text className="mt-2 text-2xl font-bold text-text dark:text-text-dark">{t(TRANSLATION_KEYS.DASHBOARD.SERVICE_ADMIN.HOTELS_TITLE)}</Text>
           <Text className="text-sm text-muted dark:text-muted-dark mt-1">{t(TRANSLATION_KEYS.DASHBOARD.SERVICE_ADMIN.HOTELS_SUBTITLE)}</Text>
 
           {loading ? (

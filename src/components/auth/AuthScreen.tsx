@@ -1,10 +1,11 @@
 import React from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, Text, TouchableOpacity, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../hooks/useTheme';
 import theme from '../../constants/theme';
 import AppBrandSection from '../homepage/AppBrandSection';
+import { KeyboardAwareScroll } from '../ui/KeyboardAwareScroll';
 import { TRANSLATION_KEYS } from '../../constants/translationKeys';
 
 interface AuthScreenProps {
@@ -15,29 +16,31 @@ interface AuthScreenProps {
 }
 
 export function AuthScreen({ title, subtitle, children, footer }: AuthScreenProps) {
+  const insets = useSafeAreaInsets();
+
   return (
-    <SafeAreaView edges={['top', 'bottom']} className="flex-1 bg-background dark:bg-background-dark">
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        className="flex-1"
+    <SafeAreaView edges={['top', 'left', 'right']} className="flex-1 bg-background dark:bg-background-dark">
+      <KeyboardAwareScroll
+        centerWhenClosed
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{
+          paddingHorizontal: 24,
+          paddingTop: 24,
+          paddingBottom: 24 + insets.bottom,
+        }}
       >
-        <ScrollView
-          keyboardShouldPersistTaps="handled"
-          contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', paddingHorizontal: 24, paddingVertical: 32 }}
-        >
-          <View className="w-full max-w-md mx-auto rounded-2xl border border-border bg-surface p-6 dark:border-border-dark dark:bg-surface-dark">
-            <View className="mb-6 items-center">
-              <AppBrandSection width={240} height={90} />
-            </View>
-            <Text className="mb-2 text-center font-heading text-3xl font-bold text-text dark:text-text-dark">
-              {title}
-            </Text>
-            <Text className="mb-6 text-center text-muted dark:text-muted-dark">{subtitle}</Text>
-            <View className="gap-4">{children}</View>
-            {footer}
+        <View className="w-full max-w-md mx-auto rounded-2xl border border-border bg-surface p-6 dark:border-border-dark dark:bg-surface-dark">
+          <View className="mb-6 items-center">
+            <AppBrandSection width={240} height={90} />
           </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
+          <Text className="mb-2 text-center font-heading text-3xl font-bold text-text dark:text-text-dark">
+            {title}
+          </Text>
+          <Text className="mb-6 text-center text-muted dark:text-muted-dark">{subtitle}</Text>
+          <View className="gap-4">{children}</View>
+          {footer}
+        </View>
+      </KeyboardAwareScroll>
     </SafeAreaView>
   );
 }

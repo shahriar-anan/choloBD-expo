@@ -66,9 +66,10 @@ export default function NotificationsTab() {
   const { isDark } = useTheme();
   const { t } = useTranslation();
   const { currentLanguage } = useLanguage();
-  const { isHotelAdmin, isHotelEmployee, pending } = useHotelAdminSession();
+  const { isHotelAdmin, isHotelEmployee, isTransportAdmin, pending } = useHotelAdminSession();
   const { items, loading, markingAll, openNotification, markAllRead, load } = useNotificationInbox({
-    traveler: !pending && !isHotelAdmin && !isHotelEmployee,
+    traveler: !pending && !isHotelAdmin && !isHotelEmployee && !isTransportAdmin,
+    transportOperator: !pending && isTransportAdmin,
   });
   const primaryColor = isDark ? theme.colors['primary-dark'] : theme.colors.primary;
   const surface = isDark ? theme.colors['surface-dark'] : theme.colors.surface;

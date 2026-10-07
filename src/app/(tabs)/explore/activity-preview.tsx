@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { KeyboardAwareScroll } from '../../../components/ui/KeyboardAwareScroll';
 import {
   View,
   Text,
@@ -23,6 +24,7 @@ import { useActivityPreview } from '../../../hooks/useHomeFeed';
 import { useActivityBookingLogic } from '../../../hooks/useActivityBookingLogic';
 import { formatBdt } from '../../../utils/money';
 import type { RootState } from '../../../store/store';
+import { goBack } from '../../../utilities/navigation';
 
 function toIsoDate(date: Date): string {
   const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -90,7 +92,7 @@ export default function ActivityPreviewPage() {
   return (
     <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1, backgroundColor: background }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 8 }}>
-        <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+        <TouchableOpacity onPress={() => goBack(router)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
           <Ionicons name="chevron-back" size={26} color={primary} />
         </TouchableOpacity>
       </View>
@@ -106,7 +108,7 @@ export default function ActivityPreviewPage() {
           </TouchableOpacity>
         </View>
       ) : (
-        <ScrollView contentContainerStyle={{ paddingBottom: 32 }}>
+        <KeyboardAwareScroll contentContainerStyle={{ paddingBottom: 32 }}>
           <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false}>
             {gallery.length > 0 ? gallery.map((image) => (
               <Image key={image.id} source={{ uri: image.url }} style={{ width, height: 220 }} resizeMode="cover" />
@@ -205,7 +207,7 @@ export default function ActivityPreviewPage() {
               )}
             </View>
           </View>
-        </ScrollView>
+        </KeyboardAwareScroll>
       )}
     </SafeAreaView>
   );

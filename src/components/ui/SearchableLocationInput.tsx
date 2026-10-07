@@ -11,6 +11,7 @@ interface SearchableLocationInputProps {
   loadingLocations: boolean;
   selectedLocationId: string;
   onLocationSelect: (locationId: string) => void;
+  label?: string;
 }
 
 export function SearchableLocationInput({
@@ -18,6 +19,7 @@ export function SearchableLocationInput({
   loadingLocations,
   selectedLocationId,
   onLocationSelect,
+  label,
 }: SearchableLocationInputProps) {
   const { isDark } = useTheme();
   const { t } = useTranslation();
@@ -86,7 +88,7 @@ export function SearchableLocationInput({
   return (
     <View className="mb-4">
       <Text className="mb-2 text-sm font-semibold text-text dark:text-text-dark">
-        {t('explore.searchLocation')}
+        {label ?? t('explore.searchLocation')}
       </Text>
 
       {/* Search Input */}

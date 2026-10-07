@@ -4,6 +4,7 @@ import { useTheme } from '../../../hooks/useTheme';
 import { ExploreHotelDetailUI } from '../../../components/ui/exploreHotelDetailUI';
 import { useExplore } from './_provider';
 import { useRouter } from 'expo-router';
+import { goBack } from '../../../utilities/navigation';
 
 export default function ExploreDetail() {
   const { hotelDetail, detailLoading } = useExplore();
@@ -19,7 +20,7 @@ export default function ExploreDetail() {
     >
       <ExploreHotelDetailUI
         hotel={hotelDetail}
-        onBack={() => router.back()}
+        onBack={() => goBack(router)}
         onBackToSearch={() => router.push('/(tabs)/explore')}
         onBooking={() => router.push('/(tabs)/explore/booking')}
         loading={detailLoading}

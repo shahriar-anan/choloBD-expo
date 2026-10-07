@@ -15,6 +15,7 @@ import { RecommendedHotelCard } from '../../../components/hotelSearch/Recommende
 import { fetchDivisionIdByName } from '../../../services/api/locations';
 import { fetchHotels } from '../../../services/api/hotels';
 import { HotelSearchListItem } from '../../../types/hotelSearch';
+import { goBack } from '../../../utilities/navigation';
 
 function pad(value: number): string {
     return String(value).padStart(2, '0');
@@ -32,12 +33,12 @@ export default function HotelSearchPage() {
     const nights = nightsBetween(params.checkIn, params.checkOut);
     const roomLabel = params.roomCount === 1 ? '1 Room' : `${params.roomCount} Rooms`;
 
-    const goBack = () => {
+    const onBack = () => {
         if (fromHome === 'true') {
             router.replace('/(tabs)');
             return;
         }
-        router.back();
+        goBack(router);
     };
 
     useEffect(() => {
@@ -89,7 +90,7 @@ export default function HotelSearchPage() {
         <SafeAreaView className="flex-1 bg-background dark:bg-background-dark">
             <ScrollView>
                 <LinearGradient colors={[primary, isDark ? theme.colors['background-dark'] : theme.colors.background]} className="px-4 pt-2 pb-16">
-                    <Pressable accessibilityLabel="Back" onPress={goBack} className="items-center justify-center w-11 h-11">
+                    <Pressable accessibilityLabel="Back" onPress={onBack} className="items-center justify-center w-11 h-11">
                         <Ionicons name="chevron-back" size={24} color="#fff" />
                     </Pressable>
                     <Text className="text-3xl font-bold text-center text-white">{t(TRANSLATION_KEYS.HOTEL_SEARCH.TITLE)}</Text>
@@ -147,7 +148,7 @@ export default function HotelSearchPage() {
                                         return null;
                                     }
                                     return (
-                                        <View key={hotel.id} style={{ width: '48%', marginBottom: 12 }}>
+                                        <View key={hotel.id} style={{ width: '48%', marginBottom: 12, alignSelf: 'flex-start' }}>
                                             <RecommendedHotelCard
                                                 name={hotel.name}
                                                 imageUrl={hotel.images?.[0]?.url}

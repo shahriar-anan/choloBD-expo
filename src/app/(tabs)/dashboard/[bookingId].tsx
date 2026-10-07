@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, ActivityIndicator, Pressable, Modal, Alert, Image } from 'react-native';
+import { View, Text, ActivityIndicator, Pressable, Modal, Alert, Image } from 'react-native';
+import { KeyboardAwareScroll } from '../../../components/ui/KeyboardAwareScroll';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSelector } from 'react-redux';
@@ -276,7 +277,7 @@ export default function BookingTrackingPage() {
             ) : null}
           </View>
         ) : (
-          <ScrollView className="flex-1 p-4">
+          <KeyboardAwareScroll className="flex-1 p-4">
             <HotelBookingForm
               checkInDate={editCheckInDate}
               checkOutDate={editCheckOutDate}
@@ -295,7 +296,7 @@ export default function BookingTrackingPage() {
               isEditing={true}
               onCancel={cancelEdit}
             />
-          </ScrollView>
+          </KeyboardAwareScroll>
         )}
       </SafeAreaView>
     );
@@ -303,7 +304,11 @@ export default function BookingTrackingPage() {
 
   return (
     <View className="flex-1 bg-background dark:bg-background-dark">
-      <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: actionBarHeight + 16 }}>
+      <KeyboardAwareScroll
+        className="flex-1"
+        contentContainerStyle={{ paddingBottom: actionBarHeight + 16 }}
+        bottomClearance={Math.max(64, actionBarHeight + 12)}
+      >
         <View style={{ height: 160, backgroundColor: isDark ? theme.colors['background-dark'] : theme.colors.background }}>
           {coverUrl ? (
             <Image source={{ uri: coverUrl }} accessibilityLabel={hotelName} style={{ width: '100%', height: 160 }} />
@@ -415,7 +420,7 @@ export default function BookingTrackingPage() {
             })}
           </View>
         ) : null}
-      </ScrollView>
+      </KeyboardAwareScroll>
 
       <View
         onLayout={(event) => {

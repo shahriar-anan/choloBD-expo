@@ -122,6 +122,7 @@ export function TransportBookingCard({ booking, onPress }: TransportBookingCardP
         <Text className="text-base font-bold text-text dark:text-text-dark">৳{booking.totalPrice}</Text>
       </View>
 
+      {isBus ? (
       <View className="flex-row items-center mb-3">
         <Text className="text-sm font-semibold text-text dark:text-text-dark" numberOfLines={1}>
           {booking.departureLocation}
@@ -131,11 +132,19 @@ export function TransportBookingCard({ booking, onPress }: TransportBookingCardP
           {booking.arrivalLocation}
         </Text>
       </View>
+      ) : (
+      <View className="flex-row items-center mb-3">
+        <Ionicons name="location-outline" size={16} color={primary} style={{ marginRight: 8 }} />
+        <Text className="flex-1 text-sm font-semibold text-text dark:text-text-dark" numberOfLines={1}>
+          {booking.departureLocation}
+        </Text>
+      </View>
+      )}
 
       <View className="flex-row justify-between gap-3">
         <View className="flex-1 p-3 border border-border rounded-lg bg-surface-2 dark:bg-surface-2-dark dark:border-border-dark">
           <Text className="mb-1 text-xs font-semibold text-muted dark:text-muted-dark">
-            {t(TRANSLATION_KEYS.TRANSPORT_BOOKING.DEPARTURE)}
+            {t(isBus ? TRANSLATION_KEYS.TRANSPORT_BOOKING.DEPARTURE : TRANSLATION_KEYS.TRANSPORT.RENTAL_PICKUP_LABEL)}
           </Text>
           <Text className="text-base font-bold text-text dark:text-text-dark">
             {formatTripClock(booking.departureDateTime)}
@@ -144,7 +153,7 @@ export function TransportBookingCard({ booking, onPress }: TransportBookingCardP
         </View>
         <View className="flex-1 p-3 border border-border rounded-lg bg-surface-2 dark:bg-surface-2-dark dark:border-border-dark">
           <Text className="mb-1 text-xs font-semibold text-muted dark:text-muted-dark">
-            {t(TRANSLATION_KEYS.TRANSPORT_BOOKING.ARRIVAL)}
+            {t(isBus ? TRANSLATION_KEYS.TRANSPORT_BOOKING.ARRIVAL : TRANSLATION_KEYS.TRANSPORT.RENTAL_RETURN_LABEL)}
           </Text>
           <Text className="text-base font-bold text-text dark:text-text-dark">
             {formatTripClock(booking.arrivalDateTime)}

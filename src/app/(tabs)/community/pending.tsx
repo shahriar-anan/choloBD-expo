@@ -9,6 +9,7 @@ import { useAdminCommunityLogic } from '../../../hooks/useAdminCommunityLogic';
 import { PostCard } from '../../../components/community';
 import theme from '../../../constants/theme';
 import { TRANSLATION_KEYS } from '../../../constants/translationKeys';
+import { goBack } from '../../../utilities/navigation';
 
 export default function CommunityPendingPage() {
   const router = useRouter();
@@ -35,7 +36,7 @@ export default function CommunityPendingPage() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: bg }}>
       <View className="px-5 pb-3 flex-row items-center justify-between">
-        <TouchableOpacity onPress={() => router.back()}>
+        <TouchableOpacity onPress={() => goBack(router)}>
           <Ionicons name="chevron-back" size={24} color={primary} />
         </TouchableOpacity>
         <Text className="text-lg font-bold text-text dark:text-text-dark">{t(TRANSLATION_KEYS.COMMUNITY.PENDING_TITLE)}</Text>

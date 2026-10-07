@@ -9,12 +9,12 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  ScrollView,
   SafeAreaView,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
 import { Feather, Ionicons } from '@expo/vector-icons';
+import { KeyboardAwareScroll } from '../ui/KeyboardAwareScroll';
 import { useTranslation } from 'react-i18next';
 import { TRANSLATION_KEYS } from '../../constants/translationKeys';
 import { useTheme } from '../../hooks/useTheme';
@@ -162,10 +162,9 @@ export function StopEditorSheet({
             className="flex-1"
             keyboardVerticalOffset={Platform.OS === 'ios' ? 8 : 0}
           >
-            <ScrollView
+            <KeyboardAwareScroll
+              avoiding={false}
               className="flex-1 px-4 pt-4"
-              keyboardShouldPersistTaps="handled"
-              automaticallyAdjustKeyboardInsets
               contentContainerStyle={{ paddingBottom: 16 }}
             >
               <Text className="text-sm font-semibold text-text dark:text-text-dark mb-2">
@@ -287,14 +286,14 @@ export function StopEditorSheet({
                 placeholderTextColor={mutedColor}
                 className="border border-border dark:border-border-dark rounded-xl px-3 py-3 text-text dark:text-text-dark mb-2 min-h-[80px] bg-surface dark:bg-surface-dark"
               />
-            </ScrollView>
+            </KeyboardAwareScroll>
+            <View className="px-4 py-3 border-t border-border dark:border-border-dark">
+              {error ? <Text className="text-error text-sm mb-2 text-center">{error}</Text> : null}
+              <TouchableOpacity onPress={save} className="bg-primary rounded-xl py-3.5 items-center">
+                <Text className="text-onPrimary font-semibold">{t(TRANSLATION_KEYS.COMMON.SAVE)}</Text>
+              </TouchableOpacity>
+            </View>
           </KeyboardAvoidingView>
-          <View className="px-4 py-3 border-t border-border dark:border-border-dark">
-            {error ? <Text className="text-error text-sm mb-2 text-center">{error}</Text> : null}
-            <TouchableOpacity onPress={save} className="bg-primary rounded-xl py-3.5 items-center">
-              <Text className="text-onPrimary font-semibold">{t(TRANSLATION_KEYS.COMMON.SAVE)}</Text>
-            </TouchableOpacity>
-          </View>
         </SafeAreaView>
       </Modal>
 

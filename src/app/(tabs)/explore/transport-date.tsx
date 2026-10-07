@@ -8,6 +8,7 @@ import { DateRangeCalendar } from '../../../components/hotelSearch/DateRangeCale
 import { useTransportSearch } from '../../../context/TransportSearchContext';
 import { longDayLabel } from '../../../utilities/hotelSearch';
 import { TRANSLATION_KEYS } from '../../../constants/translationKeys';
+import { goBack } from '../../../utilities/navigation';
 
 export default function TransportDatePage() {
     const router = useRouter();
@@ -24,7 +25,7 @@ export default function TransportDatePage() {
         <SafeAreaView edges={['top', 'left', 'right']} className="flex-1 bg-background dark:bg-background-dark">
             <GradientAppBar
                 title={isReturn ? t(TRANSLATION_KEYS.TRANSPORT.RETURN_DATE) : t(TRANSLATION_KEYS.TRANSPORT.SELECT_DATE)}
-                onBack={() => router.back()}
+                onBack={() => goBack(router)}
             />
             <DateRangeCalendar
                 checkIn={selected}
@@ -55,7 +56,7 @@ export default function TransportDatePage() {
                         } else {
                             setDate(selected);
                         }
-                        router.back();
+                        goBack(router);
                     }}
                 />
             </View>

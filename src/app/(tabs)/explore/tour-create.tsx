@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { View, ScrollView, Text, ActivityIndicator } from 'react-native';
+import { View, Text, ActivityIndicator } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -19,6 +19,7 @@ import { useTheme } from '../../../hooks/useTheme';
 import { theme } from '../../../constants/theme';
 import { useTranslation } from 'react-i18next';
 import { TRANSLATION_KEYS } from '../../../constants/translationKeys';
+import { goBack } from '../../../utilities/navigation';
 
 export default function TourCreatePage() {
   const router = useRouter();
@@ -32,13 +33,13 @@ export default function TourCreatePage() {
   const primaryColor = isDark ? theme.colors['primary-dark'] : theme.colors.primary;
 
   const handleBack = () => {
-    router.back();
+    goBack(router);
   };
 
   const handleCreateTour = async (data: CreateTourPlanData | any) => {
     try {
       await dispatch(createTourPlanAsync(data)).unwrap();
-      router.back();
+      goBack(router);
     } catch (error) {
       if (__DEV__) console.error('[TourCreatePage] Error creating tour:', error);
       // Error is stored in Redux state and shown via ErrorAlert
@@ -47,10 +48,6 @@ export default function TourCreatePage() {
 
   return (
     <SafeAreaView className="flex-1 bg-background dark:bg-background-dark">
-      <ScrollView
-        className="flex-1"
-        showsVerticalScrollIndicator={false}
-      >
         {/* Header with Back Button */}
         <View className="px-6 pt-6 pb-2 flex-row items-center">
           <Ionicons
@@ -78,7 +75,7 @@ export default function TourCreatePage() {
         )}
 
         {/* Tour Builder Form */}
-        <View className="px-4 pb-6">
+        <View className="flex-1 px-4 pb-6">
           {locations && locations.length > 0 ? (
             <TourBuilderForm
               locations={locations}
@@ -94,7 +91,6 @@ export default function TourCreatePage() {
             </View>
           )}
         </View>
-      </ScrollView>
     </SafeAreaView>
   );
 }

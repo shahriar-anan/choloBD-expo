@@ -9,12 +9,10 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  ScrollView,
   ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
+import { KeyboardAwareScroll } from '../ui/KeyboardAwareScroll';
 import { useTranslation } from 'react-i18next';
 import { TRANSLATION_KEYS } from '../../constants/translationKeys';
 import { useTheme } from '../../hooks/useTheme';
@@ -137,10 +135,7 @@ export function StopSegmentForm({
 
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        className="flex-1 bg-background dark:bg-background-dark"
-      >
+      <View className="flex-1 bg-background dark:bg-background-dark">
         <View className="flex-row items-center justify-between px-6 pt-12 pb-4 border-b border-border dark:border-border-dark">
           <Text className="text-lg font-bold text-text dark:text-text-dark">
             {t(TRANSLATION_KEYS.TRIP_PLANNER.SEGMENT_ADD_TITLE)} · {t(TRANSLATION_KEYS.TRIP_PLANNER.DAY_PLAN_DAY, { day: dayNumber })}
@@ -152,7 +147,7 @@ export function StopSegmentForm({
         {loading ? (
           <ActivityIndicator className="mt-8" color={primaryColor} />
         ) : (
-          <ScrollView className="flex-1 px-6 py-4" keyboardShouldPersistTaps="handled">
+          <KeyboardAwareScroll className="flex-1 px-6 py-4">
             <Text className="text-sm font-semibold text-text dark:text-text-dark mb-2">
               {t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_STOP_DESC)}
             </Text>
@@ -240,9 +235,9 @@ export function StopSegmentForm({
             <TouchableOpacity onPress={handleSave} className="py-3 rounded-lg bg-primary mb-8">
               <Text className="text-center font-semibold text-white">{t(TRANSLATION_KEYS.COMMON.SAVE)}</Text>
             </TouchableOpacity>
-          </ScrollView>
+          </KeyboardAwareScroll>
         )}
-      </KeyboardAvoidingView>
+      </View>
     </Modal>
   );
 }

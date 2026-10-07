@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
+import { KeyboardAwareScroll } from '../../../components/ui/KeyboardAwareScroll';
 import {
   View,
   Text,
   Image,
-  ScrollView,
   TouchableOpacity,
   ActivityIndicator,
   TextInput,
@@ -22,6 +22,7 @@ import { useGuideDetail } from '../../../hooks/useGuides';
 import { useGuideRequest } from '../../../hooks/useGuideRequest';
 import { formatBdt } from '../../../utils/money';
 import type { RootState } from '../../../store/store';
+import { goBack } from '../../../utilities/navigation';
 
 const DAY_KEYS = [
   TRANSLATION_KEYS.ATTRACTIONS.DAYS.SUN,
@@ -135,7 +136,7 @@ export default function GuideDetailPage() {
   return (
     <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1, backgroundColor: background }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, minHeight: 48 }}>
-        <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+        <TouchableOpacity onPress={() => goBack(router)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
           <Ionicons name="chevron-back" size={26} color={primary} />
         </TouchableOpacity>
       </View>
@@ -151,7 +152,7 @@ export default function GuideDetailPage() {
           </TouchableOpacity>
         </View>
       ) : (
-        <ScrollView contentContainerStyle={{ paddingBottom: 32 }}>
+        <KeyboardAwareScroll contentContainerStyle={{ paddingBottom: 32 }}>
           {guide.imageUrl ? (
             <Image source={{ uri: guide.imageUrl }} style={{ width: '100%', height: 240 }} resizeMode="cover" />
           ) : null}
@@ -282,7 +283,7 @@ export default function GuideDetailPage() {
               )}
             </View>
           </View>
-        </ScrollView>
+        </KeyboardAwareScroll>
       )}
     </SafeAreaView>
   );

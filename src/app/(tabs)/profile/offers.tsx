@@ -5,5 +5,12 @@ import { TRANSLATION_KEYS } from '../../../constants/translationKeys';
 
 export default function OffersScreen() {
   const { t } = useTranslation();
-  return <ProfilePlaceholder title={t(TRANSLATION_KEYS.PROFILE.OFFERS)} />;
+
+  return (
+    <ProfilePlaceholder
+      title={t(TRANSLATION_KEYS.PROFILE.OFFERS)}
+      body={t(TRANSLATION_KEYS.PROFILE.OFFERS_BODY)}
+      icon="pricetag-outline"
+    />
+  );
 }

@@ -10,6 +10,7 @@ import { RootState, AppDispatch } from '../../../store/store';
 import { fetchTourPlansByAdmin } from '../../../store/slices/tourBuilderSlice';
 import { fetchPackageBookingStats } from '../../../store/slices/packageBookingSlice';
 import { TRANSLATION_KEYS } from '../../../constants/translationKeys';
+import { goBack } from '../../../utilities/navigation';
 
 export default function PackageBookingsPage() {
   const router = useRouter();
@@ -139,7 +140,7 @@ export default function PackageBookingsPage() {
       }
     >
       <View className="px-6 pt-8 pb-4">
-        <TouchableOpacity onPress={() => router.back()} className="mb-4">
+        <TouchableOpacity onPress={() => goBack(router)} className="mb-4">
           <View className="flex-row items-center">
             <Ionicons
               name="chevron-back"

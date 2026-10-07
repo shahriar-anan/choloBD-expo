@@ -129,7 +129,6 @@ export default function Login() {
             onChangeText={edit(onChange)}
             onBlur={onBlur}
             error={error?.message ? t(error.message) : undefined}
-            hint={t(TRANSLATION_KEYS.AUTH.PASSWORD_HINT)}
             placeholder={t(TRANSLATION_KEYS.AUTH.LOGIN.PASSWORD_PLACEHOLDER)}
             secure
             showPasswordLabel={t(TRANSLATION_KEYS.AUTH.SHOW_PASSWORD)}

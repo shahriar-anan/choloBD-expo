@@ -10,6 +10,7 @@ import { fetchHotelById } from '../../../services/api/hotelDetail';
 import { HotelDetail } from '../../../types/hotels';
 import { useHotelSearch } from '../../../context/HotelSearchContext';
 import { formatMoney, locationLine, minNightlyPrice, shortRangeLabel } from '../../../utilities/hotelSearch';
+import { goBack } from '../../../utilities/navigation';
 
 export default function HotelStayPage() {
     const router = useRouter();
@@ -67,7 +68,7 @@ export default function HotelStayPage() {
 
     return (
         <SafeAreaView className="flex-1 bg-background dark:bg-background-dark">
-            <GradientAppBar title={hotel?.name || 'Hotel'} subtitle={subtitle} onBack={() => router.back()} />
+            <GradientAppBar title={hotel?.name || 'Hotel'} subtitle={subtitle} onBack={() => goBack(router)} />
             {loading ? <ActivityIndicator className="mt-10" color={primary} /> : null}
             {error ? <Text className="px-4 mt-6 text-sm text-error">Could not load this hotel.</Text> : null}
             {hotel ? (

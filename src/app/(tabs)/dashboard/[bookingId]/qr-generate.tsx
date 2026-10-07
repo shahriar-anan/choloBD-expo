@@ -7,6 +7,7 @@ import { QRCodeDisplay } from '../../../../components/ui/QRCodeDisplay';
 import { useQRGeneration } from '../../../../hooks/useQRGeneration';
 import { useTheme } from '../../../../hooks/useTheme';
 import theme from '../../../../constants/theme';
+import { goBack } from '../../../../utilities/navigation';
 
 export default function BookingQRGeneratePage() {
   const params = useLocalSearchParams();
@@ -45,7 +46,7 @@ export default function BookingQRGeneratePage() {
       {/* Header */}
       <View className="flex-row items-center justify-between px-6 py-4 bg-white border-b dark:bg-surface-dark border-border dark:border-border-dark">
         <Text className="text-2xl font-bold text-text dark:text-text-dark">Check-in QR Code</Text>
-        <Pressable onPress={() => router.back()} style={{ padding: 6 }}>
+        <Pressable onPress={() => goBack(router)} style={{ padding: 6 }}>
           <Ionicons name="close" size={24} color={isDark ? theme.colors['text-dark'] : theme.colors.text} />
         </Pressable>
       </View>
@@ -76,7 +77,7 @@ export default function BookingQRGeneratePage() {
             </Text>
           </View>
 
-          <Pressable onPress={() => router.back()} className="flex-row items-center justify-center px-6 py-3 rounded-lg bg-primary dark:bg-primary-dark active:opacity-80">
+          <Pressable onPress={() => goBack(router)} className="flex-row items-center justify-center px-6 py-3 rounded-lg bg-primary dark:bg-primary-dark active:opacity-80">
             <Ionicons name="checkmark" size={20} color="#fff" style={{ marginRight: 8 }} />
             <Text className="font-semibold text-white">Done</Text>
           </Pressable>
@@ -89,7 +90,7 @@ export default function BookingQRGeneratePage() {
             <Text className="mt-2 text-sm text-center text-muted dark:text-muted-dark">{error || 'An unknown error occurred. Please try again.'}</Text>
           </View>
 
-          <Pressable onPress={() => router.back()} className="items-center px-6 py-3 mt-8 rounded-lg bg-primary dark:bg-primary-dark">
+          <Pressable onPress={() => goBack(router)} className="items-center px-6 py-3 mt-8 rounded-lg bg-primary dark:bg-primary-dark">
             <Text className="font-semibold text-white">Go Back</Text>
           </Pressable>
         </ScrollView>

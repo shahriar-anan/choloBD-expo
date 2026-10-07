@@ -129,6 +129,9 @@ export function isDashboardBookingChromeHidden(pathname: string): boolean {
     if (pathname.includes('/service-admin/hotel-info')) {
         return true;
     }
+    if (pathname.includes('/transport-admin')) {
+        return true;
+    }
     if (pathname.includes('user-bookings') || pathname.includes('recent-bookings')) {
         return true;
     }

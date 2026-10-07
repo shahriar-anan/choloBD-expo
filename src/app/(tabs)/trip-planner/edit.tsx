@@ -13,6 +13,7 @@ import { getTripDetails } from '../../../services/api/tripPlanner';
 import { durationFromTrip, tripPlanToWizardStops } from '../../../services/api/personalPlanMapping';
 import { toDateInputValue } from '../../../utils/tripPlanItinerary';
 import { TripPlan } from '../../../types/trips';
+import { goBack } from '../../../utilities/navigation';
 
 export default function TripPlannerEdit() {
   const router = useRouter();
@@ -68,8 +69,8 @@ export default function TripPlannerEdit() {
           mode="edit"
           planId={planId}
           initial={initial || undefined}
-          onCancel={() => router.back()}
-          onSaved={() => router.back()}
+          onCancel={() => goBack(router)}
+          onSaved={() => goBack(router)}
         />
       )}
     </SafeAreaView>

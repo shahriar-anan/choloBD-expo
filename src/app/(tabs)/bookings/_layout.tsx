@@ -1,6 +1,5 @@
 import React from 'react';
 import { Stack, usePathname } from 'expo-router';
-import { useHotelAdminSession } from '../../../hooks/useHotelAdminSession';
 import { usePathTabBar } from '../../../hooks/useHideTabBar';
 
 function isBookingsIndex(pathname: string): boolean {
@@ -9,8 +8,7 @@ function isBookingsIndex(pathname: string): boolean {
 
 export default function BookingsLayout() {
   const pathname = usePathname();
-  const { isHotelAdmin, isHotelEmployee } = useHotelAdminSession();
-  usePathTabBar(!((isHotelAdmin || isHotelEmployee) && isBookingsIndex(pathname)));
+  usePathTabBar(!isBookingsIndex(pathname));
 
   return (
     <Stack screenOptions={{ headerShown: false }}>

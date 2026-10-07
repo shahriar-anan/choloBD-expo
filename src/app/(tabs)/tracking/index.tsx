@@ -10,6 +10,7 @@ import { RootState } from '../../../store/store';
 import { useDashboardLogic } from '../../../hooks/useDashboardLogic';
 import { TrackingCard } from '../../../components/ui/TrackingCard';
 import { AdminCard } from '../../../components/ui/adminCard';
+import { TransportLiveBoard } from '../../../components/transportOperator/TransportLiveBoard';
 import { TRANSLATION_KEYS } from '../../../constants/translationKeys';
 
 export default function TrackingPage() {
@@ -27,7 +28,8 @@ export default function TrackingPage() {
 
   const isServiceAdmin = (auth.user as any)?.role === 'SERVICE_ADMIN';
   const isHotelAdmin = isServiceAdmin && serviceType === 'HOTEL_BOOKING';
-  const showPackageBookings = isServiceAdmin && operatorProfileLoaded && !isHotelAdmin;
+  const isTransportAdmin = isServiceAdmin && serviceType === 'TRANSPORT_SERVICE';
+  const showPackageBookings = isServiceAdmin && operatorProfileLoaded && !isHotelAdmin && !isTransportAdmin;
 
   const handleDetailsPress = (bookingId: string) => {
     router.push(`/(tabs)/dashboard/${bookingId}`);
@@ -66,6 +68,18 @@ export default function TrackingPage() {
       />
     );
   };
+
+  if (isServiceAdmin && !operatorProfileLoaded) {
+    return (
+      <View className="items-center justify-center flex-1 bg-background dark:bg-background-dark">
+        <ActivityIndicator color={isDark ? theme.colors['primary-dark'] : theme.colors.primary} />
+      </View>
+    );
+  }
+
+  if (isTransportAdmin) {
+    return <TransportLiveBoard />;
+  }
 
   // If SERVICE_ADMIN, show cards to navigate to different booking types
   if (isServiceAdmin) {

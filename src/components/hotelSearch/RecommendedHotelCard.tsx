@@ -1,9 +1,12 @@
 import React from 'react';
 import { Image, Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../hooks/useTheme';
 import theme from '../../constants/theme';
 import { formatMoney } from '../../utilities/hotelSearch';
+
+const CARD_HEIGHT = 168;
 
 export function RecommendedHotelCard({
     name,
@@ -22,40 +25,69 @@ export function RecommendedHotelCard({
 }) {
     const { isDark } = useTheme();
     const warning = isDark ? theme.colors['warning-dark'] : theme.colors.warning;
-    const primary = isDark ? theme.colors['primary-dark'] : theme.colors.primary;
     const muted = isDark ? theme.colors['muted-dark'] : theme.colors.muted;
     const hasRating = typeof rating === 'number' && rating > 0;
+    const priceLabel = formatMoney(price);
 
     return (
         <Pressable
             accessibilityRole="button"
-            accessibilityLabel={name}
+            accessibilityLabel={`${name}, ${priceLabel}`}
             onPress={onPress}
-            className="overflow-hidden bg-white rounded-3xl dark:bg-surface-dark"
+            style={{ height: CARD_HEIGHT, width: '100%', borderRadius: 16, ...theme.elevation.sm }}
         >
-            <View className="bg-background dark:bg-background-dark" style={{ height: 148 }}>
+            <View
+                style={{
+                    flex: 1,
+                    borderRadius: 16,
+                    overflow: 'hidden',
+                    backgroundColor: isDark ? theme.colors['surface-2-dark'] : theme.colors['surface-2'],
+                }}
+            >
                 {imageUrl ? (
-                    <Image source={{ uri: imageUrl }} className="w-full h-full" resizeMode="cover" />
+                    <Image source={{ uri: imageUrl }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
                 ) : (
-                    <View className="items-center justify-center flex-1">
+                    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
                         <Ionicons name="bed-outline" size={28} color={muted} />
                     </View>
                 )}
+                <LinearGradient
+                    colors={['rgba(0,0,0,0)', 'rgba(0,0,0,0.12)', 'rgba(0,0,0,0.78)']}
+                    locations={[0.42, 0.68, 1]}
+                    style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }}
+                    pointerEvents="none"
+                />
                 {hasRating ? (
-                    <View className="absolute flex-row items-center px-2 py-1 rounded-full bottom-2 right-2" style={{ backgroundColor: 'rgba(12,12,15,0.72)' }}>
-                        <Ionicons name="star" size={12} color={warning} />
-                        <Text className="ml-1 text-xs font-bold text-white">{rating.toFixed(1)}</Text>
+                    <View
+                        style={{
+                            position: 'absolute',
+                            top: 8,
+                            right: 8,
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            backgroundColor: 'rgba(12,12,15,0.72)',
+                            borderRadius: 999,
+                            paddingHorizontal: 8,
+                            paddingVertical: 4,
+                        }}
+                    >
+                        <Ionicons name="star" size={11} color={warning} />
+                        <Text style={{ marginLeft: 4, color: '#fff', fontSize: 12, fontWeight: '700' }}>
+                            {rating.toFixed(1)}
+                        </Text>
                     </View>
                 ) : null}
-            </View>
-            <View className="px-3 pt-3 pb-3">
-                <Text className="text-sm font-bold text-text dark:text-text-dark" numberOfLines={2}>
-                    {name}
-                </Text>
-                <Text className="mt-2 text-base font-bold" style={{ color: primary }}>
-                    {formatMoney(price)}
-                </Text>
-                <Text className="text-xs text-muted dark:text-muted-dark">{priceSuffix}</Text>
+                <View style={{ position: 'absolute', left: 10, right: 10, bottom: 10 }}>
+                    <Text numberOfLines={1} style={{ color: '#fff', fontSize: 13, fontWeight: '700' }}>
+                        {name}
+                    </Text>
+                    <Text numberOfLines={1} style={{ color: '#fff', fontSize: 14, fontWeight: '700', marginTop: 2 }}>
+                        {priceLabel}
+                        <Text style={{ fontSize: 11, fontWeight: '500', color: 'rgba(255,255,255,0.88)' }}>
+                            {`  ${priceSuffix}`}
+                        </Text>
+                    </Text>
+                </View>
             </View>
         </Pressable>
     );

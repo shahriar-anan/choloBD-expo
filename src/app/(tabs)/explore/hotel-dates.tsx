@@ -6,6 +6,7 @@ import { GradientAppBar, PillButton } from '../../../components/hotelSearch/Hote
 import { DateRangeCalendar } from '../../../components/hotelSearch/DateRangeCalendar';
 import { useHotelSearch } from '../../../context/HotelSearchContext';
 import { isValidStay, longDayLabel, nightsBetween } from '../../../utilities/hotelSearch';
+import { goBack } from '../../../utilities/navigation';
 
 export default function HotelDatesPage() {
     const router = useRouter();
@@ -18,7 +19,7 @@ export default function HotelDatesPage() {
 
     return (
         <SafeAreaView edges={['top', 'left', 'right']} className="flex-1 bg-background dark:bg-background-dark">
-            <GradientAppBar title="Select Dates" onBack={() => router.back()} />
+            <GradientAppBar title="Select Dates" onBack={() => goBack(router)} />
             <DateRangeCalendar
                 checkIn={checkIn}
                 checkOut={checkOut}
@@ -47,7 +48,7 @@ export default function HotelDatesPage() {
                             return;
                         }
                         setDates(checkIn, checkOut);
-                        router.back();
+                        goBack(router);
                     }}
                 />
             </View>

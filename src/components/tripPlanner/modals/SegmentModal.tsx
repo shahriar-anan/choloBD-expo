@@ -5,6 +5,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert, KeyboardAvoidingView, Platform, Modal, ActivityIndicator } from 'react-native';
+import { KeyboardAwareScroll } from '../../ui/KeyboardAwareScroll';
 import { Feather } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { TRANSLATION_KEYS } from '../../../constants/translationKeys';
@@ -188,7 +189,7 @@ export function SegmentModal({
       onRequestClose={onClose}
     >
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         className="flex-1"
       >
         {/* Modal Overlay */}
@@ -200,8 +201,8 @@ export function SegmentModal({
         />
 
         {/* Modal Content */}
-        <View className="absolute bottom-0 left-0 right-0 bg-background dark:bg-background-dark rounded-t-2xl max-h-[90%]">
-          <ScrollView showsVerticalScrollIndicator={false}>
+        <View className="absolute bottom-0 left-0 right-0 overflow-hidden bg-background dark:bg-background-dark rounded-t-2xl" style={{ height: '90%', width: '100%' }}>
+          <KeyboardAwareScroll avoiding={false} showsVerticalScrollIndicator={false}>
           {/* Header */}
           <View className="flex-row items-center justify-between px-6 pt-6 pb-4 border-b border-border dark:border-border-dark">
             <Text className="text-lg font-bold text-text dark:text-text-dark">
@@ -525,7 +526,7 @@ export function SegmentModal({
               </TouchableOpacity>
             </View>
           </View>
-        </ScrollView>
+        </KeyboardAwareScroll>
         </View>
       </KeyboardAvoidingView>
     </Modal>

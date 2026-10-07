@@ -16,6 +16,7 @@ import { usePaymentLogic } from '@/hooks/usePaymentLogic';
 import { chargeWalletCredits, getOwnWallet, pointsCostForTotal } from '@/services/api/wallet';
 import { TRANSLATION_KEYS } from '@/constants/translationKeys';
 import type { ServiceType } from '@/types/payments';
+import { goBack } from '../../../utilities/navigation';
 
 type ScreenState = 'idle' | 'processing' | 'success' | 'failed' | 'unknown';
 
@@ -103,7 +104,7 @@ export default function DashboardPaymentScreen() {
   };
 
   const handleBack = () => {
-    router.back();
+    goBack(router);
   };
 
   return (

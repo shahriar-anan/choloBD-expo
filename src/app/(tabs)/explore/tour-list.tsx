@@ -17,6 +17,7 @@ import { ErrorAlert } from '../../../components/tourBuilder/ErrorAlert';
 import { useTheme } from '../../../hooks/useTheme';
 import { useAuthWithAdminCheck } from '../../../hooks/useAuthWithAdminCheck';
 import { theme } from '../../../constants/theme';
+import { goBack } from '../../../utilities/navigation';
 
 export default function TourListPage() {
   const router = useRouter();
@@ -35,7 +36,7 @@ export default function TourListPage() {
   }, []);
 
   const handleBack = () => {
-    router.back();
+    goBack(router);
   };
 
   const handleTourPress = (tourId: string) => {

@@ -10,6 +10,7 @@ import { useTranslation } from 'react-i18next';
 import { TRANSLATION_KEYS } from '../../../constants/translationKeys';
 import { useTripPlannerLogic } from '../../../hooks/useTripPlannerLogic';
 import { TripPlanDetailView } from '../../../components/tripPlanner/TripPlanDetailView';
+import { goBack } from '../../../utilities/navigation';
 
 export default function TripDetails() {
   const router = useRouter();
@@ -37,7 +38,7 @@ export default function TripDetails() {
           {t(TRANSLATION_KEYS.TRIP_PLANNER.TRIP_NOT_FOUND_FALLBACK)}
         </Text>
         <Text className="text-muted mt-2">{tripError?.message}</Text>
-        <TouchableOpacity onPress={() => router.back()} className="mt-4 bg-primary rounded-lg py-3 items-center">
+        <TouchableOpacity onPress={() => goBack(router)} className="mt-4 bg-primary rounded-lg py-3 items-center">
           <Text className="text-onPrimary font-semibold">{t(TRANSLATION_KEYS.TRIP_PLANNER.DETAIL_BACK)}</Text>
         </TouchableOpacity>
       </SafeAreaView>
@@ -49,7 +50,7 @@ export default function TripDetails() {
       <TripPlanDetailView
         trip={currentTrip}
         onEdit={() => router.push({ pathname: '/(tabs)/trip-planner/edit', params: { id: currentTrip.id } })}
-        onBack={() => router.back()}
+        onBack={() => goBack(router)}
       />
     </SafeAreaView>
   );

@@ -10,6 +10,13 @@ import { TRANSLATION_KEYS } from '../../constants/translationKeys';
 function authFailureMessage(error: unknown, fallback: string): string {
   if (axios.isAxiosError(error)) {
     const data: unknown = error.response?.data;
+    if (data && typeof data === 'object' && 'errors' in data) {
+      const errors = (data as { errors?: unknown }).errors;
+      const first = Array.isArray(errors) ? (errors[0] as { message?: unknown } | undefined) : undefined;
+      if (typeof first?.message === 'string' && first.message.trim()) {
+        return first.message.trim();
+      }
+    }
     if (data && typeof data === 'object' && 'message' in data) {
       const message = (data as { message?: unknown }).message;
       if (typeof message === 'string' && message.trim()) {
@@ -91,7 +98,7 @@ export const loginUser = createAsyncThunk<
 
 export const registerUser = createAsyncThunk<
   { tokens: AuthTokens; user: AuthUser },
-  { email: string; password: string; userName: string; role: string },
+  { email: string; password: string; userName: string },
   { rejectValue: string }
 >('auth/register', async (payload, { rejectWithValue }) => {
   try {

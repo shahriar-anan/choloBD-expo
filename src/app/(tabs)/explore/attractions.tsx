@@ -29,6 +29,7 @@ import type { TourSpot } from '../../../hooks/useFetchTourSpots';
 import type { ActivitySpot } from '../../../services/api/activitySpots';
 import type { GuideSummary } from '../../../types/guides';
 import type { Location } from '../../../types/locations';
+import { goBack } from '../../../utilities/navigation';
 
 type AttractionsTab = 'places' | 'activities' | 'guides';
 
@@ -130,7 +131,7 @@ export default function AttractionsPage() {
       router.replace('/(tabs)');
       return;
     }
-    router.back();
+    goBack(router);
   };
 
   const selectTab = (next: AttractionsTab) => {

@@ -18,6 +18,7 @@ import { useTheme } from '../../../hooks/useTheme';
 import { useAuthWithAdminCheck } from '../../../hooks/useAuthWithAdminCheck';
 import { theme } from '../../../constants/theme';
 import { TRANSLATION_KEYS } from '../../../constants/translationKeys';
+import { goBack } from '../../../utilities/navigation';
 
 console.log('[TourDetailPage] Component loaded');
 
@@ -48,7 +49,7 @@ export default function TourDetailPage() {
 
   const handleBack = () => {
     console.log('[TourDetailPage] Going back to tour list');
-    router.back();
+    goBack(router);
   };
 
   const handleEdit = () => {

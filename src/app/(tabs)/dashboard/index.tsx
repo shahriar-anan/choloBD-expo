@@ -3,6 +3,7 @@ import { ActivityIndicator, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { ServiceAdminDashboard } from '../../../components/interface/ServiceAdminDashboard';
+import { TransportOperatorDashboard } from '../../../components/interface/TransportOperatorDashboard';
 import { UserDashboard } from '../../../components/interface/UserDashboard';
 import { useDashboardLogic } from '../../../hooks/useDashboardLogic';
 import { profileDisplayName } from '../../../utilities/profileImage';
@@ -33,6 +34,9 @@ export default function DashboardPage() {
     (auth.user?.role === 'SERVICE_ADMIN' && serviceType === 'HOTEL_BOOKING') ||
     (auth.user?.role === 'EMPLOYEE' && employeeServiceType === 'HOTEL_BOOKING');
 
+  const isTransportOperator =
+    auth.user?.role === 'SERVICE_ADMIN' && serviceType === 'TRANSPORT_SERVICE';
+
   const waitingForAssignment =
     (auth.user?.role === 'SERVICE_ADMIN' || auth.user?.role === 'EMPLOYEE') &&
     !operatorProfileLoaded;
@@ -45,11 +49,11 @@ export default function DashboardPage() {
       if (auth.user?.role === 'EMPLOYEE' && !operatorProfileLoaded) {
         return;
       }
-      if (isHotelOperator) {
+      if (isHotelOperator || isTransportOperator) {
         return;
       }
       refreshTravelerHome();
-    }, [auth.user?.role, employeeServiceType, isHotelOperator, operatorProfileLoaded, refreshTravelerHome])
+    }, [auth.user?.role, employeeServiceType, isHotelOperator, isTransportOperator, operatorProfileLoaded, refreshTravelerHome])
   );
 
   if (waitingForAssignment) {
@@ -64,6 +68,19 @@ export default function DashboardPage() {
     return (
       <ServiceAdminDashboard
         hotelOperator
+        userName={profileDisplayName(auth.user) || auth.user?.userName}
+        email={auth.user?.email}
+        imageUrl={profileImageUrl || auth.user?.imageUrl}
+        role={auth.user?.role}
+        userStatus={profileStatus || auth.user?.userStatus}
+        onLogout={handleLogout}
+      />
+    );
+  }
+
+  if (isTransportOperator) {
+    return (
+      <TransportOperatorDashboard
         userName={profileDisplayName(auth.user) || auth.user?.userName}
         email={auth.user?.email}
         imageUrl={profileImageUrl || auth.user?.imageUrl}

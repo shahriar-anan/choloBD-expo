@@ -10,6 +10,7 @@ import { TRANSLATION_KEYS } from '../../constants/translationKeys';
 import { GradientAppBar } from '../hotelSearch/HotelFlowChrome';
 import { searchTransportPlaces } from '../../services/api/search';
 import { TransportPlace } from '../../types/transportSearch';
+import { goBack } from '../../utilities/navigation';
 
 interface TransportPlacePickerProps {
     title: string;
@@ -63,7 +64,7 @@ export function TransportPlacePicker({ title, selectedId, onChoose }: TransportP
 
     return (
         <SafeAreaView className="flex-1 bg-background dark:bg-background-dark">
-            <GradientAppBar title={title} onBack={() => router.back()} />
+            <GradientAppBar title={title} onBack={() => goBack(router)} />
             <View className="flex-row items-center px-4 py-3 border-b border-border dark:border-border-dark">
                 <Ionicons name="location" size={20} color={primary} />
                 <TextInput

@@ -10,6 +10,7 @@ import { useTheme } from '../../../hooks/useTheme';
 import { useDashboardLogic } from '../../../hooks/useDashboardLogic';
 import theme from '../../../constants/theme';
 import { TRANSLATION_KEYS } from '../../../constants/translationKeys';
+import { goBack } from '../../../utilities/navigation';
 
 type BookingListFilter = 'all' | 'unpaid' | 'confirmed' | 'pending' | 'cancelled';
 
@@ -66,7 +67,7 @@ export default function UserBookingsPage() {
         {/* Header with back button */}
         <View className="flex-row items-center px-6 mb-4">
           <Pressable 
-            onPress={() => router.back()} 
+            onPress={() => goBack(router)} 
             style={{ padding: 6, marginRight: 12 }}
             accessibilityRole="button"
             accessibilityLabel="Go back"

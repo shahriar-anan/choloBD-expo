@@ -41,8 +41,7 @@ export default function Register() {
     void dispatch(registerUser({
       email: values.email.trim().toLowerCase(),
       password: values.password,
-      userName: values.userName,
-      role: 'USER',
+      userName: values.userName.trim(),
     }));
   };
 

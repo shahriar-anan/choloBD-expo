@@ -3,10 +3,7 @@ import {
   ActivityIndicator,
   Alert,
   Image,
-  KeyboardAvoidingView,
-  Platform,
   Pressable,
-  ScrollView,
   Text,
   TextInput,
   View,
@@ -17,6 +14,7 @@ import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import * as ImagePicker from 'expo-image-picker';
 import { useDispatch, useSelector } from 'react-redux';
+import { KeyboardAwareScroll } from '../../../components/ui/KeyboardAwareScroll';
 import { useTheme } from '../../../hooks/useTheme';
 import theme from '../../../constants/theme';
 import { TRANSLATION_KEYS } from '../../../constants/translationKeys';
@@ -27,6 +25,7 @@ import { AppDispatch, RootState } from '../../../store/store';
 import { setAuthUser } from '../../../store/slices/authSlice';
 import { saveUser } from '../../../lib/secureStore';
 import { AuthUser } from '../../../types/auth';
+import { goBack } from '../../../utilities/navigation';
 
 const USERNAME_PATTERN = /^[a-zA-Z0-9_-]+$/;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -190,7 +189,7 @@ export default function AccountScreen() {
       }
 
       Alert.alert(t(TRANSLATION_KEYS.COMMON.SUCCESS), t(TRANSLATION_KEYS.PROFILE.SAVED));
-      router.back();
+      goBack(router);
     } catch (error: unknown) {
       setFormError(serverMessage(error, t(TRANSLATION_KEYS.PROFILE.SAVE_FAILED)));
     } finally {
@@ -204,7 +203,7 @@ export default function AccountScreen() {
     <SafeAreaView edges={['top']} className="flex-1 bg-background dark:bg-background-dark">
       <View className="flex-row items-center px-4 pt-2">
         <Pressable
-          onPress={() => router.back()}
+          onPress={() => goBack(router)}
           accessibilityRole="button"
           accessibilityLabel={t(TRANSLATION_KEYS.COMMON.BACK)}
           style={{ minWidth: 44, minHeight: 44, justifyContent: 'center' }}
@@ -221,8 +220,7 @@ export default function AccountScreen() {
           <ActivityIndicator />
         </View>
       ) : (
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} className="flex-1">
-          <ScrollView className="flex-1" contentContainerStyle={{ padding: 16, paddingBottom: 40 }} keyboardShouldPersistTaps="handled">
+        <KeyboardAwareScroll className="flex-1" contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
             <View className="items-center mb-5">
               {localPhotoUri ? (
                 <Image
@@ -272,8 +270,7 @@ export default function AccountScreen() {
                 {saving ? t(TRANSLATION_KEYS.PROFILE.SAVING) : t(TRANSLATION_KEYS.COMMON.SAVE)}
               </Text>
             </Pressable>
-          </ScrollView>
-        </KeyboardAvoidingView>
+        </KeyboardAwareScroll>
       )}
     </SafeAreaView>
   );

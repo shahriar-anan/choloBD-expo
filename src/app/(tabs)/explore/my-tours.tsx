@@ -17,6 +17,7 @@ import { useTourBuilderLogic } from '../../../hooks/useTourBuilderLogic';
 import { useTheme } from '../../../hooks/useTheme';
 import { theme } from '../../../constants/theme';
 import { TRANSLATION_KEYS } from '../../../constants/translationKeys';
+import { goBack } from '../../../utilities/navigation';
 
 export default function MyToursPage() {
   const router = useRouter();
@@ -35,7 +36,7 @@ export default function MyToursPage() {
   }, [dispatch]);
 
   const handleBack = () => {
-    router.back();
+    goBack(router);
   };
 
   const handlePressTour = (tourId: string) => {

@@ -10,6 +10,7 @@ import { useTheme } from '../../../../hooks/useTheme';
 import { TRANSLATION_KEYS } from '../../../../constants/translationKeys';
 import { getMyHotel } from '../../../../services/api/users';
 import { getHotelStaff, HotelStaffMember, staffDisplayName } from '../../../../services/api/hotelDesk';
+import { goBack } from '../../../../utilities/navigation';
 
 export default function StaffPage() {
   const router = useRouter();
@@ -46,7 +47,7 @@ export default function StaffPage() {
   return (
     <SafeAreaView edges={['top', 'bottom']} className="flex-1 bg-background dark:bg-background-dark">
       <View className="flex-1 p-6">
-        <Pressable onPress={() => router.back()} accessibilityRole="button" style={{ padding: 6 }}>
+        <Pressable onPress={() => goBack(router)} accessibilityRole="button" style={{ padding: 6 }}>
           <Ionicons name="chevron-back" size={24} color={textColor} />
         </Pressable>
         <Text className="mt-2 text-2xl font-bold text-text dark:text-text-dark">

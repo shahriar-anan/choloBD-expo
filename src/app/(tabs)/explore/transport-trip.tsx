@@ -26,6 +26,7 @@ import { useTransportBusCheckout } from '../../../context/TransportBusCheckoutCo
 import { useTransportSearch } from '../../../context/TransportSearchContext';
 import { displayLabelMap, LaidOutSeat, layoutDeck } from '../../../utilities/busSeatLayout';
 import { formatTripClock, sumSelectedSeatPrices } from '../../../utilities/transportFormat';
+import { goBack } from '../../../utilities/navigation';
 
 function groupByCompartment(seats: TransportSeat[]): { name: string; seats: TransportSeat[] }[] {
   const order: string[] = [];
@@ -319,7 +320,7 @@ export default function TransportTripPage() {
   return (
     <SafeAreaView className="flex-1 bg-background dark:bg-background-dark">
       <View className="flex-row items-center px-4 py-3">
-        <Pressable onPress={() => router.back()} className="p-2 mr-2">
+        <Pressable onPress={() => goBack(router)} className="p-2 mr-2">
           <Ionicons name="chevron-back" size={24} color={textColor} />
         </Pressable>
         <Text className="text-xl font-bold text-text dark:text-text-dark">

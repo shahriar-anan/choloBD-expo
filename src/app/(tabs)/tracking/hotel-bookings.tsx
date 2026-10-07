@@ -10,6 +10,7 @@ import { RootState } from '../../../store/store';
 import { useDashboardLogic } from '../../../hooks/useDashboardLogic';
 import { TrackingCard } from '../../../components/ui/TrackingCard';
 import { TRANSLATION_KEYS } from '../../../constants/translationKeys';
+import { goBack } from '../../../utilities/navigation';
 
 export default function HotelBookingsPage() {
   const router = useRouter();
@@ -63,7 +64,7 @@ export default function HotelBookingsPage() {
   return (
     <ScrollView className="flex-1 bg-background dark:bg-background-dark" showsVerticalScrollIndicator={false}>
       <View className="px-6 pt-8 pb-4">
-        <TouchableOpacity onPress={() => router.back()} className="mb-4">
+        <TouchableOpacity onPress={() => goBack(router)} className="mb-4">
           <View className="flex-row items-center">
             <Ionicons
               name="chevron-back"

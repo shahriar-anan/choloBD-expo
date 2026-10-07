@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Pressable, ActivityIndicator, TextInput, Alert } from 'react-native';
+import { KeyboardAwareScroll } from '../../../../components/ui/KeyboardAwareScroll';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -338,7 +339,7 @@ export default function HotelInfoPage() {
               );
             })}
           </ScrollView>
-          <ScrollView showsVerticalScrollIndicator={false} className="flex-1">
+          <KeyboardAwareScroll showsVerticalScrollIndicator={false} className="flex-1">
           <View className="px-6 pt-2 pb-8">
             {tab === 'overview' ? (
             <>
@@ -701,7 +702,7 @@ export default function HotelInfoPage() {
             </View>
             ) : null}
           </View>
-        </ScrollView>
+        </KeyboardAwareScroll>
         </>
       ) : (
         <View className="items-center justify-center flex-1 px-6">

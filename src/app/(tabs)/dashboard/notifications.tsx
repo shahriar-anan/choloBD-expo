@@ -10,6 +10,7 @@ import { useNotificationInbox } from '../../../hooks/useNotificationInbox';
 import theme from '../../../constants/theme';
 import { TRANSLATION_KEYS } from '../../../constants/translationKeys';
 import { AppNotification } from '../../../types/notification';
+import { goBack } from '../../../utilities/navigation';
 
 function formatCreatedTime(value: string, language: string): string {
   const date = new Date(value);
@@ -78,7 +79,7 @@ export default function NotificationsPage() {
       <View className="flex-1">
         <View className="flex-row items-center px-4 pt-2 pb-3">
           <Pressable
-            onPress={() => router.back()}
+            onPress={() => goBack(router)}
             accessibilityRole="button"
             accessibilityLabel={t(TRANSLATION_KEYS.DASHBOARD.SERVICE_ADMIN.BACK)}
             style={{ padding: 6, marginRight: 8 }}

@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { TRANSLATION_KEYS } from '../../../constants/translationKeys';
 import { TransportPlacePicker } from '../../../components/transportSearch/TransportPlacePicker';
 import { useTransportSearch } from '../../../context/TransportSearchContext';
+import { goBack } from '../../../utilities/navigation';
 
 export default function TransportFromPage() {
     const router = useRouter();
@@ -16,7 +17,7 @@ export default function TransportFromPage() {
             selectedId={params.from?.id}
             onChoose={(place) => {
                 setFrom(place);
-                router.back();
+                goBack(router);
             }}
         />
     );

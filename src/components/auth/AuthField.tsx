@@ -1,8 +1,9 @@
-import React, { forwardRef, useState } from 'react';
+import React, { forwardRef, useContext, useState } from 'react';
 import { Text, TextInput, TouchableOpacity, View, type TextInputProps } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../hooks/useTheme';
 import theme from '../../constants/theme';
+import { KeyboardFormFocusContext } from '../ui/KeyboardAwareScroll';
 
 interface AuthFieldProps {
   label: string;
@@ -47,6 +48,7 @@ export const AuthField = forwardRef<TextInput, AuthFieldProps>(function AuthFiel
   ref,
 ) {
   const { isDark } = useTheme();
+  const scrollFocusedField = useContext(KeyboardFormFocusContext);
   const [visible, setVisible] = useState(false);
   const placeholderColor = isDark ? theme.colors['muted-dark'] : theme.colors.muted;
   const iconColor = isDark ? theme.colors['text-dark'] : theme.colors.text;
@@ -65,6 +67,7 @@ export const AuthField = forwardRef<TextInput, AuthFieldProps>(function AuthFiel
           value={value}
           onChangeText={onChangeText}
           onBlur={onBlur}
+          onFocus={scrollFocusedField}
           secureTextEntry={secure && !visible}
           placeholder={placeholder}
           placeholderTextColor={placeholderColor}

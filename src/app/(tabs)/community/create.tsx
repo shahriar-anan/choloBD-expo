@@ -9,6 +9,7 @@ import { useCommunityPostLogic } from '../../../hooks/useCommunityPostLogic';
 import { CreatePostForm } from '../../../components/community';
 import theme from '../../../constants/theme';
 import { TRANSLATION_KEYS } from '../../../constants/translationKeys';
+import { goBack } from '../../../utilities/navigation';
 
 export default function CommunityCreatePage() {
   const router = useRouter();
@@ -40,7 +41,7 @@ export default function CommunityCreatePage() {
       await uploadImagesAndAttach(draft.id, values.images);
 
       Alert.alert(t('common.success'), t(TRANSLATION_KEYS.COMMUNITY.DRAFT_CREATED));
-      router.back();
+      goBack(router);
     } finally {
       setIsSubmitting(false);
     }
@@ -49,7 +50,7 @@ export default function CommunityCreatePage() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: bg }}>
       <View className="px-5 pb-2 flex-row items-center justify-between">
-        <TouchableOpacity onPress={() => router.back()}>
+        <TouchableOpacity onPress={() => goBack(router)}>
           <Text style={{ color: primary, fontWeight: '700' }}>{t('common.back')}</Text>
         </TouchableOpacity>
         <Text className="text-lg font-bold text-text dark:text-text-dark">{t(TRANSLATION_KEYS.COMMUNITY.CREATE_TITLE)}</Text>

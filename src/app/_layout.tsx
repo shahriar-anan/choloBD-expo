@@ -10,10 +10,12 @@ import { useAuthInitializer } from '../hooks/state/useAuthInitializer';
 import { usePreloadAssets } from '../hooks/usePreloadAssets';
 import { API_BASE_URL } from '../constants/api';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { View } from 'react-native';
 import * as SplashScreen from 'expo-splash-screen';
 import { SplashScreen as CustomSplash } from '../components/splash';
 import { useState, useEffect } from 'react';
+
+// Keep the native splash visible until the animated splash has painted.
+SplashScreen.preventAutoHideAsync().catch(() => {});
 
 function AppContentStack() {
   return <Stack initialRouteName="index" screenOptions={{ headerShown: false }} />;
@@ -35,34 +37,13 @@ function AppContentLayout() {
     }
   }, [auth.isAuthenticated, auth.tokens, auth.isInitializing, splashDone]);
 
-  useEffect(() => {
-    if (assetsReady && splashDone) {
-      // Hide native splash when custom splash is done
-      SplashScreen.hideAsync().catch(() => {});
-    }
-  }, [assetsReady, splashDone]);
-
-  // Show custom splash while preloading
-  if (!assetsReady) {
-    return (
-      <CustomSplash delay={0} /> // Show splash indefinitely until assets ready
-    );
-  }
-
-  // Show custom splash with fade-out transition
-  if (!splashDone) {
-    return (
-      <CustomSplash
-        delay={2500}
-        onComplete={() => setSplashDone(true)}
-      />
-    );
-  }
-
-  // App is ready, show main content
+  // Native splash covers launch. The animated splash hides it once painted.
   return (
     <SafeAreaProvider>
-      <AppContentStack />
+      {assetsReady && !splashDone ? (
+        <CustomSplash onComplete={() => setSplashDone(true)} />
+      ) : null}
+      {assetsReady && splashDone ? <AppContentStack /> : null}
     </SafeAreaProvider>
   );
 }

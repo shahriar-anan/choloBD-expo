@@ -6,6 +6,7 @@ import theme from '../../constants/theme';
 import SideScroller from '../modals/SideScroller';
 import AppBrandSection from './AppBrandSection';
 import { useIsTraveler } from '../../hooks/useIsTraveler';
+import { useHotelAdminSession } from '../../hooks/useHotelAdminSession';
 
 interface HomeHeaderProps {
   onNavigate?: (section: string, item: string) => void;
@@ -15,6 +16,7 @@ interface HomeHeaderProps {
 export default function HomeHeader({ onNavigate, onLogout }: HomeHeaderProps) {
   const { isDark } = useTheme();
   const traveler = useIsTraveler();
+  const { isTransportAdmin } = useHotelAdminSession();
 
   const bgColor = isDark ? theme.colors['surface-dark'] : theme.colors.surface;
   const borderColor = isDark ? theme.colors['border-dark'] : theme.colors.border;
@@ -36,7 +38,7 @@ export default function HomeHeader({ onNavigate, onLogout }: HomeHeaderProps) {
         }}
       >
         <View className="flex-row items-center gap-1.5 flex-1">
-          {traveler ? null : <SideScroller onNavigate={onNavigate} onLogout={onLogout} />}
+          {traveler || isTransportAdmin ? null : <SideScroller onNavigate={onNavigate} onLogout={onLogout} />}
           <AppBrandSection />
         </View>
       </View>

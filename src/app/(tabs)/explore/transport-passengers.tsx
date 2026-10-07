@@ -3,11 +3,11 @@ import {
   ActivityIndicator,
   Alert,
   Pressable,
-  ScrollView,
   Text,
   TextInput,
   View,
 } from 'react-native';
+import { KeyboardAwareScroll } from '../../../components/ui/KeyboardAwareScroll';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -27,6 +27,7 @@ import {
   sumSelectedSeatPrices,
 } from '../../../utilities/transportFormat';
 import { CreateTransportBookingResult } from '../../../services/api/transportBookings';
+import { goBack } from '../../../utilities/navigation';
 
 interface PassengerFormRow {
   seatId: string;
@@ -327,14 +328,14 @@ export default function TransportPassengersPage() {
   return (
     <SafeAreaView className="flex-1 bg-background dark:bg-background-dark">
       <View className="flex-row items-center px-4 py-3">
-        <Pressable onPress={() => router.back()} className="p-2 mr-2">
+        <Pressable onPress={() => goBack(router)} className="p-2 mr-2">
           <Ionicons name="chevron-back" size={24} color={textColor} />
         </Pressable>
         <Text className="text-xl font-bold text-text dark:text-text-dark">
           {t(TRANSLATION_KEYS.TRANSPORT.PASSENGER_DETAILS)}
         </Text>
       </View>
-      <ScrollView className="px-4" contentContainerStyle={{ paddingBottom: 150 }} keyboardShouldPersistTaps="handled">
+      <KeyboardAwareScroll className="px-4" contentContainerStyle={{ paddingBottom: 150 }} bottomClearance={168}>
         {holdExpiresAt ? (
           <View
             className="flex-row items-center px-4 py-3 mb-4"
@@ -384,7 +385,7 @@ export default function TransportPassengersPage() {
         {returnLeg
           ? renderPassengerBlock(t(TRANSLATION_KEYS.TRANSPORT.RETURN_PASSENGERS), returnRows, setReturnRows)
           : null}
-      </ScrollView>
+      </KeyboardAwareScroll>
       <View
         className="absolute bottom-0 left-0 right-0 px-4 pt-3 pb-4 bg-background dark:bg-background-dark"
         style={{ borderTopWidth: 1, borderTopColor: borderColor }}

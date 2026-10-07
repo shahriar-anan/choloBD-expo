@@ -10,6 +10,7 @@ import { useTheme } from '../../../hooks/useTheme';
 import theme from '../../../constants/theme';
 import { TRANSLATION_KEYS } from '../../../constants/translationKeys';
 import { OnPlatformTransportType } from '../../../types/transports';
+import { goBack } from '../../../utilities/navigation';
 
 const OPTIONS: { value: OnPlatformTransportType; icon: keyof typeof Ionicons.glyphMap; labelKey: string }[] = [
     { value: 'BUS', icon: 'bus', labelKey: TRANSLATION_KEYS.TRANSPORT.BUS },
@@ -26,7 +27,7 @@ export default function TransportTypePage() {
 
     return (
         <SafeAreaView className="flex-1 bg-background dark:bg-background-dark">
-            <GradientAppBar title={t(TRANSLATION_KEYS.TRANSPORT.TYPE_TITLE)} onBack={() => router.back()} />
+            <GradientAppBar title={t(TRANSLATION_KEYS.TRANSPORT.TYPE_TITLE)} onBack={() => goBack(router)} />
             <View className="flex-1 px-6 pt-6">
                 <Text className="text-lg font-bold text-text dark:text-text-dark">
                     {t(TRANSLATION_KEYS.TRANSPORT.TYPE)}
@@ -59,7 +60,7 @@ export default function TransportTypePage() {
                     label={t(TRANSLATION_KEYS.TRANSPORT.CONFIRM)}
                     onPress={() => {
                         setTransportType(selected);
-                        router.back();
+                        goBack(router);
                     }}
                 />
             </View>

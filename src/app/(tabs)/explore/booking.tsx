@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, ScrollView, Pressable } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, Text, View, type ScrollView } from 'react-native';
+import { KeyboardAwareScroll } from '../../../components/ui/KeyboardAwareScroll';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -13,6 +14,7 @@ import { useTranslation } from 'react-i18next';
 import { TRANSLATION_KEYS } from '../../../constants/translationKeys';
 import { displayRoomName, formatMoney, nightsBetween, shortRangeLabel } from '../../../utilities/hotelSearch';
 import { RoomType } from '../../../types/hotels';
+import { goBack } from '../../../utilities/navigation';
 
 export default function ExploreBooking() {
   const router = useRouter();
@@ -88,8 +90,9 @@ export default function ExploreBooking() {
 
   return (
     <SafeAreaView edges={['top', 'left', 'right']} className="flex-1 bg-background dark:bg-background-dark">
-      <GradientAppBar title={t(TRANSLATION_KEYS.BOOKING.COMPLETE_BOOKING)} subtitle={hotelDetail.name} onBack={() => router.back()} />
-      <ScrollView ref={scrollRef} className="flex-1" showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+      <GradientAppBar title={t(TRANSLATION_KEYS.BOOKING.COMPLETE_BOOKING)} subtitle={hotelDetail.name} onBack={() => goBack(router)} />
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
+      <KeyboardAwareScroll avoiding={false} ref={scrollRef} className="flex-1" showsVerticalScrollIndicator={false}>
         <View className="px-4 pt-4 pb-6">
           <View className="p-4 mb-6 bg-white rounded-3xl dark:bg-surface-dark">
             <Text className="text-xs font-semibold tracking-wide uppercase text-muted dark:text-muted-dark">
@@ -146,7 +149,7 @@ export default function ExploreBooking() {
             <RoomTypeSelectorUI roomTypes={roomTypes} selectedRoomsMap={selectedRoomsMap} onChange={changeRoomQty} />
           ) : null}
         </View>
-      </ScrollView>
+      </KeyboardAwareScroll>
 
       <View className="flex-row items-center px-4 pt-2 border-t border-border dark:border-border-dark bg-surface dark:bg-surface-dark" style={{ paddingBottom: Math.max(insets.bottom, 8) }}>
         <View className="flex-1 mr-3">
@@ -165,6 +168,7 @@ export default function ExploreBooking() {
           </Text>
         </Pressable>
       </View>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

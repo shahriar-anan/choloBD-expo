@@ -21,6 +21,7 @@ import { TransportRouteStop, TransportTrip } from '../../../types/transports';
 import { useTransportBusCheckout } from '../../../context/TransportBusCheckoutContext';
 import { useTransportSearch } from '../../../context/TransportSearchContext';
 import { formatTripClock } from '../../../utilities/transportFormat';
+import { goBack } from '../../../utilities/navigation';
 
 function stopTimeLabel(trip: TransportTrip | null, stop: TransportRouteStop): string {
   if (!trip?.departureDateTime) return '';
@@ -150,7 +151,7 @@ export default function TransportStopsPage() {
   return (
     <SafeAreaView className="flex-1 bg-background dark:bg-background-dark">
       <View className="flex-row items-center px-4 py-3">
-        <Pressable onPress={() => router.back()} className="p-2 mr-2">
+        <Pressable onPress={() => goBack(router)} className="p-2 mr-2">
           <Ionicons name="chevron-back" size={24} color={isDark ? theme.colors['text-dark'] : theme.colors.text} />
         </Pressable>
         <Text className="text-xl font-bold text-text dark:text-text-dark">

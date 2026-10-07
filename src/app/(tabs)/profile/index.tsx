@@ -19,7 +19,7 @@ type ProfileRoute =
   | '/(tabs)/profile/about'
   | '/(tabs)/profile/tracking'
   | '/(tabs)/profile/offers'
-  | '/(tabs)/profile/community'
+  | '/(tabs)/community'
   | '/(tabs)/profile/help';
 
 const ACCOUNT_ROWS: { titleKey: string; route: ProfileRoute; icon: keyof typeof Ionicons.glyphMap; signedInOnly?: boolean }[] = [
@@ -27,7 +27,7 @@ const ACCOUNT_ROWS: { titleKey: string; route: ProfileRoute; icon: keyof typeof 
   { titleKey: TRANSLATION_KEYS.PROFILE.ABOUT, route: '/(tabs)/profile/about', icon: 'information-circle-outline' },
   { titleKey: TRANSLATION_KEYS.PROFILE.TRACKING, route: '/(tabs)/profile/tracking', icon: 'navigate-outline' },
   { titleKey: TRANSLATION_KEYS.PROFILE.OFFERS, route: '/(tabs)/profile/offers', icon: 'pricetag-outline' },
-  { titleKey: TRANSLATION_KEYS.PROFILE.COMMUNITY, route: '/(tabs)/profile/community', icon: 'people-outline' },
+  { titleKey: TRANSLATION_KEYS.PROFILE.COMMUNITY, route: '/(tabs)/community', icon: 'people-outline' },
   { titleKey: TRANSLATION_KEYS.PROFILE.HELP, route: '/(tabs)/profile/help', icon: 'help-circle-outline' },
 ];
 

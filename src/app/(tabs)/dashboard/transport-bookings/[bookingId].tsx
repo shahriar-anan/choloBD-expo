@@ -107,6 +107,7 @@ export default function TransportBookingDetailPage() {
     router.replace('/(tabs)/dashboard/transport-bookings');
   };
   const vehicle = booking.items?.find((item) => item.transportVehicle)?.transportVehicle;
+  const rental = booking.transportType === 'CAR_RENTAL';
 
   return (
     <SafeAreaView className="flex-1 bg-background dark:bg-background-dark">
@@ -135,7 +136,9 @@ export default function TransportBookingDetailPage() {
             {booking.transport?.name || booking.transportType}
           </Text>
           <Text className="mt-1 text-sm text-muted dark:text-muted-dark">
-            {booking.departureLocation} → {booking.arrivalLocation}
+            {rental
+              ? [booking.departureLocation, vehicle?.name || booking.serviceClass].filter(Boolean).join(' · ')
+              : `${booking.departureLocation} → ${booking.arrivalLocation}`}
           </Text>
           <View className="flex-row items-center justify-between mt-3">
             <View className="flex-1 pr-3">
@@ -159,14 +162,25 @@ export default function TransportBookingDetailPage() {
           </View>
         </View>
 
-        <DetailCard title={t(TRANSLATION_KEYS.TRANSPORT_BOOKING.ROUTE)}>
-          <DetailRow label={t(TRANSLATION_KEYS.TRANSPORT_BOOKING.TYPE)} value={booking.transportType} />
+        <DetailCard title={t(rental ? TRANSLATION_KEYS.TRANSPORT.RENTAL : TRANSLATION_KEYS.TRANSPORT_BOOKING.ROUTE)}>
+          <DetailRow label={t(TRANSLATION_KEYS.TRANSPORT_BOOKING.TYPE)} value={rental ? t(TRANSLATION_KEYS.TRANSPORT.FILTER_CAR) : t(TRANSLATION_KEYS.TRANSPORT.BUS)} />
+          {rental ? (
+            <>
+              <DetailRow label={t(TRANSLATION_KEYS.TRANSPORT.RENTAL_PICKUP_LABEL)} value={`${booking.departureLocation} · ${formatWhen(booking.departureDateTime)}`} />
+              <DetailRow label={t(TRANSLATION_KEYS.TRANSPORT.RENTAL_RETURN_LABEL)} value={formatWhen(booking.arrivalDateTime)} />
+              <DetailRow label={t(TRANSLATION_KEYS.TRANSPORT_BOOKING.VEHICLE)} value={[vehicle?.name, vehicle?.licensePlate, booking.serviceClass].filter(Boolean).join(' · ')} />
+            </>
+          ) : (
+            <>
           <DetailRow label={t(TRANSLATION_KEYS.TRANSPORT_BOOKING.DEPARTURE)} value={`${booking.departureLocation} · ${formatWhen(booking.departureDateTime)}`} />
           <DetailRow label={t(TRANSLATION_KEYS.TRANSPORT_BOOKING.ARRIVAL)} value={`${booking.arrivalLocation} · ${formatWhen(booking.arrivalDateTime)}`} />
           <DetailRow label={t(TRANSLATION_KEYS.TRANSPORT_BOOKING.BOARDING)} value={booking.boardingStop?.name} />
           <DetailRow label={t(TRANSLATION_KEYS.TRANSPORT_BOOKING.DROPPING)} value={booking.droppingStop?.name} />
+            </>
+          )}
         </DetailCard>
 
+        {rental ? null : (
         <DetailCard title={t(TRANSLATION_KEYS.TRANSPORT_BOOKING.PASSENGERS)}>
           <DetailRow label={t(TRANSLATION_KEYS.TRANSPORT_BOOKING.PASSENGER_COUNT)} value={booking.passengerCount} />
           <DetailRow label={t(TRANSLATION_KEYS.TRANSPORT_BOOKING.SEATS)} value={booking.seatNumber} />
@@ -178,6 +192,7 @@ export default function TransportBookingDetailPage() {
             </Text>
           ))}
         </DetailCard>
+        )}
 
         <DetailCard title={t(TRANSLATION_KEYS.TRANSPORT_BOOKING.OPERATOR)}>
           <DetailRow label={t(TRANSLATION_KEYS.TRANSPORT_BOOKING.OPERATOR)} value={booking.transport?.name} />

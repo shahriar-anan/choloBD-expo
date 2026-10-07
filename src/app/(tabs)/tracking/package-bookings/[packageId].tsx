@@ -11,6 +11,7 @@ import { fetchPackageBookingsByPackageId } from '../../../../store/slices/packag
 import { PackageBookingCard } from '../../../../components/tourBuilder/PackageBookingCard';
 import { usePackageBookingLogic } from '../../../../hooks/usePackageBookingLogic';
 import { TRANSLATION_KEYS } from '../../../../constants/translationKeys';
+import { goBack } from '../../../../utilities/navigation';
 
 export default function PackageBookingDetailsPage() {
   const router = useRouter();
@@ -79,7 +80,7 @@ export default function PackageBookingDetailsPage() {
       }
     >
       <View className="px-6 pt-8 pb-4">
-        <TouchableOpacity onPress={() => router.back()} className="mb-4">
+        <TouchableOpacity onPress={() => goBack(router)} className="mb-4">
           <View className="flex-row items-center">
             <Ionicons
               name="chevron-back"

@@ -5,12 +5,16 @@
     "slug": "choloBD-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/app-icon.png",
     "userInterfaceStyle": "automatic",
     "splash": {
-      "image": "./src/assets/splash/splash.png",
+      "image": "./assets/app-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#FFFFFF"
+      "backgroundColor": "#F5F7FB",
+      "dark": {
+        "image": "./assets/app-icon.png",
+        "backgroundColor": "#0C0C0F"
+      }
     },
     "ios": {
       "supportsTablet": true,
@@ -21,10 +25,8 @@
     "android": {
       "softwareKeyboardLayoutMode": "resize",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
+        "backgroundColor": "#0F766E",
+        "foregroundImage": "./assets/app-icon.png"
       },
       "predictiveBackGestureEnabled": false,
       "permissions": [
@@ -36,9 +38,10 @@
       "package": "com.anonymous.choloBDmobile"
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/app-icon.png"
     },
     "plugins": [
+      "./plugins/withKotlinJvm17",
       "expo-router",
       "expo-secure-store",
       "expo-image",

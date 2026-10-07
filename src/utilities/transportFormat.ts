@@ -1,5 +1,29 @@
 import { addDays, format, parseISO } from 'date-fns';
+import { TRANSLATION_KEYS } from '../constants/translationKeys';
 import { TransportSeat } from '../types/transports';
+
+const OPERATOR_STATUS_KEYS: Record<string, string> = {
+  PENDING: TRANSLATION_KEYS.TRANSPORT_OPERATOR.STATUS_PENDING,
+  CONFIRMED: TRANSLATION_KEYS.TRANSPORT_OPERATOR.STATUS_CONFIRMED,
+  CANCELLED: TRANSLATION_KEYS.TRANSPORT_OPERATOR.STATUS_CANCELLED,
+  REFUNDED: TRANSLATION_KEYS.TRANSPORT_OPERATOR.STATUS_REFUNDED,
+  COMPLETED: TRANSLATION_KEYS.TRANSPORT_OPERATOR.STATUS_COMPLETED,
+  PAID: TRANSLATION_KEYS.TRANSPORT_OPERATOR.STATUS_PAID,
+  UNPAID: TRANSLATION_KEYS.TRANSPORT_OPERATOR.STATUS_UNPAID,
+  ACCEPTED: TRANSLATION_KEYS.TRANSPORT_OPERATOR.STATUS_ACCEPTED,
+  NO_SHOW: TRANSLATION_KEYS.TRANSPORT_OPERATOR.STATUS_NO_SHOW,
+  MALE: TRANSLATION_KEYS.TRANSPORT_OPERATOR.MALE,
+  FEMALE: TRANSLATION_KEYS.TRANSPORT_OPERATOR.FEMALE,
+};
+
+export function operatorStatusLabel(
+  value: string | null | undefined,
+  t: (key: string) => string
+): string {
+  if (!value) return '—';
+  const key = OPERATOR_STATUS_KEYS[value];
+  return key ? t(key) : value.replace(/_/g, ' ');
+}
 
 export function formatTripClock(value: string): string {
   const date = new Date(value);

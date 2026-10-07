@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, ScrollView, ActivityIndicator, Pressable, Alert, TextInput } from 'react-native';
+import { KeyboardAwareScroll } from '../ui/KeyboardAwareScroll';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -192,10 +193,9 @@ export function HotelGuestBookings({
 
   return (
     <SafeAreaView edges={['top', 'bottom']} className="flex-1 bg-background dark:bg-background-dark">
-      <ScrollView
+      <KeyboardAwareScroll
         className="flex-1"
         contentContainerStyle={{ padding: 24, paddingBottom: 120 }}
-        keyboardShouldPersistTaps="handled"
       >
         {showBack ? (
           <Pressable onPress={() => router.replace('/(tabs)/dashboard')} style={{ padding: 6 }} accessibilityRole="button">
@@ -361,7 +361,7 @@ export function HotelGuestBookings({
             </Pressable>
           </View>
         ) : null}
-      </ScrollView>
+      </KeyboardAwareScroll>
     </SafeAreaView>
   );
 }

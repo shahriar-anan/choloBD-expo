@@ -17,6 +17,7 @@ import {
   Keyboard,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { KeyboardAwareScroll } from '../ui/KeyboardAwareScroll';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as ImagePicker from 'expo-image-picker';
 import { Feather } from '@expo/vector-icons';
@@ -451,14 +452,14 @@ export function TripPlanCreateWizard({
 
       <KeyboardAvoidingView
         className="flex-1"
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top + 88 : 0}
       >
-        <ScrollView
+        <KeyboardAwareScroll
+          avoiding={false}
           ref={detailsScrollRef}
           className="flex-1 px-4"
           contentContainerStyle={{ paddingBottom: scrollBottomPadding, flexGrow: 1 }}
-          keyboardShouldPersistTaps="handled"
           keyboardDismissMode="interactive"
           showsVerticalScrollIndicator={false}
         >
@@ -808,7 +809,7 @@ export function TripPlanCreateWizard({
             </View>
           </View>
         ) : null}
-      </ScrollView>
+      </KeyboardAwareScroll>
 
         <View className="px-4 py-3 border-t border-border dark:border-border-dark flex-row gap-3 bg-background dark:bg-background-dark">
           <TouchableOpacity

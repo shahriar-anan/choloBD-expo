@@ -15,8 +15,8 @@ import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../../hooks/useTheme';
 import theme from '../../../constants/theme';
 import { TRANSLATION_KEYS } from '../../../constants/translationKeys';
-import { getTransportById, getTransportTrips, getTransports } from '../../../services/api/transports';
-import { TransportOperator, TransportTrip } from '../../../types/transports';
+import { getTransportById, getTransportTrips, getTransports, getTransportVehicles } from '../../../services/api/transports';
+import { TransportOperator, TransportTrip, TransportVehicle } from '../../../types/transports';
 import {
   BusServiceClassFilter,
   countTripsByServiceClass,
@@ -24,9 +24,26 @@ import {
   tripIsSoldOut,
 } from '../../../utilities/transportTripFilters';
 import { formatTripClock } from '../../../utilities/transportFormat';
-import { longDayLabel, nightsBetween } from '../../../utilities/hotelSearch';
+import { formatMoney, longDayLabel, nightsBetween } from '../../../utilities/hotelSearch';
 import { useTransportBusCheckout } from '../../../context/TransportBusCheckoutContext';
 import { useTransportSearch } from '../../../context/TransportSearchContext';
+import { goBack } from '../../../utilities/navigation';
+
+function rentalClock(date: string): string {
+  return new Date(`${date}T10:00:00`).toISOString();
+}
+
+function categoryLabel(value?: string | null): string {
+  if (!value) return '';
+  const lower = value.toLowerCase().replace(/_/g, ' ');
+  return lower.charAt(0).toUpperCase() + lower.slice(1);
+}
+
+interface RentalOffer {
+  vehicle: TransportVehicle;
+  operatorId: string;
+  operatorName: string;
+}
 
 function tripTitle(trip: TransportTrip): string {
   if (trip.coachLabel) return trip.coachLabel;
@@ -71,6 +88,7 @@ export default function TransportResultsPage() {
   const [loading, setLoading] = useState(true);
   const [trips, setTrips] = useState<TransportTrip[]>([]);
   const [operators, setOperators] = useState<TransportOperator[]>([]);
+  const [cars, setCars] = useState<RentalOffer[]>([]);
   const [serviceFilter, setServiceFilter] = useState<BusServiceClassFilter>('ALL');
   const [imageByTransportId, setImageByTransportId] = useState<Record<string, string>>({});
 
@@ -114,6 +132,7 @@ export default function TransportResultsPage() {
       try {
         if (!params.locationId) {
           setOperators([]);
+          setCars([]);
           return;
         }
         const page = await getTransports({
@@ -122,9 +141,39 @@ export default function TransportResultsPage() {
           page: 1,
           limit: 50,
         });
-        if (!cancelled) setOperators(page.results);
+        const pickupIso = params.pickupDate ? rentalClock(params.pickupDate) : undefined;
+        const returnIso = params.returnDateRental ? rentalClock(params.returnDateRental) : undefined;
+        const offers = (
+          await Promise.all(
+            page.results.map(async (operator) => {
+              try {
+                const vehicles = await getTransportVehicles({
+                  transportId: operator.id,
+                  checkInDate: pickupIso,
+                  checkOutDate: returnIso,
+                });
+                return vehicles
+                  .filter((vehicle) => vehicle.isAvailable !== false)
+                  .map((vehicle) => ({
+                    vehicle,
+                    operatorId: operator.id,
+                    operatorName: operator.name,
+                  }));
+              } catch {
+                return [] as RentalOffer[];
+              }
+            })
+          )
+        ).flat();
+        if (!cancelled) {
+          setOperators(page.results);
+          setCars(offers);
+        }
       } catch {
-        if (!cancelled) setOperators([]);
+        if (!cancelled) {
+          setOperators([]);
+          setCars([]);
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -133,7 +182,7 @@ export default function TransportResultsPage() {
     return () => {
       cancelled = true;
     };
-  }, [isBus, params.locationId]);
+  }, [isBus, params.locationId, params.pickupDate, params.returnDateRental]);
 
   useEffect(() => {
     if (!isBus || trips.length === 0) return;
@@ -200,7 +249,7 @@ export default function TransportResultsPage() {
     ? isReturnLeg
       ? t(TRANSLATION_KEYS.TRANSPORT.RETURN_TRIPS_TITLE)
       : t(TRANSLATION_KEYS.TRANSPORT.TRIPS_TITLE)
-    : t(TRANSLATION_KEYS.TRANSPORT.OPERATORS_TITLE);
+    : t(TRANSLATION_KEYS.TRANSPORT.AVAILABLE_CARS);
 
   const filterChip = (key: BusServiceClassFilter, label: string) => {
     const selected = serviceFilter === key;
@@ -223,7 +272,7 @@ export default function TransportResultsPage() {
   return (
     <SafeAreaView className="flex-1 bg-background dark:bg-background-dark">
       <View className="flex-row items-center px-4 py-3">
-        <Pressable onPress={() => router.back()} className="p-2 mr-2">
+        <Pressable onPress={() => goBack(router)} className="p-2 mr-2">
           <Ionicons name="chevron-back" size={24} color={isDark ? theme.colors['text-dark'] : theme.colors.text} />
         </Pressable>
         <View className="flex-1">
@@ -366,7 +415,7 @@ export default function TransportResultsPage() {
                   </Text>
                 </View>
               ) : null}
-              {operators.length === 0 ? (
+              {operators.length === 0 || cars.length === 0 ? (
                 <View className="items-center px-6 py-16">
                   <View
                     className="items-center justify-center w-16 h-16 mb-4 rounded-full"
@@ -375,81 +424,57 @@ export default function TransportResultsPage() {
                     <Ionicons name="car-outline" size={30} color={primary} />
                   </View>
                   <Text className="text-base font-semibold text-center text-text dark:text-text-dark">
-                    {t(TRANSLATION_KEYS.TRANSPORT.NO_OPERATORS)}
+                    {t(operators.length === 0 ? TRANSLATION_KEYS.TRANSPORT.NO_OPERATORS : TRANSLATION_KEYS.TRANSPORT.NO_CARS)}
                   </Text>
                 </View>
               ) : (
-                operators.map((operator) => {
-                  const imageUrl = operator.images?.[0]?.url;
-                  const place = operator.location?.city || operator.location?.district || operator.location?.name || '';
-                  const vehicleCount = operator._count?.vehicles;
-                  const amenities = (operator.amenities ?? []).slice(0, 2);
+                cars.map((offer) => {
+                  const days = Math.max(1, nightsBetween(params.pickupDate || '', params.returnDateRental || params.pickupDate || ''));
+                  const daily = offer.vehicle.transportClass?.basePrice ?? 0;
+                  const category = categoryLabel(offer.vehicle.transportClass?.vehicleRentalCategory) || offer.vehicle.transportClass?.name || '';
                   return (
                     <Pressable
-                      key={operator.id}
+                      key={offer.vehicle.id}
                       onPress={() =>
                         router.push({
                           pathname: '/(tabs)/explore/transport-rental',
                           params: {
-                            transportId: operator.id,
+                            transportId: offer.operatorId,
                             pickupDate: params.pickupDate,
                             returnDate: params.returnDateRental ?? params.returnDate,
                             pickupName: params.pickupName ?? '',
                           },
                         })
                       }
-                      className="flex-row mb-3 overflow-hidden bg-white border rounded-2xl border-border dark:bg-surface-dark dark:border-border-dark"
+                      className="p-4 mb-3 bg-white border rounded-2xl border-border dark:bg-surface-dark dark:border-border-dark"
                     >
-                      {imageUrl ? (
-                        <Image source={{ uri: imageUrl }} style={{ width: 108, height: 128 }} />
-                      ) : (
-                        <View
-                          className="items-center justify-center"
-                          style={{ width: 108, height: 128, backgroundColor: `${primary}14` }}
-                        >
-                          <Ionicons name="car" size={32} color={primary} />
-                        </View>
-                      )}
-                      <View className="justify-center flex-1 px-3 py-3">
-                        <Text className="text-base font-bold text-text dark:text-text-dark" numberOfLines={1}>
-                          {operator.name}
-                        </Text>
-                        {place ? (
-                          <View className="flex-row items-center mt-1">
-                            <Ionicons name="location-outline" size={14} color={isDark ? theme.colors['muted-dark'] : theme.colors.muted} />
-                            <Text className="ml-1 text-xs text-muted dark:text-muted-dark" numberOfLines={1}>
-                              {place}
-                            </Text>
-                          </View>
-                        ) : null}
-                        <View className="flex-row items-center mt-2">
-                          {operator.rating != null && operator.rating > 0 ? (
-                            <View className="flex-row items-center mr-3">
-                              <Ionicons name="star" size={13} color={theme.colors.warning} />
-                              <Text className="ml-1 text-xs font-semibold text-text dark:text-text-dark">
-                                {operator.rating.toFixed(1)}
-                              </Text>
-                            </View>
-                          ) : null}
-                          {vehicleCount != null ? (
-                            <Text className="text-xs text-muted dark:text-muted-dark">
-                              {t(TRANSLATION_KEYS.TRANSPORT.VEHICLE_COUNT, { count: vehicleCount })}
-                            </Text>
-                          ) : null}
-                        </View>
-                        {amenities.length > 0 ? (
-                          <Text className="mt-2 text-xs text-muted dark:text-muted-dark" numberOfLines={1}>
-                            {amenities.join(' · ')}
-                          </Text>
+                      <View className="flex-row items-center">
+                        {offer.vehicle.imageUrl ? (
+                          <Image source={{ uri: offer.vehicle.imageUrl }} style={{ width: 64, height: 64, borderRadius: 16, marginRight: 12 }} resizeMode="cover" />
                         ) : (
-                          <Text className="mt-2 text-xs font-semibold" style={{ color: primary }}>
-                            {t(TRANSLATION_KEYS.TRANSPORT.SEE_CARS)}
-                          </Text>
+                        <View
+                          className="items-center justify-center w-12 h-12 mr-3 rounded-2xl"
+                          style={{ backgroundColor: `${primary}14` }}
+                        >
+                          <Ionicons name="car-sport" size={22} color={primary} />
+                        </View>
                         )}
+                        <View className="flex-1">
+                          <Text className="text-base font-bold text-text dark:text-text-dark" numberOfLines={1}>
+                            {offer.vehicle.name || category || offer.operatorName}
+                          </Text>
+                          <Text className="mt-0.5 text-sm text-muted dark:text-muted-dark" numberOfLines={1}>
+                            {[category, offer.vehicle.licensePlate, offer.operatorName].filter(Boolean).join(' · ')}
+                          </Text>
+                        </View>
+                        <View className="items-end ml-2">
+                          <Text className="text-base font-bold text-text dark:text-text-dark">{formatMoney(daily)}</Text>
+                          <Text className="text-xs text-muted dark:text-muted-dark">{t(TRANSLATION_KEYS.TRANSPORT.PER_DAY)}</Text>
+                        </View>
                       </View>
-                      <View className="items-center justify-center pr-3">
-                        <Ionicons name="chevron-forward" size={18} color={primary} />
-                      </View>
+                      <Text className="mt-3 text-sm font-semibold" style={{ color: primary }}>
+                        {formatMoney(daily * days)} · {t(TRANSLATION_KEYS.TRANSPORT.RENTAL_DAYS, { count: days })}
+                      </Text>
                     </Pressable>
                   );
                 })

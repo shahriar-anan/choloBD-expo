@@ -16,6 +16,7 @@ import { useFetchTourSpots, TourSpot } from '../../../hooks/useFetchTourSpots';
 import { useFetchLocations } from '../../../hooks/useFetchLocations';
 import { TourSpotListCard, TourSpotFilters } from '../../../components/tourSpots';
 import { TourSpotFilters as Filters } from '../../../services/api/tourSpots';
+import { goBack } from '../../../utilities/navigation';
 
 export default function TourSpotsListPage() {
   const router = useRouter();
@@ -38,7 +39,7 @@ export default function TourSpotsListPage() {
     if (fromHome === 'true') {
       router.replace('/(tabs)');
     } else {
-      router.back();
+      goBack(router);
     }
   };
 

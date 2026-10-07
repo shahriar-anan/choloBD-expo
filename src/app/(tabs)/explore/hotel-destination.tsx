@@ -11,6 +11,7 @@ import { GradientAppBar } from '../../../components/hotelSearch/HotelFlowChrome'
 import { searchHotelDestinations } from '../../../services/api/search';
 import { HotelSearchDestination } from '../../../types/hotelSearch';
 import { useHotelSearch } from '../../../context/HotelSearchContext';
+import { goBack } from '../../../utilities/navigation';
 
 export default function HotelDestinationPage() {
     const router = useRouter();
@@ -59,12 +60,12 @@ export default function HotelDestinationPage() {
 
     const choose = (row: HotelSearchDestination) => {
         setDestination(row);
-        router.back();
+        goBack(router);
     };
 
     return (
         <SafeAreaView className="flex-1 bg-background dark:bg-background-dark">
-            <GradientAppBar title={t(TRANSLATION_KEYS.HOTEL_SEARCH.WHERE)} onBack={() => router.back()} />
+            <GradientAppBar title={t(TRANSLATION_KEYS.HOTEL_SEARCH.WHERE)} onBack={() => goBack(router)} />
             <View className="flex-row items-center px-4 py-3 border-b border-border dark:border-border-dark">
                 <Ionicons name="business" size={20} color={primary} />
                 <TextInput

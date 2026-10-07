@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, ScrollView, Pressable, ActivityIndicator, TextInput, Alert } from 'react-native';
+import { View, Text, Pressable, ActivityIndicator, TextInput, Alert } from 'react-native';
+import { KeyboardAwareScroll } from '../../../../components/ui/KeyboardAwareScroll';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -77,7 +78,7 @@ export default function HotelComplaintsPage() {
 
   return (
     <SafeAreaView edges={['top', 'bottom']} className="flex-1 bg-background dark:bg-background-dark">
-      <ScrollView className="flex-1 px-6 pt-4">
+      <KeyboardAwareScroll className="flex-1 px-6 pt-4">
         <Pressable onPress={() => router.replace('/(tabs)/dashboard')} style={{ padding: 6 }}>
           <Ionicons name="chevron-back" size={24} color={isDark ? theme.colors['text-dark'] : theme.colors.text} />
         </Pressable>
@@ -135,7 +136,7 @@ export default function HotelComplaintsPage() {
             );
           })
         )}
-      </ScrollView>
+      </KeyboardAwareScroll>
     </SafeAreaView>
   );
 }

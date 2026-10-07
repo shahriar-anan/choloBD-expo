@@ -19,6 +19,7 @@ import {
     minNightlyPrice,
     shortRangeLabel,
 } from '../../../utilities/hotelSearch';
+import { goBack } from '../../../utilities/navigation';
 
 function Stars({ rating }: { rating: number }) {
     const { isDark } = useTheme();
@@ -89,7 +90,7 @@ export default function HotelResultsPage() {
             <GradientAppBar
                 title={params.destination?.subtitle || params.destination?.name || 'Hotels'}
                 subtitle={subtitle}
-                onBack={() => router.back()}
+                onBack={() => goBack(router)}
             />
             <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingBottom: 96 }}>
                 <Pressable onPress={() => router.push('/(tabs)/explore/hotel-search')}>

@@ -11,6 +11,7 @@ import { useCommunityPostLogic } from '../../../hooks/useCommunityPostLogic';
 import { TagChip } from '../../../components/community';
 import theme from '../../../constants/theme';
 import { TRANSLATION_KEYS } from '../../../constants/translationKeys';
+import { goBack } from '../../../utilities/navigation';
 
 export default function CommunityPostDetailPage() {
   const router = useRouter();
@@ -45,7 +46,7 @@ export default function CommunityPostDetailPage() {
   const handleDeactivate = async () => {
     if (!post?.id) return;
     await doDeactivate(post.id);
-    router.back();
+    goBack(router);
   };
 
   if (loading || !post) {
@@ -59,7 +60,7 @@ export default function CommunityPostDetailPage() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: bg }}>
       <View className="px-5 pb-3 flex-row items-center justify-between">
-        <TouchableOpacity onPress={() => router.back()}>
+        <TouchableOpacity onPress={() => goBack(router)}>
           <Ionicons name="chevron-back" size={24} color={primary} />
         </TouchableOpacity>
         <Text className="text-lg font-bold text-text dark:text-text-dark">{t(TRANSLATION_KEYS.COMMUNITY.POST_TITLE)}</Text>

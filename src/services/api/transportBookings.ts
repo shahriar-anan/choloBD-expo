@@ -106,6 +106,8 @@ export async function getTransportBookings(
     if (filters.status) params.status = filters.status;
     if (filters.paymentStatus) params.paymentStatus = filters.paymentStatus;
     if (filters.confirmationCode) params.confirmationCode = filters.confirmationCode;
+    if (filters.departureFrom) params.departureFrom = filters.departureFrom;
+    if (filters.departureTo) params.departureTo = filters.departureTo;
     if (filters.page) params.page = filters.page;
     if (filters.limit) params.limit = filters.limit;
     const res = await api.get('/api/bookings/transports', { params });

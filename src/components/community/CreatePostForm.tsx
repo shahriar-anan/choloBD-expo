@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, Alert, Image, Linking } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, Alert, Image, Linking } from 'react-native';
+import { KeyboardAwareScroll } from '../ui/KeyboardAwareScroll';
 import { useForm, Controller, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -132,7 +133,7 @@ export function CreatePostForm({ initialValues, onSubmit, isSubmitting }: Create
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <KeyboardAwareScroll contentContainerStyle={styles.container}>
       <View style={[styles.card, { backgroundColor: surface, borderColor: border }]}> 
         <Text style={[styles.label, { color: text }]}>{t(TRANSLATION_KEYS.COMMUNITY.CAPTION_LABEL)}</Text>
         <Controller
@@ -204,7 +205,7 @@ export function CreatePostForm({ initialValues, onSubmit, isSubmitting }: Create
           <Text style={styles.primaryBtnText}>{isSubmitting ? t(TRANSLATION_KEYS.COMMUNITY.SAVING) : t('common.save')}</Text>
         </TouchableOpacity>
       </View>
-    </ScrollView>
+    </KeyboardAwareScroll>
   );
 }
 

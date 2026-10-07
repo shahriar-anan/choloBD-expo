@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, TextInput } from 'react-native';
+import { KeyboardAwareScroll } from './KeyboardAwareScroll';
 import { Ionicons } from '@expo/vector-icons';
 import { CameraQRScanner } from './CameraQRScanner';
 import { useTheme } from '../../hooks/useTheme';
@@ -28,8 +29,7 @@ export const QRCodeScanner: React.FC<QRCodeScannerProps> = ({ onScan, isLoading 
   };
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} className="flex-1">
-      <ScrollView className="flex-1 p-6 bg-background dark:bg-background-dark">
+    <KeyboardAwareScroll className="flex-1 p-6 bg-background dark:bg-background-dark">
         {/* Camera Scanner */}
         {scanMethod === 'camera' && (
           <CameraQRScanner
@@ -95,8 +95,7 @@ export const QRCodeScanner: React.FC<QRCodeScannerProps> = ({ onScan, isLoading 
               : '• Paste or type the QR token below\n• Press "Validate QR Code"\n• The guest\'s booking details will appear below'}
           </Text>
         </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+    </KeyboardAwareScroll>
   );
 };
 

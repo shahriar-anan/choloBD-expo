@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { View, ScrollView, Text, ActivityIndicator } from 'react-native';
+import { View, Text, ActivityIndicator } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -20,6 +20,7 @@ import { useTheme } from '../../../hooks/useTheme';
 import { theme } from '../../../constants/theme';
 import { useTranslation } from 'react-i18next';
 import { TRANSLATION_KEYS } from '../../../constants/translationKeys';
+import { goBack } from '../../../utilities/navigation';
 
 export default function TourEditPage() {
   const router = useRouter();
@@ -47,7 +48,7 @@ export default function TourEditPage() {
   }, [tourId, dispatch]);
 
   const handleBack = () => {
-    router.back();
+    goBack(router);
   };
 
   const handleEditTour = async (data: UpdateTourPlanData | any) => {
@@ -58,7 +59,7 @@ export default function TourEditPage() {
 
     try {
       await updateTour(tourId, data);
-      router.back();
+      goBack(router);
     } catch (error) {
       if (__DEV__) console.error('[TourEditPage] Error updating tour:', error);
       // Error is stored in Redux state and shown via ErrorAlert
@@ -79,10 +80,6 @@ export default function TourEditPage() {
 
   return (
     <SafeAreaView className="flex-1 bg-background dark:bg-background-dark">
-      <ScrollView
-        className="flex-1"
-        showsVerticalScrollIndicator={false}
-      >
         {/* Header with Back Button */}
         <View className="px-6 pt-6 pb-2 flex-row items-center">
           <Ionicons
@@ -110,7 +107,7 @@ export default function TourEditPage() {
         )}
 
         {/* Tour Builder Form */}
-        <View className="px-4 pb-6">
+        <View className="flex-1 px-4 pb-6">
           {locations && locations.length > 0 && detail ? (
             <TourBuilderForm
               locations={locations}
@@ -128,7 +125,6 @@ export default function TourEditPage() {
             </View>
           )}
         </View>
-      </ScrollView>
     </SafeAreaView>
   );
 }

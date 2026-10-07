@@ -12,6 +12,7 @@ import { TRANSLATION_KEYS } from '../../../constants/translationKeys';
 import { PillButton } from '../../../components/hotelSearch/HotelFlowChrome';
 import { useTransportSearch } from '../../../context/TransportSearchContext';
 import { longDayLabel } from '../../../utilities/hotelSearch';
+import { goBack } from '../../../utilities/navigation';
 
 export default function TransportSearchPage() {
     const router = useRouter();
@@ -26,12 +27,12 @@ export default function TransportSearchPage() {
         ? t(TRANSLATION_KEYS.TRANSPORT.RENTAL)
         : t(TRANSLATION_KEYS.TRANSPORT.BUS);
 
-    const goBack = () => {
+    const onBack = () => {
         if (fromHome === 'true') {
             router.replace('/(tabs)');
             return;
         }
-        router.back();
+        goBack(router);
     };
 
     const search = () => {
@@ -98,7 +99,7 @@ export default function TransportSearchPage() {
         <SafeAreaView className="flex-1 bg-background dark:bg-background-dark">
             <ScrollView>
                 <LinearGradient colors={[primary, isDark ? theme.colors['background-dark'] : theme.colors.background]} className="px-4 pt-2 pb-16">
-                    <Pressable accessibilityLabel="Back" onPress={goBack} className="items-center justify-center w-11 h-11">
+                    <Pressable accessibilityLabel="Back" onPress={onBack} className="items-center justify-center w-11 h-11">
                         <Ionicons name="chevron-back" size={24} color="#fff" />
                     </Pressable>
                     <Text className="text-3xl font-bold text-center text-white">

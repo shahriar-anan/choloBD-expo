@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, ScrollView, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -15,6 +15,7 @@ import { RecentBookingCard } from '../../../components/ui/recentBookingCard';
 import { BookingQrSheet } from '../../../components/booking/BookingQrSheet';
 import { useHotelAdminSession } from '../../../hooks/useHotelAdminSession';
 import { HotelGuestBookings } from '../../../components/hotel/HotelGuestBookings';
+import { tabBarClearance } from '../../../hooks/useHideTabBar';
 
 type Chip = 'all' | 'hotels' | 'tickets' | 'activities';
 type HotelFilter = 'all' | 'unpaid' | 'confirmed' | 'pending' | 'cancelled';
@@ -58,6 +59,7 @@ function TravelerBookingsScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const { isDark } = useTheme();
+  const insets = useSafeAreaInsets();
   const userId = useSelector((state: RootState) => state.auth.user?.id);
   const [chip, setChip] = useState<Chip>('all');
   const [hotelFilter, setHotelFilter] = useState<HotelFilter>('all');
@@ -121,7 +123,7 @@ function TravelerBookingsScreen() {
   };
 
   return (
-    <SafeAreaView edges={['top', 'bottom']} className="flex-1 bg-background dark:bg-background-dark">
+    <SafeAreaView edges={['top']} className="flex-1 bg-background dark:bg-background-dark">
       <Text className="px-6 pt-4 text-3xl font-bold font-heading text-text dark:text-text-dark">
         {t(TRANSLATION_KEYS.BOOKINGS_TAB.TITLE)}
       </Text>
@@ -259,7 +261,7 @@ function TravelerBookingsScreen() {
               }}
             />
           )}
-          contentContainerStyle={{ paddingHorizontal: 12, paddingBottom: 24 }}
+          contentContainerStyle={{ paddingHorizontal: 12, paddingBottom: tabBarClearance(insets.bottom) }}
           refreshing={loading}
           onRefresh={() => { void load(); }}
         />
