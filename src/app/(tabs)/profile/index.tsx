@@ -72,8 +72,9 @@ export default function ProfileIndex() {
 
   useFocusEffect(
     useCallback(() => {
+      if (!auth.user?.id) return;
       void refreshTravelerHome();
-    }, [refreshTravelerHome]),
+    }, [auth.user?.id, refreshTravelerHome]),
   );
 
   const cycleAppearance = () => {

@@ -903,7 +903,17 @@
     "requests": "বিশেষ অনুরোধ",
     "payment": "পেমেন্ট",
     "operator": "অপারেটর",
-    "bookedOn": "বুক করার তারিখ"
+    "bookedOn": "বুক করার তারিখ",
+    "tabTicket": "টিকিট",
+    "tabFare": "ভাড়া",
+    "pnr": "পিএনআর",
+    "journeyTime": "যাত্রা",
+    "durationHm": "{{hours}} ঘ {{minutes}} মি",
+    "durationH": "{{hours}} ঘ",
+    "durationM": "{{minutes}} মি",
+    "callOperator": "কল",
+    "plate": "নম্বর প্লেট",
+    "passengerFallback": "যাত্রী"
   },
   "transportOperator": {
     "title": "পরিবহন অ্যাডমিন",

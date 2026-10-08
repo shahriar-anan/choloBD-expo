@@ -1,4 +1,5 @@
 import { bookingSortTime } from './newestBooking';
+import { transportBookingCoverUrl } from './transportCover';
 
 export type RecentBookingKind = 'hotel' | 'transport' | 'activity' | 'guide' | 'package' | 'trip';
 
@@ -109,7 +110,7 @@ export function mapTransport(booking: any): RecentBookingView | null {
     paymentStatus: booking.paymentStatus || '',
     price: money(booking.totalPrice ?? booking.price),
     sortTime: bookingSortTime(booking),
-    imageUrl: imageUrlFrom(booking.transport?.images) || imageUrlFrom(booking.vehicle?.images),
+    imageUrl: transportBookingCoverUrl(booking),
   };
 }
 

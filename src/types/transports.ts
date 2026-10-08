@@ -123,6 +123,7 @@ export interface TransportTrip {
   layout?: {
     id?: string;
     name?: string | null;
+    imageUrl?: string | null;
   };
   transport?: {
     id: string;

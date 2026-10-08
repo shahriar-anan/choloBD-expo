@@ -43,6 +43,9 @@ export default function DashboardPage() {
 
   useFocusEffect(
     React.useCallback(() => {
+      if (!auth.user?.id) {
+        return;
+      }
       if (auth.user?.role === 'SERVICE_ADMIN') {
         return;
       }
@@ -53,7 +56,7 @@ export default function DashboardPage() {
         return;
       }
       refreshTravelerHome();
-    }, [auth.user?.role, employeeServiceType, isHotelOperator, isTransportOperator, operatorProfileLoaded, refreshTravelerHome])
+    }, [auth.user?.id, auth.user?.role, employeeServiceType, isHotelOperator, isTransportOperator, operatorProfileLoaded, refreshTravelerHome])
   );
 
   if (waitingForAssignment) {

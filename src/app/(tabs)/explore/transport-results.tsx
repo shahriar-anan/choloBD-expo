@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Image,
@@ -15,7 +15,7 @@ import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../../hooks/useTheme';
 import theme from '../../../constants/theme';
 import { TRANSLATION_KEYS } from '../../../constants/translationKeys';
-import { getTransportById, getTransportTrips, getTransports, getTransportVehicles } from '../../../services/api/transports';
+import { getTransportById, getTransportLayouts, getTransportTrips, getTransports, getTransportVehicles } from '../../../services/api/transports';
 import { TransportOperator, TransportTrip, TransportVehicle } from '../../../types/transports';
 import {
   BusServiceClassFilter,
@@ -43,6 +43,22 @@ interface RentalOffer {
   vehicle: TransportVehicle;
   operatorId: string;
   operatorName: string;
+  operatorImageUrl?: string | null;
+}
+
+function busCoverUrl(
+  trip: TransportTrip,
+  imageByLayoutId: Record<string, string>,
+  imageByTransportId: Record<string, string>
+): string | undefined {
+  return (
+    imageByLayoutId[trip.layoutId] ||
+    trip.layout?.imageUrl ||
+    trip.transportImageUrl ||
+    trip.transport?.images?.[0]?.url ||
+    imageByTransportId[trip.transportId] ||
+    undefined
+  );
 }
 
 function tripTitle(trip: TransportTrip): string {
@@ -91,13 +107,17 @@ export default function TransportResultsPage() {
   const [cars, setCars] = useState<RentalOffer[]>([]);
   const [serviceFilter, setServiceFilter] = useState<BusServiceClassFilter>('ALL');
   const [imageByTransportId, setImageByTransportId] = useState<Record<string, string>>({});
+  const [imageByLayoutId, setImageByLayoutId] = useState<Record<string, string>>({});
+  const [layoutsChecked, setLayoutsChecked] = useState<Record<string, true>>({});
 
-  const loadBus = useCallback(async () => {
+  const busLoadedOnce = useRef(false);
+
+  const loadBus = useCallback(async (silent = false) => {
     if (!searchOriginId || !searchDestinationId || !activeDate) {
       setTrips([]);
       return;
     }
-    setLoading(true);
+    if (!silent) setLoading(true);
     try {
       const rows = await getTransportTrips({
         originLocationId: searchOriginId,
@@ -108,7 +128,7 @@ export default function TransportResultsPage() {
     } catch {
       setTrips([]);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, [searchOriginId, searchDestinationId, activeDate]);
 
@@ -116,13 +136,12 @@ export default function TransportResultsPage() {
     useCallback(() => {
       const next = isReturnLeg ? searchParams.returnDate : searchParams.date;
       if (next) setActiveDate(next);
-    }, [isReturnLeg, searchParams.returnDate, searchParams.date])
+      if (!isBus) return;
+      const silent = busLoadedOnce.current;
+      busLoadedOnce.current = true;
+      void loadBus(silent);
+    }, [isBus, isReturnLeg, searchParams.returnDate, searchParams.date, loadBus])
   );
-
-  useEffect(() => {
-    if (!isBus) return;
-    loadBus();
-  }, [isBus, loadBus]);
 
   useEffect(() => {
     if (isBus) return;
@@ -158,6 +177,7 @@ export default function TransportResultsPage() {
                     vehicle,
                     operatorId: operator.id,
                     operatorName: operator.name,
+                    operatorImageUrl: operator.images?.[0]?.url ?? null,
                   }));
               } catch {
                 return [] as RentalOffer[];
@@ -189,7 +209,46 @@ export default function TransportResultsPage() {
     const missing = [
       ...new Set(
         trips
-          .filter((trip) => !trip.transportImageUrl && !trip.transport?.images?.[0]?.url)
+          .map((trip) => trip.transportId)
+          .filter((id) => id && !layoutsChecked[id])
+      ),
+    ];
+    if (missing.length === 0) return;
+    let cancelled = false;
+    const loadCoachPhotos = async () => {
+      const next: Record<string, string> = {};
+      const checked: Record<string, true> = {};
+      await Promise.all(
+        missing.map(async (transportId) => {
+          checked[transportId] = true;
+          try {
+            const layouts = await getTransportLayouts(transportId);
+            layouts.forEach((layout) => {
+              if (layout.imageUrl) next[layout.id] = layout.imageUrl;
+            });
+          } catch {
+            // Coach photo is optional; the operator image stays as fallback.
+          }
+        })
+      );
+      if (cancelled) return;
+      setLayoutsChecked((current) => ({ ...current, ...checked }));
+      if (Object.keys(next).length > 0) {
+        setImageByLayoutId((current) => ({ ...current, ...next }));
+      }
+    };
+    loadCoachPhotos();
+    return () => {
+      cancelled = true;
+    };
+  }, [isBus, trips, layoutsChecked]);
+
+  useEffect(() => {
+    if (!isBus || trips.length === 0) return;
+    const missing = [
+      ...new Set(
+        trips
+          .filter((trip) => !busCoverUrl(trip, imageByLayoutId, imageByTransportId))
           .map((trip) => trip.transportId)
           .filter((id) => id && !imageByTransportId[id])
       ),
@@ -217,7 +276,7 @@ export default function TransportResultsPage() {
     return () => {
       cancelled = true;
     };
-  }, [isBus, trips, imageByTransportId]);
+  }, [isBus, trips, imageByTransportId, imageByLayoutId]);
 
   const counts = useMemo(() => countTripsByServiceClass(trips), [trips]);
   const visibleTrips = useMemo(
@@ -328,10 +387,7 @@ export default function TransportResultsPage() {
           {isBus ? (
             visibleTrips.map((trip) => {
                 const soldOut = tripIsSoldOut(trip);
-                const imageUrl =
-                  trip.transportImageUrl ||
-                  trip.transport?.images?.[0]?.url ||
-                  imageByTransportId[trip.transportId];
+                const imageUrl = busCoverUrl(trip, imageByLayoutId, imageByTransportId);
                 return (
                   <Pressable
                     key={trip.id}
@@ -449,8 +505,8 @@ export default function TransportResultsPage() {
                       className="p-4 mb-3 bg-white border rounded-2xl border-border dark:bg-surface-dark dark:border-border-dark"
                     >
                       <View className="flex-row items-center">
-                        {offer.vehicle.imageUrl ? (
-                          <Image source={{ uri: offer.vehicle.imageUrl }} style={{ width: 64, height: 64, borderRadius: 16, marginRight: 12 }} resizeMode="cover" />
+                        {offer.vehicle.imageUrl || offer.operatorImageUrl ? (
+                          <Image source={{ uri: offer.vehicle.imageUrl || offer.operatorImageUrl || '' }} style={{ width: 64, height: 64, borderRadius: 16, marginRight: 12 }} resizeMode="cover" />
                         ) : (
                         <View
                           className="items-center justify-center w-12 h-12 mr-3 rounded-2xl"

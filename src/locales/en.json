@@ -903,7 +903,17 @@
     "requests": "Special requests",
     "payment": "Payment",
     "operator": "Operator",
-    "bookedOn": "Booked on"
+    "bookedOn": "Booked on",
+    "tabTicket": "Ticket",
+    "tabFare": "Fare",
+    "pnr": "PNR",
+    "journeyTime": "Journey",
+    "durationHm": "{{hours}}h {{minutes}}m",
+    "durationH": "{{hours}}h",
+    "durationM": "{{minutes}}m",
+    "callOperator": "Call",
+    "plate": "Number plate",
+    "passengerFallback": "Passenger"
   },
   "transportOperator": {
     "title": "Transport admin",

@@ -38,7 +38,6 @@ import {
   coachTypeLabelKey,
   layoutCoachClass,
   layoutSeatCount,
-  layoutToTransportSeats,
   routeLabelFromRef,
 } from '../../../../../utilities/coachOperator';
 import { formatTripClock, formatTripDayKey } from '../../../../../utilities/transportFormat';
@@ -87,10 +86,23 @@ export default function TransportAdminCoachDetailPage() {
     setTrips(tripRows.filter((trip) => trip.layoutId === layoutId));
   }, [transportId, layoutId]);
 
+  const openTripIdRef = React.useRef<string | null>(null);
+  openTripIdRef.current = openTripId;
+
   useFocusEffect(
     useCallback(() => {
       setLoading(true);
       reload()
+        .then(async () => {
+          const tripId = openTripIdRef.current;
+          if (!tripId) return;
+          try {
+            const map = await getTransportTripSeats(tripId);
+            setTripSeats(map.seats);
+          } catch {
+            setTripSeats([]);
+          }
+        })
         .catch(() => {
           setLayout(null);
           setTrips([]);
@@ -133,6 +145,12 @@ export default function TransportAdminCoachDetailPage() {
     setSelectedDay(departureDays.find((day) => day >= today) ?? departureDays[0]);
   }, [departureDays, selectedDay]);
 
+  const seatDayTrips = useMemo(() => {
+    return trips
+      .filter((trip) => formatTripDayKey(trip.departureDateTime) === selectedDay)
+      .sort((a, b) => a.departureDateTime.localeCompare(b.departureDateTime));
+  }, [trips, selectedDay]);
+
   const dayTrips = useMemo(() => {
     const needle = routeQuery.trim().toLowerCase();
     return trips
@@ -173,12 +191,7 @@ export default function TransportAdminCoachDetailPage() {
     }
   };
 
-  const openTrip = async (tripId: string) => {
-    if (openTripId === tripId) {
-      setOpenTripId(null);
-      setTripSeats([]);
-      return;
-    }
+  const loadTripSeats = useCallback(async (tripId: string) => {
     setOpenTripId(tripId);
     setSeatsLoading(true);
     try {
@@ -189,7 +202,23 @@ export default function TransportAdminCoachDetailPage() {
     } finally {
       setSeatsLoading(false);
     }
+  }, []);
+
+  const openTrip = async (tripId: string) => {
+    if (openTripId === tripId) {
+      setOpenTripId(null);
+      setTripSeats([]);
+      return;
+    }
+    await loadTripSeats(tripId);
   };
+
+  useEffect(() => {
+    if (tab !== 'seats') return;
+    if (seatDayTrips.length === 0) return;
+    if (openTripId && seatDayTrips.some((trip) => trip.id === openTripId)) return;
+    void loadTripSeats(seatDayTrips[0].id);
+  }, [tab, seatDayTrips, openTripId, loadTripSeats]);
 
   const startEdit = () => {
     if (!layout) return;
@@ -458,18 +487,91 @@ export default function TransportAdminCoachDetailPage() {
         {tab === 'seats' ? (
           <View className="pt-4">
             <Text className="mb-3 text-xs text-muted dark:text-muted-dark">
-              {t(TRANSLATION_KEYS.TRANSPORT_OPERATOR.SEATS_ON_DEPARTURE)}
+              {t(TRANSLATION_KEYS.TRANSPORT_OPERATOR.SEAT_MANAGE_HINT)}
             </Text>
-            <Pressable
-              onPress={() => setTab('departures')}
-              className="flex-row items-center justify-center py-3 mb-4 rounded-xl bg-primary dark:bg-primary-dark"
-            >
-              <Ionicons name="calendar-outline" size={18} color="#fff" />
-              <Text className="ml-2 font-semibold text-white">
-                {t(TRANSLATION_KEYS.TRANSPORT_OPERATOR.OPEN_DEPARTURES)}
-              </Text>
-            </Pressable>
-            <CoachCabinMap seats={layoutToTransportSeats(layout)} showAvailability={false} {...mapCopy} />
+            {trips.length === 0 ? (
+              <>
+                <Text className="mb-3 text-sm text-muted dark:text-muted-dark">
+                  {t(TRANSLATION_KEYS.TRANSPORT_OPERATOR.NO_DEPARTURES)}
+                </Text>
+                <Pressable
+                  onPress={() => setTab('departures')}
+                  className="flex-row items-center justify-center py-3 mb-4 rounded-xl bg-primary dark:bg-primary-dark"
+                >
+                  <Ionicons name="calendar-outline" size={18} color="#fff" />
+                  <Text className="ml-2 font-semibold text-white">
+                    {t(TRANSLATION_KEYS.TRANSPORT_OPERATOR.OPEN_DEPARTURES)}
+                  </Text>
+                </Pressable>
+              </>
+            ) : (
+              <>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-3" contentContainerStyle={{ gap: 8 }}>
+                  {departureDays.map((day) => {
+                    const active = day === selectedDay;
+                    const label = format(parseISO(`${day}T12:00:00`), 'EEE, d MMM');
+                    return (
+                      <Pressable
+                        key={day}
+                        onPress={() => {
+                          setSelectedDay(day);
+                          setOpenTripId(null);
+                          setTripSeats([]);
+                        }}
+                        className={`px-3 py-2 rounded-full border ${active ? 'bg-primary dark:bg-primary-dark border-primary dark:border-primary-dark' : 'border-border dark:border-border-dark'}`}
+                      >
+                        <Text className={`text-xs font-semibold ${active ? 'text-white' : 'text-text dark:text-text-dark'}`}>
+                          {label}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </ScrollView>
+                {seatDayTrips.length === 0 ? (
+                  <Text className="text-sm text-muted dark:text-muted-dark">
+                    {t(TRANSLATION_KEYS.TRANSPORT_OPERATOR.NO_DEPARTURES_DAY)}
+                  </Text>
+                ) : (
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-4" contentContainerStyle={{ gap: 8 }}>
+                    {seatDayTrips.map((trip) => {
+                      const active = trip.id === openTripId;
+                      return (
+                        <Pressable
+                          key={trip.id}
+                          onPress={() => { void loadTripSeats(trip.id); }}
+                          className={`px-3 py-2 rounded-xl border ${active ? 'border-primary dark:border-primary-dark' : 'border-border dark:border-border-dark'}`}
+                        >
+                          <Text className={`text-sm font-semibold ${active ? 'text-primary dark:text-primary-dark' : 'text-text dark:text-text-dark'}`}>
+                            {formatTripClock(trip.departureDateTime)}
+                          </Text>
+                          <Text className="text-xs text-muted dark:text-muted-dark" numberOfLines={1}>
+                            {trip.route ? routeLabelFromRef(trip.route) : trip.coachLabel || ''}
+                          </Text>
+                        </Pressable>
+                      );
+                    })}
+                  </ScrollView>
+                )}
+                {seatsLoading ? <ActivityIndicator className="mt-4" color={primary} /> : null}
+                {openTripId && !seatsLoading ? (
+                  <View>
+                    <View className="flex-row items-center mb-3">
+                      <View className="w-4 h-4 mr-1 bg-white border rounded-sm" style={{ borderColor: ink }} />
+                      <Text className="mr-4 text-xs text-muted dark:text-muted-dark">{t(TRANSLATION_KEYS.TRANSPORT.AVAILABLE)}</Text>
+                      <View className="w-4 h-4 mr-1 rounded-sm" style={{ backgroundColor: soldFill }} />
+                      <Text className="text-xs text-muted dark:text-muted-dark">{t(TRANSLATION_KEYS.TRANSPORT.LEGEND_SOLD)}</Text>
+                    </View>
+                    <CoachCabinMap
+                      seats={tripSeats}
+                      showAvailability
+                      onSeatPress={markSeat}
+                      busySeatId={markingSeatId}
+                      {...mapCopy}
+                    />
+                  </View>
+                ) : null}
+              </>
+            )}
           </View>
         ) : null}
 

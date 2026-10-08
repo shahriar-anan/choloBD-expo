@@ -12,6 +12,14 @@ import { getUserProfile } from '../services/api/users';
 import { loadTravelerBookingSources } from '../services/api/travelerBookings';
 import { buildRecentBookingItems, RecentBookingView } from '../utilities/recentBookingItems';
 
+function isSignedOutError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') return false;
+  const message = 'message' in error ? String((error as { message?: unknown }).message ?? '') : '';
+  if (message === 'no refresh token') return true;
+  const response = 'response' in error ? (error as { response?: { status?: number } }).response : undefined;
+  return response?.status === 401;
+}
+
 export interface TravelerWalletStrip {
   balance: number;
   currency: string;
@@ -47,14 +55,20 @@ export function useDashboardLogic() {
       setBookings(sources.hotels);
       setRecentBookingItems(buildRecentBookingItems(sources, 5));
     } catch (e: any) {
-      console.error('[useDashboardLogic] fetchBookings error', e?.message ?? e);
-      Alert.alert('Error', 'Could not load bookings');
+      if (!isSignedOutError(e)) {
+        console.error('[useDashboardLogic] fetchBookings error', e?.message ?? e);
+        Alert.alert('Error', 'Could not load bookings');
+      }
     } finally {
       setLoading(false);
     }
   }, [auth.user?.id]);
 
   const loadWallet = useCallback(async () => {
+    if (!auth.user?.id) {
+      setWallet(null);
+      return;
+    }
     try {
       const data: OwnWallet = await getOwnWallet();
       if (typeof data?.balance !== 'number' || typeof data?.currency !== 'string' || !data.currency) {
@@ -63,12 +77,22 @@ export function useDashboardLogic() {
       }
       setWallet({ balance: data.balance, currency: data.currency });
     } catch (e: any) {
-      console.error('[useDashboardLogic] loadWallet error', e?.message ?? e);
+      if (!isSignedOutError(e)) {
+        console.error('[useDashboardLogic] loadWallet error', e?.message ?? e);
+      }
       setWallet(null);
     }
-  }, []);
+  }, [auth.user?.id]);
 
   const loadProfile = useCallback(async () => {
+    if (!auth.user?.id) {
+      setProfileImageUrl(null);
+      setProfileStatus(null);
+      setServiceType(null);
+      setEmployeeServiceType(null);
+      setOperatorProfileLoaded(false);
+      return;
+    }
     try {
       const profile = await getUserProfile();
       const imageUrl = typeof profile?.imageUrl === 'string' ? profile.imageUrl.trim() : '';
@@ -103,7 +127,9 @@ export function useDashboardLogic() {
         }
       }
     } catch (e: any) {
-      console.error('[useDashboardLogic] loadProfile error', e?.message ?? e);
+      if (!isSignedOutError(e)) {
+        console.error('[useDashboardLogic] loadProfile error', e?.message ?? e);
+      }
       setServiceType(null);
       setEmployeeServiceType(null);
     } finally {
@@ -112,22 +138,41 @@ export function useDashboardLogic() {
   }, [auth.user, dispatch]);
 
   const loadUnreadCount = useCallback(async () => {
+    if (!auth.user?.id) {
+      setUnreadCount(null);
+      return;
+    }
     try {
       const count = await getUnreadNotificationCount();
       setUnreadCount(count);
     } catch (e: any) {
-      console.error('[useDashboardLogic] loadUnreadCount error', e?.message ?? e);
+      if (!isSignedOutError(e)) {
+        console.error('[useDashboardLogic] loadUnreadCount error', e?.message ?? e);
+      }
       setUnreadCount(null);
     }
-  }, []);
+  }, [auth.user?.id]);
 
   const refreshTravelerHome = useCallback(async () => {
+    if (!auth.user?.id) return;
     await Promise.all([fetchBookings(), loadWallet(), loadUnreadCount(), loadProfile()]);
-  }, [fetchBookings, loadWallet, loadUnreadCount, loadProfile]);
+  }, [auth.user?.id, fetchBookings, loadWallet, loadUnreadCount, loadProfile]);
 
   useEffect(() => {
-    loadProfile();
-  }, [loadProfile]);
+    if (auth.user?.id) {
+      void loadProfile();
+      return;
+    }
+    setBookings([]);
+    setRecentBookingItems([]);
+    setWallet(null);
+    setUnreadCount(null);
+    setProfileImageUrl(null);
+    setProfileStatus(null);
+    setServiceType(null);
+    setEmployeeServiceType(null);
+    setOperatorProfileLoaded(false);
+  }, [auth.user?.id, loadProfile]);
 
   const handleLogout = async () => {
     try {

@@ -8,6 +8,7 @@ import theme from '../../constants/theme';
 import { TRANSLATION_KEYS } from '../../constants/translationKeys';
 import { TransportBooking } from '../../types/transports';
 import { formatTripClock } from '../../utilities/transportFormat';
+import { transportBookingCoverUrl } from '../../utilities/transportCover';
 
 interface TransportBookingCardProps {
   booking: TransportBooking;
@@ -39,7 +40,7 @@ export function TransportBookingCard({ booking, onPress }: TransportBookingCardP
   const success = isDark ? theme.colors['success-dark'] : theme.colors.success;
   const warning = isDark ? theme.colors['warning-dark'] : theme.colors.warning;
   const error = isDark ? theme.colors['error-dark'] : theme.colors.error;
-  const imageUrl = booking.transport?.images?.[0]?.url;
+  const imageUrl = transportBookingCoverUrl(booking);
   const isBus = booking.transportType === 'BUS';
   const coach =
     booking.serviceClass ||

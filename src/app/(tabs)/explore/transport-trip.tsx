@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -11,6 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
 import { useTheme } from '../../../hooks/useTheme';
@@ -94,36 +95,44 @@ export default function TransportTripPage() {
   const [stopTab, setStopTab] = useState<'boarding' | 'dropping'>('boarding');
   const [boardingId, setBoardingId] = useState<string | null>(null);
   const [droppingId, setDroppingId] = useState<string | null>(null);
+  const loadedTripId = useRef<string | null>(null);
 
-  useEffect(() => {
-    if (!tripId) return;
-    let cancelled = false;
-    const load = async () => {
-      setLoading(true);
-      try {
-        const [tripRow, seatMap] = await Promise.all([
-          getTransportTripById(tripId),
-          getTransportTripSeats(tripId),
-        ]);
-        if (!cancelled) {
-          setTrip(tripRow);
-          setSeats(seatMap.seats);
-          setActiveDeck(0);
+  useFocusEffect(
+    useCallback(() => {
+      if (!tripId) return;
+      let cancelled = false;
+      const silent = loadedTripId.current === tripId;
+      const load = async () => {
+        if (!silent) setLoading(true);
+        try {
+          const [tripRow, seatMap] = await Promise.all([
+            getTransportTripById(tripId),
+            getTransportTripSeats(tripId),
+          ]);
+          if (!cancelled) {
+            loadedTripId.current = tripId;
+            setTrip(tripRow);
+            setSeats(seatMap.seats);
+            setSelected((current) =>
+              current.filter((id) => seatMap.seats.some((seat) => seat.id === id && seat.isAvailable))
+            );
+            if (!silent) setActiveDeck(0);
+          }
+        } catch (error: unknown) {
+          if (!cancelled) {
+            const message = error instanceof Error ? error.message : t(TRANSLATION_KEYS.TRANSPORT.LOAD_FAILED);
+            Alert.alert(t(TRANSLATION_KEYS.COMMON.ERROR), message);
+          }
+        } finally {
+          if (!cancelled) setLoading(false);
         }
-      } catch (error: unknown) {
-        if (!cancelled) {
-          const message = error instanceof Error ? error.message : t(TRANSLATION_KEYS.TRANSPORT.LOAD_FAILED);
-          Alert.alert(t(TRANSLATION_KEYS.COMMON.ERROR), message);
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    };
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, [tripId, t]);
+      };
+      load();
+      return () => {
+        cancelled = true;
+      };
+    }, [tripId, t])
+  );
 
   const decks = useMemo(() => groupByCompartment(seats), [seats]);
   const deck = decks[activeDeck] ?? decks[0];

@@ -184,8 +184,8 @@ export default function TransportRentalPage() {
                   style={{ opacity: available ? 1 : 0.7 }}
                 >
                   <View className="flex-row">
-                    {vehicle.imageUrl ? (
-                      <Image source={{ uri: vehicle.imageUrl }} style={{ width: 72, height: 72, borderRadius: 16 }} resizeMode="cover" />
+                    {(vehicle.imageUrl || operator?.images?.[0]?.url) ? (
+                      <Image source={{ uri: vehicle.imageUrl || operator?.images?.[0]?.url || '' }} style={{ width: 72, height: 72, borderRadius: 16 }} resizeMode="cover" />
                     ) : (
                     <View
                       className="items-center justify-center w-14 h-14 rounded-2xl"

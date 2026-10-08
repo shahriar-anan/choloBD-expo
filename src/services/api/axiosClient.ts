@@ -29,6 +29,13 @@ function decodeJwtExpiry(token: string): number | null {
   }
 }
 
+function requestHadBearer(cfg: AxiosRequestConfig | undefined): boolean {
+  const headers = cfg?.headers as { get?: (key: string) => unknown; Authorization?: unknown } | undefined;
+  if (!headers) return false;
+  const raw = typeof headers.get === 'function' ? headers.get('Authorization') : headers.Authorization;
+  return typeof raw === 'string' && raw.length > 0;
+}
+
 function isAccessTokenStale(token: string): boolean {
   const expiry = decodeJwtExpiry(token);
   if (!expiry) {
@@ -115,9 +122,11 @@ export function createApi(baseURL: string) {
     },
     async (error: AxiosError) => {
       const original = error.config as AxiosRequestConfig & { _retry?: boolean };
-      const canRefresh = error.response?.status === 401 && original && !original._retry;
+      const hadBearer = requestHadBearer(original);
+      const canRefresh = error.response?.status === 401 && !!original && !original._retry && hadBearer;
+      const signedOut401 = error.response?.status === 401 && !hadBearer;
       const silent404 = error.response?.status === 404 && original?.silent404 === true;
-      if (!canRefresh && !silent404) {
+      if (!canRefresh && !silent404 && !signedOut401) {
         console.error('[axios.error] ❌', {
           message: error.message,
           url: error.config?.url,
@@ -130,6 +139,10 @@ export function createApi(baseURL: string) {
       if (canRefresh && original) {
         original._retry = true;
         try {
+          const stored = await getTokens();
+          if (!stored?.refreshToken) {
+            return Promise.reject(error);
+          }
           const newTokens = await refreshStoredAccessToken();
           if (!newTokens) throw new Error('no refresh token');
           if (!api) throw new Error('api missing');
