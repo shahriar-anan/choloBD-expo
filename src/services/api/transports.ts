@@ -1,5 +1,6 @@
 import { getApiInstance } from './axiosClient';
 import { unwrapList } from './personalPlanMapping';
+import { withCatalogLang } from './catalogLang';
 import {
   cannotBookOnPlatformMessage,
   CreateTransportClassPayload,
@@ -56,7 +57,7 @@ export async function getTransports(
     if (filters.name) params.name = filters.name;
     if (filters.page) params.page = filters.page;
     if (filters.limit) params.limit = filters.limit;
-    const res = await api.get('/api/transports', { params });
+    const res = await api.get('/api/transports', { params: withCatalogLang(params) });
     return unwrapPaginatedTransports(res.data?.data);
   } catch (error: unknown) {
     throw new Error(apiMessage(error, 'Failed to load transports'));
@@ -73,7 +74,7 @@ export async function searchTransports(
     if (params.transportType) query.transportType = params.transportType;
     if (params.page) query.page = params.page;
     if (params.limit) query.limit = params.limit;
-    const res = await api.get('/api/transports/search', { params: query });
+    const res = await api.get('/api/transports/search', { params: withCatalogLang(query) });
     return unwrapPaginatedTransports(res.data?.data);
   } catch (error: unknown) {
     throw new Error(apiMessage(error, 'Failed to search transports'));
@@ -85,7 +86,7 @@ export async function getTransportsByLocation(
 ): Promise<TransportOperator[]> {
   try {
     const api = getApiInstance();
-    const res = await api.get(`/api/transports/location/${locationId}`);
+    const res = await api.get(`/api/transports/location/${locationId}`, { params: withCatalogLang() });
     return unwrapList<TransportOperator>(res.data?.data);
   } catch (error: unknown) {
     throw new Error(apiMessage(error, 'Failed to load transports for this location'));
@@ -95,7 +96,7 @@ export async function getTransportsByLocation(
 export async function getTransportById(transportId: string): Promise<TransportOperator> {
   try {
     const api = getApiInstance();
-    const res = await api.get(`/api/transports/${transportId}`);
+    const res = await api.get(`/api/transports/${transportId}`, { params: withCatalogLang() });
     const transport = res.data?.data as TransportOperator | undefined;
     if (!transport?.id) {
       throw new Error('Transport not found');
@@ -116,7 +117,7 @@ export async function getTransportTrips(
     if (filters.originLocationId) params.originLocationId = filters.originLocationId;
     if (filters.destinationLocationId) params.destinationLocationId = filters.destinationLocationId;
     if (filters.departureDate) params.departureDate = filters.departureDate;
-    const res = await api.get('/api/transport-inventory/trips', { params });
+    const res = await api.get('/api/transport-inventory/trips', { params: withCatalogLang(params) });
     return unwrapList<TransportTrip>(res.data?.data);
   } catch (error: unknown) {
     throw new Error(apiMessage(error, 'Failed to load trips'));
@@ -126,7 +127,7 @@ export async function getTransportTrips(
 export async function getTransportTripById(tripId: string): Promise<TransportTrip> {
   try {
     const api = getApiInstance();
-    const res = await api.get(`/api/transport-inventory/trips/${tripId}`);
+    const res = await api.get(`/api/transport-inventory/trips/${tripId}`, { params: withCatalogLang() });
     const trip = res.data?.data as TransportTrip | undefined;
     if (!trip?.id) {
       throw new Error('Transport trip not found');
@@ -189,7 +190,7 @@ export async function setTransportTripSeatSold(
 export async function getTransportTripSeats(tripId: string): Promise<TransportTripSeatMap> {
   try {
     const api = getApiInstance();
-    const res = await api.get(`/api/transport-inventory/trips/${tripId}/seats`);
+    const res = await api.get(`/api/transport-inventory/trips/${tripId}/seats`, { params: withCatalogLang() });
     const data = res.data?.data as TransportTripSeatMap | undefined;
     return {
       tripId: data?.tripId ?? tripId,
@@ -394,7 +395,7 @@ export async function updateTransportClass(
 
 export async function updateTransportVehicle(
   vehicleId: string,
-  payload: { name?: string; licensePlate?: string; imageUrl?: string | null; vehicleStatus?: string; transportClassId?: string; isActive?: boolean }
+  payload: { name?: string; nameBn?: string; licensePlate?: string; imageUrl?: string | null; vehicleStatus?: string; transportClassId?: string; isActive?: boolean }
 ): Promise<TransportVehicle> {
   try {
     const api = getApiInstance();

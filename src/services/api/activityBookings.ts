@@ -3,6 +3,7 @@
  */
 
 import { getApiInstance } from './axiosClient';
+import { withCatalogLang } from './catalogLang';
 
 export interface CreateActivityBookingInput {
   activitySpotId: string;
@@ -62,7 +63,7 @@ export async function getMyActivityBookings(userId: string): Promise<ActivityBoo
   const api = getApiInstance();
   try {
     const response = await api.get('/api/bookings/activity-spots', {
-      params: { userId, page: 1, limit: 50 },
+      params: withCatalogLang({ userId, page: 1, limit: 50 }),
     });
     return unwrapActivityList(response.data?.data);
   } catch (error: unknown) {
@@ -96,7 +97,7 @@ export async function generateActivityQr(bookingId: string): Promise<{ qrToken: 
 export async function getActivityBooking(bookingId: string): Promise<ActivityBookingRecord> {
   const api = getApiInstance();
   try {
-    const response = await api.get(`/api/bookings/activity-spots/${bookingId}`);
+    const response = await api.get(`/api/bookings/activity-spots/${bookingId}`, { params: withCatalogLang() });
     const booking = response.data?.data as ActivityBookingRecord | undefined;
     if (!booking?.id) {
       throw new Error(response.data?.message || 'Activity booking could not be loaded');

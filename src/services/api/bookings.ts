@@ -1,4 +1,5 @@
 import { getApiInstance } from './axiosClient';
+import { withCatalogLang } from './catalogLang';
 import {
     CancellationEligibility,
     CancelBookingWithRefundData,
@@ -40,7 +41,9 @@ export async function getUserBookings(
   limit = 20
 ): Promise<{ data: any[]; pagination: any }> {
   const api = getApiInstance();
-  const res = await api.get(`/api/bookings/hotel-rooms?userId=${userId}&page=${page}&limit=${limit}`);
+  const res = await api.get('/api/bookings/hotel-rooms', {
+    params: withCatalogLang({ userId, page, limit }),
+  });
   return res.data?.data ?? { data: [], pagination: { total: 0, page, limit, pages: 0 } };
 }
 
@@ -51,7 +54,7 @@ export async function getHotelBookings(
 ): Promise<{ data: any[]; pagination: any }> {
   const api = getApiInstance();
   const res = await api.get('/api/bookings/hotel-rooms', {
-    params: { hotelId, page, limit },
+    params: withCatalogLang({ hotelId, page, limit }),
   });
   const responseData = res.data?.data?.data || [];
   const responsePagination = res.data?.data?.pagination || null;
@@ -60,7 +63,7 @@ export async function getHotelBookings(
 
 export async function getBookingById(bookingId: string): Promise<any> {
   const api = getApiInstance();
-  const res = await api.get(`/api/bookings/hotel-rooms/${bookingId}`);
+  const res = await api.get(`/api/bookings/hotel-rooms/${bookingId}`, { params: withCatalogLang() });
   return res.data?.data ?? null;
 }
 

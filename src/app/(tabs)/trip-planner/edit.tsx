@@ -33,9 +33,21 @@ export default function TripPlannerEdit() {
       try {
         const trip: TripPlan = await getTripDetails(planId);
         if (cancelled) return;
+        const banglaOnly = trip.contentLanguage === 'bn';
+        const englishDescription = trip.shortDescription || trip.description || '';
+        const banglaDescription = trip.shortDescriptionBn || '';
         setInitial({
-          packageName: trip.name,
-          shortDescription: trip.shortDescription || trip.description || '',
+          contentLanguage: banglaOnly ? 'bn' : 'en',
+          packageName: banglaOnly ? (trip.packageNameBn || trip.name) : trip.name,
+          packageNameBn: banglaOnly
+            ? (trip.packageNameBn && trip.name !== trip.packageNameBn ? trip.name : '')
+            : (trip.packageNameBn || ''),
+          shortDescription: banglaOnly
+            ? (banglaDescription || englishDescription)
+            : englishDescription,
+          shortDescriptionBn: banglaOnly
+            ? (banglaDescription && englishDescription && englishDescription !== banglaDescription ? englishDescription : '')
+            : banglaDescription,
           tourType: trip.tourType || '',
           locationId: trip.primaryLocationId,
           startDate: toDateInputValue(trip.startDate),

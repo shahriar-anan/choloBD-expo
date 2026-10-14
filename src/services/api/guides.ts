@@ -3,6 +3,7 @@
  */
 
 import { getApiInstance } from './axiosClient';
+import { withCatalogLang } from './catalogLang';
 import { unwrapList } from './personalPlanMapping';
 import type { PagedResult } from './tourSpots';
 import type { GuideAvailability, GuideFilters, GuideSummary } from '../../types/guides';
@@ -21,7 +22,7 @@ export async function getGuides(filters?: GuideFilters): Promise<PagedResult<Gui
   if (filters?.limit !== undefined) params.limit = filters.limit;
 
   try {
-    const response = await api.get('/api/guides', { params });
+    const response = await api.get('/api/guides', { params: withCatalogLang(params) });
     return readPage(response.data?.data);
   } catch (error: unknown) {
     throw new Error(readApiMessage(error));
@@ -31,7 +32,7 @@ export async function getGuides(filters?: GuideFilters): Promise<PagedResult<Gui
 export async function getGuideById(guideId: string): Promise<GuideSummary> {
   const api = getApiInstance();
   try {
-    const response = await api.get(`/api/guides/${guideId}`);
+    const response = await api.get(`/api/guides/${guideId}`, { params: withCatalogLang() });
     const guide = response.data?.data;
     if (!guide?.id) {
       throw new Error(response.data?.message || 'Guide not found');

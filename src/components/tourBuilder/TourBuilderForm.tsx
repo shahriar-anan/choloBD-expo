@@ -33,6 +33,7 @@ import {
   validateSegmentsForDuration,
 } from '../../validators/tours';
 import { DaySegmentCard } from './DaySegmentCard';
+import { OptionalBanglaField } from '../ui/ContentLanguageFields';
 import { useTheme } from '../../hooks/useTheme';
 import { theme } from '../../constants/theme';
 import { useTranslation } from 'react-i18next';
@@ -98,6 +99,8 @@ export function TourBuilderForm({
       ? {
           packageName: initialData.packageName,
           shortDescription: initialData.shortDescription,
+          packageNameBn: initialData.packageNameBn || '',
+          shortDescriptionBn: initialData.shortDescriptionBn || '',
           tourType: initialData.tourType ?? undefined,
           duration: initialData.duration,
           maxGroupSize: initialData.maxGroupSize,
@@ -110,6 +113,8 @@ export function TourBuilderForm({
       : {
           packageName: '',
           shortDescription: '',
+          packageNameBn: '',
+          shortDescriptionBn: '',
           tourType: undefined,
           duration: 1,
           maxGroupSize: 10,
@@ -269,6 +274,18 @@ export function TourBuilderForm({
               {errors.packageName.message}
             </Text>
           )}
+          <Controller
+            control={control}
+            name="packageNameBn"
+            render={({ field: { value, onChange } }) => (
+              <OptionalBanglaField
+                value={value || ''}
+                onChangeText={onChange}
+                placeholderTextColor={mutedColor}
+                style={[styles.input, dynamicStyles.input]}
+              />
+            )}
+          />
         </View>
 
         {/* Location */}
@@ -605,6 +622,19 @@ export function TourBuilderForm({
                 multiline
                 numberOfLines={3}
                 placeholderTextColor={mutedColor}
+              />
+            )}
+          />
+          <Controller
+            control={control}
+            name="shortDescriptionBn"
+            render={({ field: { value, onChange } }) => (
+              <OptionalBanglaField
+                value={value || ''}
+                onChangeText={onChange}
+                multiline
+                placeholderTextColor={mutedColor}
+                style={[styles.input, dynamicStyles.input, styles.multilineInput]}
               />
             )}
           />

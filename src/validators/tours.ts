@@ -66,6 +66,8 @@ export const TourDaySegmentInputSchema = z.object({
 export const CreateTourPlanSchema = z.object({
   packageName: z.string().min(1, 'Package name is required').max(255, 'Package name too long'),
   shortDescription: z.string().max(500, 'Description too long').optional(),
+  packageNameBn: z.string().max(255, 'Bangla name too long').optional(),
+  shortDescriptionBn: z.string().max(500, 'Bangla description too long').optional(),
   tourType: TourTypeSchema,
   duration: z.number().int().positive('Duration must be at least 1 day'),
   maxGroupSize: z.number().int().positive('Group size must be positive').optional(),
@@ -83,6 +85,8 @@ export const CreateTourPlanSchema = z.object({
 export const UpdateTourPlanSchema = z.object({
   packageName: z.string().min(1, 'Package name is required').max(255, 'Package name too long').optional(),
   shortDescription: z.string().max(500, 'Description too long').optional(),
+  packageNameBn: z.string().max(255, 'Bangla name too long').optional(),
+  shortDescriptionBn: z.string().max(500, 'Bangla description too long').optional(),
   tourType: TourTypeSchema.optional(),
   duration: z.number().int().positive('Duration must be at least 1 day').optional(),
   maxGroupSize: z.number().int().positive('Group size must be positive').optional(),

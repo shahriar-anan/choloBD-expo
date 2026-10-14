@@ -1,4 +1,5 @@
 import { getApiInstance } from './axiosClient';
+import { withCatalogLang } from './catalogLang';
 import { getUserBookings } from './bookings';
 import { getUserPackageBookings } from './packageBookings';
 import { getTransportBookings } from './transportBookings';
@@ -24,7 +25,7 @@ async function getData(
   silent404 = false,
 ): Promise<unknown> {
   const api = getApiInstance();
-  const res = await api.get(path, { params, silent404 });
+  const res = await api.get(path, { params: withCatalogLang(params), silent404 });
   return res.data?.data;
 }
 

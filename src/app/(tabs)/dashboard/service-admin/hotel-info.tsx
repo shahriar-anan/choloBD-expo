@@ -4,18 +4,15 @@ import { KeyboardAwareScroll } from '../../../../components/ui/KeyboardAwareScro
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useSelector } from 'react-redux';
 import i18next from 'i18next';
+import { useSelector } from 'react-redux';
 import theme from '../../../../constants/theme';
 import { useServiceAdminLogic } from '../../../../hooks/useServiceAdminLogic';
 import { updateMyHotel } from '../../../../services/api/users';
 import { createHotelRoomType, updateHotelRoomStatus, updateHotelRoomTypePrice, HotelRoomDeskStatus } from '../../../../services/api/hotels';
 import { getHotelReviews } from '../../../../services/api/reviews';
 import { formatDeskDate } from '../../../../utilities/hotelDesk';
-import {
-  translateDescriptionIfNeeded,
-  translateDisplayStringListIfNeeded,
-} from '../../../../services/api/translation';
+import { OptionalBanglaField } from '../../../../components/ui/ContentLanguageFields';
 import { useTheme } from '../../../../hooks/useTheme';
 import { RootState } from '../../../../store/store';
 
@@ -44,56 +41,6 @@ function splitList(value: string): string[] {
   return value.split(',').map((item) => item.trim()).filter((item) => item.length > 0);
 }
 
-async function translateHotelDisplayFields(hotelData: any): Promise<any> {
-  if (!hotelData || typeof hotelData !== 'object') {
-    return hotelData;
-  }
-
-  const description = hotelData.description;
-  const categoryNames = Array.isArray(hotelData.hotelCategories)
-    ? hotelData.hotelCategories.map((hc: any) => hc?.category?.name)
-    : [];
-
-  const [translatedDescription, translatedCategoryNames] = await Promise.all([
-    translateDescriptionIfNeeded(
-      typeof description === 'string' ? description : '',
-      i18next.language
-    ),
-    translateDisplayStringListIfNeeded(categoryNames, i18next.language),
-  ]);
-
-  const translatedHotelCategories = Array.isArray(hotelData.hotelCategories)
-    ? hotelData.hotelCategories.map((hc: any, idx: number) => {
-        const translatedName = translatedCategoryNames[idx];
-        if (!translatedName || !hc?.category) {
-          return hc;
-        }
-        return {
-          ...hc,
-          category: {
-            ...hc.category,
-            name: translatedName,
-          },
-        };
-      })
-    : hotelData.hotelCategories;
-
-  const didDescriptionChange =
-    typeof description === 'string' && translatedDescription !== description;
-  const didCategoriesChange =
-    translatedHotelCategories !== hotelData.hotelCategories;
-
-  if (!didDescriptionChange && !didCategoriesChange) {
-    return hotelData;
-  }
-
-  return {
-    ...hotelData,
-    description: didDescriptionChange ? translatedDescription : description,
-    hotelCategories: translatedHotelCategories,
-  };
-}
-
 export default function HotelInfoPage() {
   const params = useLocalSearchParams();
   const router = useRouter();
@@ -113,6 +60,8 @@ export default function HotelInfoPage() {
   const [checkOutTime, setCheckOutTime] = useState('');
   const [amenitiesText, setAmenitiesText] = useState('');
   const [policiesText, setPoliciesText] = useState('');
+  const [amenitiesBnText, setAmenitiesBnText] = useState('');
+  const [policiesBnText, setPoliciesBnText] = useState('');
   const [nearbyToursText, setNearbyToursText] = useState('');
   const [nearbyActivitiesText, setNearbyActivitiesText] = useState('');
   const [reviews, setReviews] = useState<any[]>([]);
@@ -138,6 +87,8 @@ export default function HotelInfoPage() {
         setCheckOutTime(h?.checkOutTime ?? '');
         setAmenitiesText(joinList(h?.amenities));
         setPoliciesText(joinList(h?.policies));
+        setAmenitiesBnText(joinList(h?.amenitiesBn));
+        setPoliciesBnText(joinList(h?.policiesBn));
         setNearbyToursText(joinList(h?.nearbyTourSpots));
         setNearbyActivitiesText(joinList(h?.nearbyActivitySpots));
         const prices: Record<string, string> = {};
@@ -146,11 +97,6 @@ export default function HotelInfoPage() {
         });
         setRoomPrices(prices);
         setLoading(false);
-
-        const nextHotel = await translateHotelDisplayFields(h);
-        if (nextHotel !== h) {
-          setHotel(nextHotel ?? null);
-        }
       } catch (e) {
         console.error('[HotelInfoPage] fetchOperatorHotel error', e);
         setLoading(false);
@@ -184,11 +130,15 @@ export default function HotelInfoPage() {
         checkOutTime?: string;
         amenities: string[];
         policies: string[];
+        amenitiesBn: string[];
+        policiesBn: string[];
         nearbyTourSpots: string[];
         nearbyActivitySpots: string[];
       } = {
         amenities: splitList(amenitiesText),
         policies: splitList(policiesText),
+        amenitiesBn: splitList(amenitiesBnText),
+        policiesBn: splitList(policiesBnText),
         nearbyTourSpots: splitList(nearbyToursText),
         nearbyActivitySpots: splitList(nearbyActivitiesText),
       };
@@ -273,6 +223,7 @@ export default function HotelInfoPage() {
   };
 
   const primaryColor = isDark ? theme.colors['primary-dark'] : theme.colors.primary;
+  const mutedColor = isDark ? theme.colors['muted-dark'] : theme.colors.muted;
   const successColor = isDark ? theme.colors['success-dark'] : theme.colors.success;
   const warningColor = isDark ? theme.colors['warning-dark'] : theme.colors.warning;
 
@@ -396,13 +347,29 @@ export default function HotelInfoPage() {
               )}
               <Text className="text-sm text-muted dark:text-muted-dark">Amenities</Text>
               {isHotelAdmin ? (
-                <TextInput value={amenitiesText} onChangeText={setAmenitiesText} placeholder="Wifi, Breakfast" className="px-3 py-2 mt-1 mb-3 border rounded-lg border-border dark:border-border-dark text-text dark:text-text-dark" />
+                <>
+                  <TextInput value={amenitiesText} onChangeText={setAmenitiesText} placeholder="Wifi, Breakfast" className="px-3 py-2 mt-1 border rounded-lg border-border dark:border-border-dark text-text dark:text-text-dark" />
+                  <OptionalBanglaField
+                    value={amenitiesBnText}
+                    onChangeText={setAmenitiesBnText}
+                    placeholderTextColor={mutedColor}
+                    className="px-3 py-2 border rounded-lg border-border dark:border-border-dark text-text dark:text-text-dark mb-3"
+                  />
+                </>
               ) : (
                 <Text className="mb-3 text-base text-text dark:text-text-dark">{amenitiesText || '—'}</Text>
               )}
               <Text className="text-sm text-muted dark:text-muted-dark">Policies</Text>
               {isHotelAdmin ? (
-                <TextInput value={policiesText} onChangeText={setPoliciesText} placeholder="No smoking, No pets" className="px-3 py-2 mt-1 mb-3 border rounded-lg border-border dark:border-border-dark text-text dark:text-text-dark" />
+                <>
+                  <TextInput value={policiesText} onChangeText={setPoliciesText} placeholder="No smoking, No pets" className="px-3 py-2 mt-1 border rounded-lg border-border dark:border-border-dark text-text dark:text-text-dark" />
+                  <OptionalBanglaField
+                    value={policiesBnText}
+                    onChangeText={setPoliciesBnText}
+                    placeholderTextColor={mutedColor}
+                    className="px-3 py-2 border rounded-lg border-border dark:border-border-dark text-text dark:text-text-dark mb-3"
+                  />
+                </>
               ) : (
                 <Text className="mb-3 text-base text-text dark:text-text-dark">{policiesText || '—'}</Text>
               )}

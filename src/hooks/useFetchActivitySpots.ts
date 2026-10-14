@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getActivitySpots, ActivitySpot } from '../services/api/activitySpots';
+import { useLanguage } from '../providers/LanguageProvider';
 
 export type { ActivitySpot };
 
@@ -7,6 +8,7 @@ export function useFetchActivitySpots(locationId: string | undefined) {
   const [spots, setSpots] = useState<ActivitySpot[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { currentLanguage } = useLanguage();
 
   useEffect(() => {
     if (!locationId) {
@@ -38,7 +40,7 @@ export function useFetchActivitySpots(locationId: string | undefined) {
     return () => {
       active = false;
     };
-  }, [locationId]);
+  }, [locationId, currentLanguage]);
 
   return { spots, isLoading, error };
 }

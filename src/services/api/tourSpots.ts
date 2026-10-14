@@ -5,6 +5,7 @@
 
 import { getApiInstance } from './axiosClient';
 import { unwrapList } from './personalPlanMapping';
+import { withCatalogLang } from './catalogLang';
 
 export interface TourSpot {
   id: string;
@@ -102,7 +103,7 @@ export async function getTourSpots(filters?: TourSpotFilters): Promise<PagedResu
   if (filters?.limit !== undefined) params.limit = filters.limit;
 
   try {
-    const response = await api.get('/api/tour-spots', { params });
+    const response = await api.get('/api/tour-spots', { params: withCatalogLang(params) });
     return readPage(response.data?.data, mapTourSpotRow);
   } catch (error: unknown) {
     throw new Error(readApiMessage(error));
@@ -129,7 +130,7 @@ function mapTourSpotRow(spot: any): TourSpot {
 export async function getPopularTourSpots(limit = 24): Promise<TourSpot[]> {
   const api = getApiInstance();
   try {
-    const response = await api.get('/api/tour-spots/popular', { params: { limit } });
+    const response = await api.get('/api/tour-spots/popular', { params: withCatalogLang({ limit }) });
     return readPage(response.data?.data, mapTourSpotRow).results;
   } catch (error: unknown) {
     throw new Error(readApiMessage(error));
@@ -163,7 +164,7 @@ export async function getTourSpotDetail(id: string): Promise<TourSpotDetail> {
   
   console.log('[getTourSpotDetail] 🔍 Fetching spot:', id);
 
-  const response = await api.get(`/api/tour-spots/${id}`);
+  const response = await api.get(`/api/tour-spots/${id}`, { params: withCatalogLang() });
   const spot = response.data.data;
 
   return {

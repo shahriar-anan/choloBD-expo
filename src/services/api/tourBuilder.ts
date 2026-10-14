@@ -4,6 +4,7 @@
  */
 
 import { getApiInstance } from './axiosClient';
+import { withCatalogLang } from './catalogLang';
 import { unwrapList } from './personalPlanMapping';
 import {
   TourPackage,
@@ -78,7 +79,7 @@ export async function getTourPlans(filters?: TourFilters): Promise<TourPackage[]
     if (filters?.minBudget !== undefined) params.minBudget = filters.minBudget;
     if (filters?.maxBudget !== undefined) params.maxBudget = filters.maxBudget;
 
-    const res = await api.get<TourApiResponse<TourPackage[]>>('/api/tour-builder', { params });
+    const res = await api.get<TourApiResponse<TourPackage[]>>('/api/tour-builder', { params: withCatalogLang(params) });
     const rows = unwrapList<TourPackage>(res.data?.data);
     console.log('[tourBuilder.ts] getTourPlans success, count:', rows.length);
     return rows;
@@ -104,7 +105,7 @@ export async function getCatalogTourPlansPage(filters?: CatalogPageFilters): Pro
 
     const res = await api.get<TourApiResponse<{ results?: TourPackage[]; total?: number; page?: number; limit?: number }>>(
       '/api/tour-builder',
-      { params },
+      { params: withCatalogLang(params) },
     );
     const payload = res.data?.data;
     const results = unwrapList<TourPackage>(payload);
@@ -122,11 +123,16 @@ export async function getCatalogTourPlansPage(filters?: CatalogPageFilters): Pro
  * GET /api/tour-builder/:tourPackageId
  * Fetch a single tour package with enriched day segments
  */
-export async function getTourPlan(tourPackageId: string): Promise<TourPackage> {
+export async function getTourPlan(
+  tourPackageId: string,
+  options?: { localize?: boolean },
+): Promise<TourPackage> {
   try {
     console.log('[tourBuilder.ts] Fetching tour plan:', tourPackageId);
     const api = getApiInstance();
-    const res = await api.get<TourApiResponse<TourPackage>>(`/api/tour-builder/${tourPackageId}`);
+    const res = await api.get<TourApiResponse<TourPackage>>(`/api/tour-builder/${tourPackageId}`, {
+      params: options?.localize ? withCatalogLang() : undefined,
+    });
     console.log('[tourBuilder.ts] getTourPlan success, segments count:', res.data.data?.daySegments?.length);
     return res.data.data;
   } catch (error: any) {
@@ -219,7 +225,7 @@ export async function getTourSpots(locationId?: string): Promise<Array<{ id: str
     console.log('[tourBuilder.ts] Fetching tour spots from: /api/tour-spots', params);
     const api = getApiInstance();
 
-    const res = await api.get<TourApiResponse<Array<any>>>('/api/tour-spots', { params });
+    const res = await api.get<TourApiResponse<Array<any>>>('/api/tour-spots', { params: withCatalogLang(params) });
     const rows = unwrapList<any>(res.data?.data);
     console.log('[tourBuilder.ts] getTourSpots success, count:', rows.length);
 
@@ -246,7 +252,7 @@ export async function getActivitySpots(locationId?: string): Promise<Array<{ id:
     console.log('[tourBuilder.ts] Fetching activity spots from: /api/activity-spots', params);
     const api = getApiInstance();
 
-    const res = await api.get<TourApiResponse<Array<any>>>('/api/activity-spots', { params });
+    const res = await api.get<TourApiResponse<Array<any>>>('/api/activity-spots', { params: withCatalogLang(params) });
     const rows = unwrapList<any>(res.data?.data);
     console.log('[tourBuilder.ts] getActivitySpots success, count:', rows.length);
 

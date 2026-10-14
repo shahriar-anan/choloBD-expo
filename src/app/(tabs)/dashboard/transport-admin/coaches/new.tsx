@@ -17,6 +17,7 @@ import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../../../../hooks/useTheme';
 import theme from '../../../../../constants/theme';
 import { TRANSLATION_KEYS } from '../../../../../constants/translationKeys';
+import { OptionalBanglaField } from '../../../../../components/ui/ContentLanguageFields';
 import { useTransportOperator } from '../../../../../hooks/useTransportOperator';
 import { fetchLocations } from '../../../../../services/api/locations';
 import { SearchableLocationInput } from '../../../../../components/ui/SearchableLocationInput';
@@ -64,6 +65,7 @@ export default function TransportAdminCoachWizardPage() {
   const [locationsLoading, setLocationsLoading] = useState(true);
 
   const [className, setClassName] = useState('');
+  const [classNameBn, setClassNameBn] = useState('');
   const [classPrice, setClassPrice] = useState('');
   const [busServiceType, setBusServiceType] = useState<CoachBusType>(COACH_BUS_TYPES[1]);
   const [photoUri, setPhotoUri] = useState<string | null>(null);
@@ -73,7 +75,9 @@ export default function TransportAdminCoachWizardPage() {
   const [originId, setOriginId] = useState('');
   const [destinationId, setDestinationId] = useState('');
   const [boardingName, setBoardingName] = useState('');
+  const [boardingNameBn, setBoardingNameBn] = useState('');
   const [droppingName, setDroppingName] = useState('');
+  const [droppingNameBn, setDroppingNameBn] = useState('');
   const [routeId, setRouteId] = useState('');
 
   const [departureAt, setDepartureAt] = useState(() => tomorrowAt(8));
@@ -145,12 +149,14 @@ export default function TransportAdminCoachWizardPage() {
       const createdClass = await createTransportClass({
         transportId,
         name: className.trim(),
+        ...(classNameBn.trim() ? { nameBn: classNameBn.trim() } : {}),
         basePrice: price,
         busServiceType,
       });
       const createdLayout = await createTransportLayout({
         transportId,
         name: className.trim(),
+        ...(classNameBn.trim() ? { nameBn: classNameBn.trim() } : {}),
         compartmentName: 'Coach',
         seats: planCoachSeats(busServiceType, createdClass.id),
       });
@@ -193,12 +199,14 @@ export default function TransportAdminCoachWizardPage() {
       await addTransportRouteStop(createdRoute.id, {
         locationId: originId,
         name: boardingName.trim(),
+        ...(boardingNameBn.trim() ? { nameBn: boardingNameBn.trim() } : {}),
         stopOrder: 1,
         arrivalOffsetMinutes: 0,
       });
       await addTransportRouteStop(createdRoute.id, {
         locationId: destinationId,
         name: droppingName.trim(),
+        ...(droppingNameBn.trim() ? { nameBn: droppingNameBn.trim() } : {}),
         stopOrder: 2,
         arrivalOffsetMinutes: 60,
       });
@@ -338,6 +346,12 @@ export default function TransportAdminCoachWizardPage() {
               value={className}
               onChangeText={setClassName}
             />
+            <OptionalBanglaField
+              value={classNameBn}
+              onChangeText={setClassNameBn}
+              placeholderTextColor={muted}
+              className={inputClass}
+            />
             <View className="flex-row flex-wrap mb-3">
               {COACH_BUS_TYPES.map((type) => (
                 <Pressable
@@ -397,12 +411,24 @@ export default function TransportAdminCoachWizardPage() {
               value={boardingName}
               onChangeText={setBoardingName}
             />
+            <OptionalBanglaField
+              value={boardingNameBn}
+              onChangeText={setBoardingNameBn}
+              placeholderTextColor={muted}
+              className={inputClass}
+            />
             <TextInput
               className={inputClass}
               placeholder={t(TRANSLATION_KEYS.TRANSPORT_OPERATOR.DROPPING_COUNTER)}
               placeholderTextColor={muted}
               value={droppingName}
               onChangeText={setDroppingName}
+            />
+            <OptionalBanglaField
+              value={droppingNameBn}
+              onChangeText={setDroppingNameBn}
+              placeholderTextColor={muted}
+              className={inputClass}
             />
             <View className="flex-row" style={{ gap: 8 }}>
               <Pressable onPress={() => setStep('coach')} className="items-center flex-1 py-3 border rounded-xl border-border dark:border-border-dark">

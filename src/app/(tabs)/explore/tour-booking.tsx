@@ -10,6 +10,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
+import { useLanguage } from '../../../providers/LanguageProvider';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '../../../store/store';
 import { fetchTourPlanDetail } from '../../../store/slices/tourBuilderSlice';
@@ -27,6 +28,7 @@ export default function TourBookingPage() {
   const router = useRouter();
   const { packageId } = useLocalSearchParams<{ packageId: string }>();
   const { t } = useTranslation();
+  const { currentLanguage } = useLanguage();
   const { isDark } = useTheme();
   const dispatch = useDispatch<AppDispatch>();
 
@@ -53,9 +55,9 @@ export default function TourBookingPage() {
   useEffect(() => {
     if (packageId) {
       console.log('[TourBookingPage] Fetching tour package:', packageId);
-      dispatch(fetchTourPlanDetail(packageId));
+      dispatch(fetchTourPlanDetail({ tourPackageId: packageId, localize: true }));
     }
-  }, [packageId, dispatch]);
+  }, [packageId, dispatch, currentLanguage]);
 
   // Show success modal when booking is created
   useEffect(() => {

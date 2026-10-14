@@ -1,4 +1,5 @@
 import { getApiInstance } from './axiosClient';
+import { withCatalogLang } from './catalogLang';
 import {
   CancellationEligibility,
   CancelBookingWithRefundData,
@@ -110,7 +111,7 @@ export async function getTransportBookings(
     if (filters.departureTo) params.departureTo = filters.departureTo;
     if (filters.page) params.page = filters.page;
     if (filters.limit) params.limit = filters.limit;
-    const res = await api.get('/api/bookings/transports', { params });
+    const res = await api.get('/api/bookings/transports', { params: withCatalogLang(params) });
     return unwrapBookingPage(res.data?.data);
   } catch (error: unknown) {
     throw new Error(apiMessage(error, 'Failed to load transport bookings'));
@@ -120,7 +121,7 @@ export async function getTransportBookings(
 export async function getTransportBookingById(bookingId: string): Promise<TransportBooking> {
   try {
     const api = getApiInstance();
-    const res = await api.get(`/api/bookings/transports/${bookingId}`);
+    const res = await api.get(`/api/bookings/transports/${bookingId}`, { params: withCatalogLang() });
     const booking = res.data?.data as TransportBooking | undefined;
     if (!booking?.id) {
       throw new Error('Transport booking not found');

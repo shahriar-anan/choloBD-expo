@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useLanguage } from '../providers/LanguageProvider';
 import { fetchPopularHotels, PopularHotel } from '../services/api/hotels';
 import { getPopularActivitySpots, getActivitySpotById, ActivitySpot } from '../services/api/activitySpots';
 import { getPopularTourSpots, TourSpot } from '../services/api/tourSpots';
@@ -75,6 +76,7 @@ function useLoad<T>(loader: () => Promise<T>, initial: T) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
+  const { currentLanguage } = useLanguage();
 
   const refetch = useCallback(() => {
     setReloadToken((token) => token + 1);
@@ -101,7 +103,7 @@ function useLoad<T>(loader: () => Promise<T>, initial: T) {
     return () => {
       active = false;
     };
-  }, [reloadToken]);
+  }, [reloadToken, currentLanguage]);
 
   return { data, isLoading, error, refetch };
 }

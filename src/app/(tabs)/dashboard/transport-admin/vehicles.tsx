@@ -18,6 +18,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../../../hooks/useTheme';
+import { OptionalBanglaField } from '../../../../components/ui/ContentLanguageFields';
 import theme from '../../../../constants/theme';
 import { TRANSLATION_KEYS } from '../../../../constants/translationKeys';
 import { useTransportOperator } from '../../../../hooks/useTransportOperator';
@@ -83,6 +84,7 @@ export default function TransportAdminVehiclesPage() {
   const [category, setCategory] = useState<string>(RENTAL_CATEGORIES[0]);
   const [dailyRate, setDailyRate] = useState('');
   const [carName, setCarName] = useState('');
+  const [carNameBn, setCarNameBn] = useState('');
   const [plate, setPlate] = useState('');
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [serviceStatus, setServiceStatus] = useState<'AVAILABLE' | 'OUT_OF_SERVICE'>('AVAILABLE');
@@ -119,6 +121,7 @@ export default function TransportAdminVehiclesPage() {
     setCategory(RENTAL_CATEGORIES[0]);
     setDailyRate('');
     setCarName('');
+    setCarNameBn('');
     setPlate('');
     setPhotoUri(null);
     setServiceStatus('AVAILABLE');
@@ -129,6 +132,7 @@ export default function TransportAdminVehiclesPage() {
     setCategory(vehicle.transportClass?.vehicleRentalCategory || RENTAL_CATEGORIES[0]);
     setDailyRate(String(vehicle.transportClass?.basePrice ?? ''));
     setCarName(vehicle.name || '');
+    setCarNameBn(vehicle.nameBn || '');
     setPlate(vehicle.licensePlate || '');
     setPhotoUri(vehicle.imageUrl || null);
     setServiceStatus(fleetStatus(vehicle) === 'out' ? 'OUT_OF_SERVICE' : 'AVAILABLE');
@@ -184,6 +188,7 @@ export default function TransportAdminVehiclesPage() {
           transportId,
           transportClassId: classId,
           name: carName.trim(),
+          ...(carNameBn.trim() ? { nameBn: carNameBn.trim() } : {}),
           licensePlate: plate.trim(),
           ...(imageUrl ? { imageUrl } : {}),
         });
@@ -207,6 +212,7 @@ export default function TransportAdminVehiclesPage() {
         }
         await updateTransportVehicle(vehicle.id, {
           name: carName.trim(),
+          nameBn: carNameBn.trim(),
           licensePlate: plate.trim(),
           imageUrl,
           transportClassId,
@@ -354,6 +360,12 @@ export default function TransportAdminVehiclesPage() {
             {t(TRANSLATION_KEYS.TRANSPORT_OPERATOR.CAR_NAME)}
           </Text>
           <TextInput className={fieldClass} placeholderTextColor={muted} value={carName} onChangeText={setCarName} />
+          <OptionalBanglaField
+            value={carNameBn}
+            onChangeText={setCarNameBn}
+            placeholderTextColor={muted}
+            className={`${fieldClass} mt-2`}
+          />
 
           <Text className="mt-4 mb-2 text-sm font-semibold text-text dark:text-text-dark">
             {t(TRANSLATION_KEYS.TRANSPORT_OPERATOR.PLATE)}

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useLanguage } from '../providers/LanguageProvider';
 import { getTourPlans } from '../services/api/tourBuilder';
 import { TourPackage, TourFilters } from '../types/tours';
 
@@ -7,6 +8,7 @@ export function useFetchTourPackages(filters?: TourFilters) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
+  const { currentLanguage } = useLanguage();
 
   const refetch = () => setReloadToken((token) => token + 1);
 
@@ -37,7 +39,7 @@ export function useFetchTourPackages(filters?: TourFilters) {
     return () => {
       active = false;
     };
-  }, [JSON.stringify(filters), reloadToken]);
+  }, [JSON.stringify(filters), reloadToken, currentLanguage]);
 
   return { packages, isLoading, error, refetch };
 }

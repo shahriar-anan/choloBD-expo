@@ -83,6 +83,8 @@ export interface TourDaySegment extends TourDaySegmentInput {
 export interface CreateTourPlanData {
   packageName: string;
   shortDescription?: string;
+  packageNameBn?: string;
+  shortDescriptionBn?: string;
   tourType: TourType;
   duration: number;
   maxGroupSize?: number;
@@ -100,6 +102,8 @@ export interface CreateTourPlanData {
 export interface UpdateTourPlanData {
   packageName?: string;
   shortDescription?: string;
+  packageNameBn?: string;
+  shortDescriptionBn?: string;
   tourType?: TourType;
   duration?: number;
   maxGroupSize?: number;
@@ -117,6 +121,8 @@ export interface TourPackage {
   id: string;
   packageName: string;
   shortDescription?: string;
+  packageNameBn?: string | null;
+  shortDescriptionBn?: string | null;
   tourType: TourType;
   duration: number;
   maxGroupSize?: number;

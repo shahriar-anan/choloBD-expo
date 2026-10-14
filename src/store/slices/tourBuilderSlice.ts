@@ -88,9 +88,11 @@ export const fetchTourPlansByAdmin = createAsyncThunk(
  */
 export const fetchTourPlanDetail = createAsyncThunk(
   'tourBuilder/fetchTourPlanDetail',
-  async (tourPackageId: string, { rejectWithValue }) => {
+  async (arg: string | { tourPackageId: string; localize?: boolean }, { rejectWithValue }) => {
     try {
-      const tour = await tourApi.getTourPlan(tourPackageId);
+      const tourPackageId = typeof arg === 'string' ? arg : arg.tourPackageId;
+      const localize = typeof arg === 'object' && arg.localize === true;
+      const tour = await tourApi.getTourPlan(tourPackageId, { localize });
       return tour;
     } catch (error: any) {
       if (__DEV__) console.error('[tourBuilderSlice] fetchTourPlanDetail error:', error);

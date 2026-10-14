@@ -32,6 +32,8 @@ export function mapDaySegmentToUserSegment(
     segmentOrder: seg.segmentOrder ?? 1,
     customNotes: seg.notes ?? undefined,
     shortDescription: seg.shortDescription,
+    shortDescriptionBn: seg.shortDescriptionBn ?? undefined,
+    notesBn: seg.notesBn ?? undefined,
     hotelRoomBookingId: seg.hotelRoomBookingId ?? undefined,
     transportBookingId: seg.transportBookingId ?? undefined,
     activityBookingId: seg.activityBookingId ?? undefined,
@@ -56,6 +58,10 @@ export function mapPersonalPlanToTripPlan(raw: any): TripPlan {
     userId: raw.ownerUserId ?? owner?.id ?? '',
     name: raw.packageName ?? raw.name ?? 'My trip',
     description: raw.shortDescription,
+    shortDescription: raw.shortDescription,
+    contentLanguage: raw.contentLanguage === 'bn' ? 'bn' : 'en',
+    packageNameBn: raw.packageNameBn ?? undefined,
+    shortDescriptionBn: raw.shortDescriptionBn ?? undefined,
     generalNotes: Array.isArray(raw.generalNotes) ? raw.generalNotes : [],
     primaryLocationId: raw.locationId ?? location?.id ?? '',
     startDate: raw.startDate,
@@ -187,11 +193,13 @@ export function mergeSegmentUpdate(
       dayNumber,
       existing.shortDescription
     ),
+    shortDescriptionBn: existing.shortDescriptionBn ?? undefined,
     tourSpotId: data.customTourSpotId ?? existing.tourSpotId ?? undefined,
     activitySpotId: data.customActivitySpotId ?? existing.activitySpotId ?? undefined,
     transportOption: data.customTransport ?? existing.transportOption ?? undefined,
     hotelOption: data.customHotel ?? existing.hotelOption ?? undefined,
     notes: data.customNotes ?? existing.notes ?? undefined,
+    notesBn: existing.notesBn ?? undefined,
   };
 }
 
@@ -200,6 +208,7 @@ export function daySegmentsForPut(segments: PersonalDaySegmentApi[]): PersonalDa
     dayNumber: seg.dayNumber,
     segmentOrder: seg.segmentOrder ?? 1,
     shortDescription: seg.shortDescription,
+    shortDescriptionBn: seg.shortDescriptionBn ?? undefined,
     tourSpotId: seg.tourSpotId ?? undefined,
     activitySpotId: seg.activitySpotId ?? undefined,
     transportOption: seg.transportOption ?? undefined,
@@ -207,6 +216,7 @@ export function daySegmentsForPut(segments: PersonalDaySegmentApi[]): PersonalDa
     hotelId: seg.hotelId ?? undefined,
     transportId: seg.transportId ?? undefined,
     notes: seg.notes ?? undefined,
+    notesBn: seg.notesBn ?? undefined,
   }));
 }
 
@@ -262,11 +272,13 @@ export function normalizeDaySegmentsInput(
     dayNumber: seg.dayNumber,
     segmentOrder: seg.segmentOrder ?? 1,
     shortDescription: seg.shortDescription,
+    shortDescriptionBn: seg.shortDescriptionBn,
     tourSpotId: seg.tourSpotId || '',
     activitySpotId: seg.activitySpotId,
     transportOption: seg.transportOption as TransportTypePreference | undefined,
     hotelOption: seg.hotelOption as HotelTypePreference | undefined,
     notes: seg.notes,
+    notesBn: seg.notesBn,
   }));
   return wizardStopsToDaySegments(applyOvernightHotelToLastStop(wizard));
 }
@@ -286,6 +298,8 @@ export function catalogSegmentsToWizardStops(segments: any[]): WizardStop[] {
     hotelId: segment.hotelId || '',
     hotelName: segment.hotelName,
     notes: segment.notes || '',
+    shortDescriptionBn: segment.shortDescriptionBn || '',
+    notesBn: segment.notesBn || '',
     activityCost: Number(segment.activityCost || segment.estimatedCost || 0),
     hotelCost: Number(segment.hotelCost || 0),
   }));
@@ -323,6 +337,8 @@ function mapPackageSegment(seg: any, planId: string): UserSegment {
     dayNumber: seg.dayNumber,
     segmentOrder: seg.segmentOrder || 1,
     shortDescription: seg.shortDescription || '',
+    shortDescriptionBn: seg.shortDescriptionBn || undefined,
+    notesBn: seg.notesBn || undefined,
     customNotes: seg.notes || seg.customNotes || seg.shortDescription || '',
     estimatedCost: Number(seg.estimatedCost || 0),
     customTourSpotId: seg.tourSpotId || undefined,
@@ -348,6 +364,9 @@ export function mapPersonalPackageToTripPlan(pkg: any): TripPlan {
     name: pkg.packageName || 'Trip plan',
     description: pkg.shortDescription || '',
     shortDescription: pkg.shortDescription || '',
+    contentLanguage: pkg.contentLanguage === 'bn' ? 'bn' : 'en',
+    packageNameBn: pkg.packageNameBn || undefined,
+    shortDescriptionBn: pkg.shortDescriptionBn || undefined,
     generalNotes: Array.isArray(pkg.generalNotes) ? pkg.generalNotes : undefined,
     primaryLocationId: location.id || pkg.locationId || '',
     startDate: pkg.startDate || new Date().toISOString(),
@@ -374,6 +393,7 @@ export function mapPersonalPackageToTripPlan(pkg: any): TripPlan {
       locationType: location.locationType || 'REGION',
       country: location.country || 'Bangladesh',
     },
+    daySegments: (pkg.daySegments || []) as PersonalDaySegmentApi[],
     userSegments: segments,
     images: Array.isArray(pkg.images)
       ? pkg.images.map((image: any) => ({ url: image.url, altText: image.altText }))
@@ -389,11 +409,22 @@ export function mapPersonalPackageToTripPlan(pkg: any): TripPlan {
 }
 
 export function tripPlanToWizardStops(trip: TripPlan): WizardStop[] {
-  return (trip.userSegments || []).map((segment) => ({
+  const banglaOnly = trip.contentLanguage === 'bn';
+  return (trip.userSegments || []).map((segment) => {
+    const englishDescription = segment.shortDescription || '';
+    const banglaDescription = segment.shortDescriptionBn || '';
+    const englishNotes = segment.customNotes || '';
+    const banglaNotes = segment.notesBn || '';
+    return {
     id: segment.id,
     dayNumber: segment.dayNumber,
     segmentOrder: segment.segmentOrder,
-    shortDescription: segment.shortDescription || segment.customNotes || '',
+    shortDescription: banglaOnly
+      ? (banglaDescription || englishDescription || segment.customNotes || '')
+      : englishDescription,
+    shortDescriptionBn: banglaOnly
+      ? (banglaDescription && englishDescription && englishDescription !== banglaDescription ? englishDescription : '')
+      : banglaDescription,
     tourSpotId: segment.customTourSpotId || '',
     tourSpotName: segment.tourSpotName,
     activitySpotId: segment.customActivitySpotId,
@@ -401,10 +432,14 @@ export function tripPlanToWizardStops(trip: TripPlan): WizardStop[] {
     transportOption: segment.customTransport,
     hotelOption: segment.customHotel,
     hotelName: segment.hotelName,
-    notes: segment.customNotes,
+    notes: banglaOnly ? (banglaNotes || englishNotes) : englishNotes,
+    notesBn: banglaOnly
+      ? (banglaNotes && englishNotes && englishNotes !== banglaNotes ? englishNotes : '')
+      : banglaNotes,
     activityCost: 0,
     hotelCost: segment.estimatedCost || 0,
-  }));
+  };
+  });
 }
 
 export interface PersonalPlanSaveInput {
@@ -418,33 +453,59 @@ export interface PersonalPlanSaveInput {
   basedOnPackageId?: string;
   daySegments: WizardStop[];
   imageURLs?: string[];
+  contentLanguage?: 'en' | 'bn';
+  packageNameBn?: string;
+  shortDescriptionBn?: string;
 }
 
 export function buildPersonalPlanBody(input: PersonalPlanSaveInput, mode: 'create' | 'edit') {
   const endDate = inferEndDateString(input.startDate, input.duration);
   const segments = applyOvernightHotelToLastStop(input.daySegments);
+  const banglaOnly = input.contentLanguage === 'bn';
   const body: Record<string, unknown> = {
-    packageName: input.packageName.trim(),
     totalBudget: input.totalBudget,
     estimatedBudget: input.totalBudget,
-    shortDescription: input.shortDescription.trim(),
     tourType: input.tourType,
     locationId: input.locationId,
     startDate: input.startDate,
     endDate,
-    daySegments: segments.map((segment) => ({
-      dayNumber: segment.dayNumber,
-      segmentOrder: segment.segmentOrder,
-      shortDescription: segment.shortDescription.trim(),
-      tourSpotId: segment.tourSpotId,
-      activitySpotId: segment.activitySpotId || undefined,
-      transportOption: segment.transportOption || undefined,
-      hotelOption: segment.hotelOption || undefined,
-      hotelId: segment.hotelId || undefined,
-      notes: segment.notes?.trim() || undefined,
-      estimatedCost: (segment.activityCost || 0) + (segment.hotelCost || 0),
-    })),
+    contentLanguage: banglaOnly ? 'bn' : 'en',
+    daySegments: segments.map((segment) => {
+      const row: Record<string, unknown> = {
+        dayNumber: segment.dayNumber,
+        segmentOrder: segment.segmentOrder,
+        tourSpotId: segment.tourSpotId,
+        activitySpotId: segment.activitySpotId || undefined,
+        transportOption: segment.transportOption || undefined,
+        hotelOption: segment.hotelOption || undefined,
+        hotelId: segment.hotelId || undefined,
+        estimatedCost: (segment.activityCost || 0) + (segment.hotelCost || 0),
+      };
+      if (banglaOnly) {
+        row.shortDescriptionBn = segment.shortDescription.trim();
+        if (segment.shortDescriptionBn?.trim()) row.shortDescription = segment.shortDescriptionBn.trim();
+        if (segment.notes?.trim()) row.notesBn = segment.notes.trim();
+        if (segment.notesBn?.trim()) row.notes = segment.notesBn.trim();
+      } else {
+        row.shortDescription = segment.shortDescription.trim();
+        if (segment.shortDescriptionBn?.trim()) row.shortDescriptionBn = segment.shortDescriptionBn.trim();
+        if (segment.notes?.trim()) row.notes = segment.notes.trim();
+        if (segment.notesBn?.trim()) row.notesBn = segment.notesBn.trim();
+      }
+      return row;
+    }),
   };
+  if (banglaOnly) {
+    body.packageNameBn = input.packageName.trim();
+    if (input.packageNameBn?.trim()) body.packageName = input.packageNameBn.trim();
+    if (input.shortDescription.trim()) body.shortDescriptionBn = input.shortDescription.trim();
+    if (input.shortDescriptionBn?.trim()) body.shortDescription = input.shortDescriptionBn.trim();
+  } else {
+    body.packageName = input.packageName.trim();
+    body.shortDescription = input.shortDescription.trim();
+    body.packageNameBn = input.packageNameBn?.trim() || '';
+    body.shortDescriptionBn = input.shortDescriptionBn?.trim() || '';
+  }
   if (mode === 'create' && input.basedOnPackageId) {
     body.basedOnPackageId = input.basedOnPackageId;
   }

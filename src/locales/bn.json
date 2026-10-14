@@ -1565,5 +1565,14 @@
     "pointsCost": "{{points}} Wallet coins ব্যবহার হবে (মোটের ৮০%)",
     "insufficientPoints": "এই বুকিংয়ের জন্য পর্যাপ্ত Wallet coins নেই",
     "pointsProcessing": "Wallet coins কাটা হচ্ছে..."
+  },
+  "contentLanguage": {
+    "writeIn": "কোন ভাষায় লিখবেন",
+    "english": "ইংরেজি",
+    "bangla": "বাংলা",
+    "banglaOnlyHint": "বাংলা বাধ্যতামূলক। ইংরেজি পরে যোগ করা যাবে।",
+    "englishOptionalHint": "ইংরেজি বাধ্যতামূলক। বাংলা ঐচ্ছিক।",
+    "optionalBangla": "বাংলা (ঐচ্ছিক)",
+    "optionalBanglaPh": "বাংলা লেখা"
   }
 }

@@ -165,6 +165,7 @@ export interface TransportVehicle {
   transportId: string;
   transportClassId: string;
   name?: string | null;
+  nameBn?: string | null;
   licensePlate?: string | null;
   imageUrl?: string | null;
   vehicleStatus?: string;
@@ -328,6 +329,7 @@ export interface TransportLayoutRef {
 export interface CreateTransportClassPayload {
   transportId: string;
   name: string;
+  nameBn?: string;
   basePrice: number;
   busServiceType?: string;
   vehicleRentalCategory?: string;
@@ -343,6 +345,7 @@ export interface CreateTransportLayoutSeatPayload {
 export interface CreateTransportLayoutPayload {
   transportId: string;
   name: string;
+  nameBn?: string;
   imageUrl?: string;
   transportClassId?: string;
   seatCount?: number;
@@ -366,6 +369,7 @@ export interface CreateTransportRoutePayload {
 export interface CreateTransportRouteStopPayload {
   locationId: string;
   name: string;
+  nameBn?: string;
   stopOrder: number;
   arrivalOffsetMinutes?: number;
 }
@@ -383,6 +387,7 @@ export interface CreateTransportVehiclePayload {
   transportId: string;
   transportClassId: string;
   name?: string;
+  nameBn?: string;
   licensePlate?: string;
   imageUrl?: string;
 }

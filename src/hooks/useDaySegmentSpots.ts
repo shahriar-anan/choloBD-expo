@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useLanguage } from '../providers/LanguageProvider';
 import { getTourSpots, getActivitySpots } from '../services/api/tourBuilder';
 
 interface Spot {
@@ -11,6 +12,7 @@ export function useDaySegmentSpots(locationId?: string, shouldFetch: boolean = t
   const [tourSpots, setTourSpots] = useState<Spot[]>([]);
   const [activitySpots, setActivitySpots] = useState<Spot[]>([]);
   const [spotsLoading, setSpotsLoading] = useState(false);
+  const { currentLanguage } = useLanguage();
 
   const fetchAvailableSpots = async () => {
     if (!shouldFetch) return;
@@ -32,7 +34,7 @@ export function useDaySegmentSpots(locationId?: string, shouldFetch: boolean = t
 
   useEffect(() => {
     fetchAvailableSpots();
-  }, [locationId, shouldFetch]);
+  }, [locationId, shouldFetch, currentLanguage]);
 
   const getTourSpotName = (spotId: string) => {
     return tourSpots.find((s) => s.id === spotId)?.name || spotId;

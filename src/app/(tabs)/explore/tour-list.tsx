@@ -15,6 +15,7 @@ import { TourFilterBar } from '../../../components/tourBuilder/TourFilterBar';
 import { TourListCard } from '../../../components/tourBuilder/TourListCard';
 import { ErrorAlert } from '../../../components/tourBuilder/ErrorAlert';
 import { useTheme } from '../../../hooks/useTheme';
+import { useLanguage } from '../../../providers/LanguageProvider';
 import { useAuthWithAdminCheck } from '../../../hooks/useAuthWithAdminCheck';
 import { theme } from '../../../constants/theme';
 import { goBack } from '../../../utilities/navigation';
@@ -24,6 +25,7 @@ export default function TourListPage() {
   const insets = useSafeAreaInsets();
   const dispatch = useDispatch<AppDispatch>();
   const { isDark } = useTheme();
+  const { currentLanguage } = useLanguage();
   const { isAdmin } = useAuthWithAdminCheck();
   const { list, listLoading, listError, filters } = useSelector((state: RootState) => state.tourBuilder);
   const [showFilters, setShowFilters] = useState(false);
@@ -33,7 +35,7 @@ export default function TourListPage() {
 
   useEffect(() => {
     dispatch(fetchTourPlans(filters));
-  }, []);
+  }, [currentLanguage]);
 
   const handleBack = () => {
     goBack(router);

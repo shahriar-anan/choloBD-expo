@@ -1608,4 +1608,13 @@ export const TRANSLATION_KEYS = {
     INSUFFICIENT_POINTS: 'payment.insufficientPoints',
     POINTS_PROCESSING: 'payment.pointsProcessing',
   },
+  CONTENT_LANGUAGE: {
+    WRITE_IN: 'contentLanguage.writeIn',
+    ENGLISH: 'contentLanguage.english',
+    BANGLA: 'contentLanguage.bangla',
+    BANGLA_ONLY_HINT: 'contentLanguage.banglaOnlyHint',
+    ENGLISH_OPTIONAL_HINT: 'contentLanguage.englishOptionalHint',
+    OPTIONAL_BANGLA: 'contentLanguage.optionalBangla',
+    OPTIONAL_BANGLA_PH: 'contentLanguage.optionalBanglaPh',
+  },
 };

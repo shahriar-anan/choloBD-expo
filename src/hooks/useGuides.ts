@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { getGuideById, getGuides } from '../services/api/guides';
 import type { GuideFilters, GuideSummary } from '../types/guides';
 import { usePagedCatalog } from './usePagedCatalog';
+import { useLanguage } from '../providers/LanguageProvider';
 
 export function useGuides(filters: Omit<GuideFilters, 'page' | 'limit'>, enabled = true) {
   const filterKey = JSON.stringify(filters);
@@ -17,6 +18,7 @@ export function useGuideDetail(guideId?: string) {
   const [isLoading, setIsLoading] = useState(Boolean(guideId));
   const [error, setError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+  const { currentLanguage } = useLanguage();
 
   useEffect(() => {
     if (!guideId) {
@@ -46,7 +48,7 @@ export function useGuideDetail(guideId?: string) {
     return () => {
       active = false;
     };
-  }, [guideId, reloadKey]);
+  }, [guideId, reloadKey, currentLanguage]);
 
   const refresh = useCallback(() => setReloadKey((value) => value + 1), []);
 

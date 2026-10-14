@@ -18,6 +18,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { KeyboardAwareScroll } from '../ui/KeyboardAwareScroll';
+import { ContentLanguageChoice, OptionalBanglaField, ContentWriteLanguage } from '../ui/ContentLanguageFields';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as ImagePicker from 'expo-image-picker';
 import { Feather } from '@expo/vector-icons';
@@ -75,6 +76,9 @@ export interface WizardInitial {
   basedOnPackageId?: string;
   stops: WizardStop[];
   images?: { url: string }[];
+  contentLanguage?: ContentWriteLanguage;
+  packageNameBn?: string;
+  shortDescriptionBn?: string;
 }
 
 interface TripPlanCreateWizardProps {
@@ -123,6 +127,9 @@ export function TripPlanCreateWizard({
   const [step, setStep] = useState(0);
   const [packageName, setPackageName] = useState(initial?.packageName || '');
   const [shortDescription, setShortDescription] = useState(initial?.shortDescription || '');
+  const [contentLanguage, setContentLanguage] = useState<ContentWriteLanguage>(initial?.contentLanguage || 'en');
+  const [packageNameBn, setPackageNameBn] = useState(initial?.packageNameBn || '');
+  const [shortDescriptionBn, setShortDescriptionBn] = useState(initial?.shortDescriptionBn || '');
   const [tourType, setTourType] = useState(initial?.tourType || '');
   const [locationId, setLocationId] = useState(initial?.locationId || '');
   const [startDate, setStartDate] = useState(initial?.startDate || '');
@@ -140,6 +147,8 @@ export function TripPlanCreateWizard({
   const [hotels, setHotels] = useState<NamedOption[]>([]);
   const [activeDay, setActiveDay] = useState(1);
   const [editor, setEditor] = useState<WizardStop | null>(null);
+  const contentLanguageRef = useRef(contentLanguage);
+  contentLanguageRef.current = contentLanguage;
   const [showDate, setShowDate] = useState(false);
   const [photos, setPhotos] = useState<{ uri: string; mimeType?: string | null; fileName?: string | null }[]>([]);
   const [saving, setSaving] = useState(false);
@@ -229,13 +238,41 @@ export function TripPlanCreateWizard({
         const tour = await getTourPlan(templateId);
         if (cancelled || !tour) return;
         setBasedOnPackageId(tour.id);
-        setPackageName(tour.packageName || '');
-        setShortDescription(tour.shortDescription || '');
+        const writeLanguage = contentLanguageRef.current;
+        const clonedStops = catalogSegmentsToWizardStops(tour.daySegments || []);
+        if (writeLanguage === 'bn') {
+          setPackageName(tour.packageNameBn || tour.packageName || '');
+          setShortDescription(tour.shortDescriptionBn || tour.shortDescription || '');
+          setPackageNameBn(
+            tour.packageName && tour.packageName !== tour.packageNameBn ? tour.packageName : ''
+          );
+          setShortDescriptionBn(
+            tour.shortDescription && tour.shortDescription !== tour.shortDescriptionBn
+              ? tour.shortDescription
+              : ''
+          );
+          setStops(clonedStops.map((stop) => ({
+            ...stop,
+            shortDescription: stop.shortDescriptionBn || stop.shortDescription,
+            shortDescriptionBn:
+              stop.shortDescriptionBn && stop.shortDescription !== stop.shortDescriptionBn
+                ? stop.shortDescription
+                : '',
+            notes: stop.notesBn || stop.notes || '',
+            notesBn:
+              stop.notesBn && stop.notes && stop.notes !== stop.notesBn ? stop.notes : '',
+          })));
+        } else {
+          setPackageName(tour.packageName || '');
+          setShortDescription(tour.shortDescription || '');
+          setPackageNameBn(tour.packageNameBn || '');
+          setShortDescriptionBn(tour.shortDescriptionBn || '');
+          setStops(clonedStops);
+        }
         setTourType(tour.tourType || '');
         setLocationId(tour.location?.id || '');
         setDuration(tour.duration || 0);
         setTotalBudget(String(tour.totalBudget || ''));
-        setStops(catalogSegmentsToWizardStops(tour.daySegments || []));
         setActiveDay(1);
         setChecklistDismissed(false);
       } catch (error: any) {
@@ -339,6 +376,29 @@ export function TripPlanCreateWizard({
     );
   };
 
+  const switchContentLanguage = (next: ContentWriteLanguage) => {
+    if (next === contentLanguage) return;
+    setPackageName(packageNameBn);
+    setPackageNameBn(packageName);
+    setShortDescription(shortDescriptionBn);
+    setShortDescriptionBn(shortDescription);
+    setStops((current) => current.map((stop) => ({
+      ...stop,
+      shortDescription: stop.shortDescriptionBn || '',
+      shortDescriptionBn: stop.shortDescription,
+      notes: stop.notesBn || '',
+      notesBn: stop.notes || '',
+    })));
+    setEditor((current) => current ? {
+      ...current,
+      shortDescription: current.shortDescriptionBn || '',
+      shortDescriptionBn: current.shortDescription,
+      notes: current.notesBn || '',
+      notesBn: current.notes || '',
+    } : current);
+    setContentLanguage(next);
+  };
+
   const savePlan = async () => {
     if (detailsReason || itineraryReason) {
       Alert.alert(t(TRANSLATION_KEYS.COMMON.ERROR), detailsReason || itineraryReason || '');
@@ -350,6 +410,9 @@ export function TripPlanCreateWizard({
         packageName,
         totalBudget: budgetNumber,
         shortDescription,
+        contentLanguage,
+        packageNameBn,
+        shortDescriptionBn,
         tourType,
         locationId,
         startDate,
@@ -467,6 +530,7 @@ export function TripPlanCreateWizard({
 
         {step === 0 ? (
           <View className="mt-4 gap-4">
+            <ContentLanguageChoice value={contentLanguage} onChange={switchContentLanguage} />
             <Question
               number={1}
               title={t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_Q_NAME)}
@@ -487,6 +551,14 @@ export function TripPlanCreateWizard({
                 }}
                 className="border border-border dark:border-border-dark rounded-xl px-3 py-3.5 text-text dark:text-text-dark bg-surface dark:bg-surface-dark"
               />
+              {contentLanguage === 'en' ? (
+                <OptionalBanglaField
+                  value={packageNameBn}
+                  onChangeText={setPackageNameBn}
+                  placeholderTextColor={mutedColor}
+                  className="border border-border dark:border-border-dark rounded-xl px-3 py-3.5 text-text dark:text-text-dark bg-surface dark:bg-surface-dark"
+                />
+              ) : null}
             </Question>
             <Question
               number={2}
@@ -664,6 +736,15 @@ export function TripPlanCreateWizard({
                     }}
                     className="border border-border dark:border-border-dark rounded-xl px-3 py-3.5 text-text dark:text-text-dark min-h-[112px] bg-surface dark:bg-surface-dark"
                   />
+                  {contentLanguage === 'en' ? (
+                    <OptionalBanglaField
+                      value={shortDescriptionBn}
+                      onChangeText={setShortDescriptionBn}
+                      multiline
+                      placeholderTextColor={mutedColor}
+                      className="border border-border dark:border-border-dark rounded-xl px-3 py-3.5 text-text dark:text-text-dark min-h-[112px] bg-surface dark:bg-surface-dark"
+                    />
+                  ) : null}
                 </Question>
               </>
             ) : null}
@@ -844,6 +925,7 @@ export function TripPlanCreateWizard({
         <StopEditorSheet
           visible
           stop={editor}
+          contentLanguage={contentLanguage}
           divisionId={locationId}
           isLastStop={
             editor.segmentOrder ===

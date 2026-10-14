@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { PagedResult } from '../services/api/tourSpots';
+import { useLanguage } from '../providers/LanguageProvider';
 
 export function usePagedCatalog<T>(
   filterKey: string,
@@ -15,6 +16,7 @@ export function usePagedCatalog<T>(
   const [error, setError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
   const generation = useRef(0);
+  const { currentLanguage } = useLanguage();
 
   useEffect(() => {
     const requestId = generation.current + 1;
@@ -48,7 +50,7 @@ export function usePagedCatalog<T>(
     return () => {
       active = false;
     };
-  }, [filterKey, reloadKey, enabled]);
+  }, [filterKey, reloadKey, enabled, currentLanguage]);
 
   const loadMore = useCallback(async () => {
     if (isLoading || isLoadingMore || page * limit >= total) return;

@@ -1,6 +1,7 @@
 import { getApiInstance } from './axiosClient';
 import { Hotel } from '../../types/hotels';
 import { unwrapList } from './personalPlanMapping';
+import { withCatalogLang } from './catalogLang';
 
 export interface HotelFilters {
   locationId?: string;
@@ -30,7 +31,7 @@ export async function fetchHotels(filters: HotelFilters = {}): Promise<Hotel[]> 
   if (filters.checkOutDate) params.checkOutDate = filters.checkOutDate;
   if (filters.page) params.page = filters.page;
   if (filters.limit) params.limit = filters.limit;
-  const res = await api.get('/api/hotels', { params });
+  const res = await api.get('/api/hotels', { params: withCatalogLang(params) });
   return unwrapList<Hotel>(res.data?.data);
 }
 
@@ -46,7 +47,7 @@ export interface PopularHotel {
 export async function fetchPopularHotels(limit = 8): Promise<PopularHotel[]> {
   const api = getApiInstance();
   try {
-    const res = await api.get('/api/hotels/popular', { params: { limit } });
+    const res = await api.get('/api/hotels/popular', { params: withCatalogLang({ limit }) });
     const rows = unwrapList<Hotel>(res.data?.data);
     return rows.map((hotel) => {
       const prices = (hotel.roomTypes ?? [])
@@ -100,12 +101,12 @@ export async function fetchHotelStayAvailability(
     String(end.getDate()).padStart(2, '0'),
   ].join('-');
   const res = await api.get(`/api/hotels/${hotelId}/availability`, {
-    params: {
+    params: withCatalogLang({
       numberOfRooms: 1,
       checkInDate,
       checkOutDate,
       shift,
-    },
+    }),
   });
   return res.data?.data ?? null;
 }

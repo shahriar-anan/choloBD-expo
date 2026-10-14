@@ -26,7 +26,7 @@ export default function HotelSearchPage() {
     const { fromHome } = useLocalSearchParams<{ fromHome?: string }>();
     const { isDark } = useTheme();
     const { params } = useHotelSearch();
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const primary = isDark ? theme.colors['primary-dark'] : theme.colors.primary;
     const [recommended, setRecommended] = useState<HotelSearchListItem[]>([]);
     const [recommendedLoading, setRecommendedLoading] = useState(true);
@@ -76,7 +76,7 @@ export default function HotelSearchPage() {
         return () => {
             cancelled = true;
         };
-    }, []);
+    }, [i18n.language]);
 
     const search = () => {
         if (!params.destination?.locationId) {

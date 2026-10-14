@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useLanguage } from '../providers/LanguageProvider';
 import { getTourSpots, TourSpot, TourSpotFilters } from '../services/api/tourSpots';
 
 export type { TourSpot };
@@ -7,6 +8,7 @@ export function useFetchTourSpots(filters?: TourSpotFilters) {
   const [spots, setSpots] = useState<TourSpot[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { currentLanguage } = useLanguage();
 
   useEffect(() => {
     let active = true;
@@ -39,7 +41,7 @@ export function useFetchTourSpots(filters?: TourSpotFilters) {
     return () => {
       active = false;
     };
-  }, [JSON.stringify(filters)]);
+  }, [JSON.stringify(filters), currentLanguage]);
 
   return { spots, isLoading, error };
 }

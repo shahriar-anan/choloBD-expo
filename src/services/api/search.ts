@@ -1,4 +1,5 @@
 import { getApiInstance } from './axiosClient';
+import { isBanglaContent, withCatalogLang } from './catalogLang';
 import { HotelSearchDestination } from '../../types/hotelSearch';
 
 interface SearchLocation {
@@ -18,12 +19,14 @@ interface NamedSearchRow {
 interface LocationRow {
     id: string;
     name: string;
+    nameBn?: string | null;
     locationType?: string;
     country?: string;
     state?: string | null;
     parentLocation?: {
         id: string;
         name: string;
+        nameBn?: string | null;
         locationType?: string;
     } | null;
 }
@@ -65,7 +68,7 @@ function placeTypeRank(locationType?: string): number {
 
 async function fetchLocationsByName(query: string): Promise<LocationRow[]> {
     const api = getApiInstance();
-    const res = await api.get('/api/locations/search', { params: { name: query } });
+    const res = await api.get('/api/locations/search', { params: withCatalogLang({ name: query }) });
     return (res.data?.data || []) as LocationRow[];
 }
 
@@ -74,9 +77,9 @@ export async function searchHotelDestinations(name: string): Promise<HotelSearch
     const api = getApiInstance();
     const [locationResult, hotelResult, tourResult, activityResult] = await Promise.allSettled([
         fetchLocationsByName(query),
-        api.get('/api/search/type', { params: { hotel: 'true', name: query } }),
-        api.get('/api/search/type', { params: { tourSpot: 'true', name: query } }),
-        api.get('/api/search/type', { params: { activitySpot: 'true', name: query } }),
+        api.get('/api/search/type', { params: withCatalogLang({ hotel: 'true', name: query }) }),
+        api.get('/api/search/type', { params: withCatalogLang({ tourSpot: 'true', name: query }) }),
+        api.get('/api/search/type', { params: withCatalogLang({ activitySpot: 'true', name: query }) }),
     ]);
 
     const locations = locationResult.status === 'fulfilled' ? locationResult.value : [];
@@ -145,13 +148,18 @@ function districtDivisionName(row: LocationRow): string {
     return row.parentLocation?.name || row.state || '';
 }
 
-function districtMatchRank(row: LocationRow, query: string): number {
-    const name = (row.name || '').toLowerCase();
-    const needle = query.toLowerCase();
+function textRank(value: string | null | undefined, needle: string): number {
+    const name = (value || '').toLowerCase();
+    if (!name) return 3;
     if (name === needle) return 0;
     if (name.startsWith(needle)) return 1;
     if (name.includes(needle)) return 2;
     return 3;
+}
+
+function districtMatchRank(row: LocationRow, query: string): number {
+    const needle = query.toLowerCase();
+    return Math.min(textRank(row.name, needle), textRank(row.nameBn, needle));
 }
 
 export async function searchTransportPlaces(name: string): Promise<HotelSearchDestination[]> {
@@ -167,18 +175,22 @@ export async function searchTransportPlaces(name: string): Promise<HotelSearchDe
     return districts
         .filter((row) => row.locationType === 'DISTRICT')
         .filter((row) => {
-            const nameMatch = (row.name || '').toLowerCase().includes(needle);
-            const divisionMatch = districtDivisionName(row).toLowerCase().includes(needle);
+            const nameMatch = (row.name || '').toLowerCase().includes(needle)
+                || (row.nameBn || '').toLowerCase().includes(needle);
+            const divisionMatch = districtDivisionName(row).toLowerCase().includes(needle)
+                || (row.parentLocation?.nameBn || '').toLowerCase().includes(needle);
             return nameMatch || divisionMatch;
         })
         .sort((left, right) => (
             districtMatchRank(left, query) - districtMatchRank(right, query)
-            || left.name.localeCompare(right.name)
+            || (isBanglaContent() && left.nameBn?.trim() ? left.nameBn : left.name).localeCompare(
+                isBanglaContent() && right.nameBn?.trim() ? right.nameBn : right.name
+            )
         ))
         .map((row) => ({
             kind: 'place' as const,
             id: row.id,
-            name: row.name,
+            name: isBanglaContent() && row.nameBn?.trim() ? row.nameBn : row.name,
             subtitle: locationLabel({
                 ...row,
                 state: districtDivisionName(row) || row.state,

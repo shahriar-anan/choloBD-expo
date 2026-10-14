@@ -3,6 +3,7 @@
  */
 
 import { getApiInstance } from './axiosClient';
+import { withCatalogLang } from './catalogLang';
 import type { CreateGuideBookingInput } from '../../types/guides';
 
 export interface GuideBookingRecord {
@@ -54,7 +55,7 @@ export async function getMyGuideBookings(userId: string): Promise<GuideBookingRe
   const api = getApiInstance();
   try {
     const response = await api.get('/api/bookings/guides', {
-      params: { userId, page: 1, limit: 50 },
+      params: withCatalogLang({ userId, page: 1, limit: 50 }),
     });
     return unwrapGuideList(response.data?.data);
   } catch (error: unknown) {
@@ -74,7 +75,7 @@ export async function cancelGuideBooking(bookingId: string): Promise<void> {
 export async function getGuideBooking(bookingId: string): Promise<GuideBookingRecord> {
   const api = getApiInstance();
   try {
-    const response = await api.get(`/api/bookings/guides/${bookingId}`);
+    const response = await api.get(`/api/bookings/guides/${bookingId}`, { params: withCatalogLang() });
     const booking = response.data?.data as GuideBookingRecord | undefined;
     if (!booking?.id) {
       throw new Error(response.data?.message || 'Guide booking could not be loaded');

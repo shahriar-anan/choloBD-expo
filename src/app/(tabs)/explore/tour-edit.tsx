@@ -8,12 +8,12 @@ import { View, Text, ActivityIndicator } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { useDispatch, useSelector } from 'react-redux';
-import { AppDispatch, RootState } from '../../../store/store';
+import { useDispatch } from 'react-redux';
+import { AppDispatch } from '../../../store/store';
 import { fetchTourPlanDetail } from '../../../store/slices/tourBuilderSlice';
 import { TourBuilderForm } from '../../../components/tourBuilder/TourBuilderForm';
 import { ErrorAlert } from '../../../components/tourBuilder/ErrorAlert';
-import { UpdateTourPlanData } from '../../../types/tours';
+import { TourPackage, UpdateTourPlanData } from '../../../types/tours';
 import { useTourBuilderLogic } from '../../../hooks/useTourBuilderLogic';
 import { useExplore } from './_provider';
 import { useTheme } from '../../../hooks/useTheme';
@@ -34,18 +34,29 @@ export default function TourEditPage() {
   const primaryColor = isDark ? theme.colors['primary-dark'] : theme.colors.primary;
 
   // Get tour detail from Redux store
-  const { detail, detailLoading } = useSelector(
-    (state: RootState) => state.tourBuilder
-  );
+  const [sourceTour, setSourceTour] = useState<TourPackage | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   // Get update function from hook
   const { updateTour, isFormSubmitting, formError } = useTourBuilderLogic();
 
   useEffect(() => {
-    if (tourId) {
-      dispatch(fetchTourPlanDetail(tourId));
-    }
-  }, [tourId, dispatch]);
+    if (!tourId) return;
+    let cancelled = false;
+    setSourceTour(null);
+    setLoadError(null);
+    dispatch(fetchTourPlanDetail(tourId))
+      .unwrap()
+      .then((tour) => {
+        if (!cancelled) setSourceTour(tour);
+      })
+      .catch((error: { message?: string }) => {
+        if (!cancelled) setLoadError(error?.message || t(TRANSLATION_KEYS.TOUR_BUILDER.LOADING_DETAILS));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [tourId, dispatch, t]);
 
   const handleBack = () => {
     goBack(router);
@@ -67,7 +78,15 @@ export default function TourEditPage() {
   };
 
   // Show loading state if detail is loading
-  if (detailLoading || !detail) {
+  if (loadError) {
+    return (
+      <SafeAreaView className="flex-1 bg-background dark:bg-background-dark flex items-center justify-center px-6">
+        <Text className="text-sm text-center text-muted dark:text-muted-dark">{loadError}</Text>
+      </SafeAreaView>
+    );
+  }
+
+  if (!sourceTour || sourceTour.id !== tourId) {
     return (
       <SafeAreaView className="flex-1 bg-background dark:bg-background-dark flex items-center justify-center">
         <ActivityIndicator size="large" color={primaryColor} />
@@ -108,10 +127,10 @@ export default function TourEditPage() {
 
         {/* Tour Builder Form */}
         <View className="flex-1 px-4 pb-6">
-          {locations && locations.length > 0 && detail ? (
+          {locations && locations.length > 0 && sourceTour ? (
             <TourBuilderForm
               locations={locations}
-              initialData={detail}
+              initialData={sourceTour}
               isEditing={true}
               onSubmit={handleEditTour}
               isSubmitting={isFormSubmitting}

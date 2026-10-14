@@ -57,6 +57,8 @@ export interface WizardStop {
   activityCost?: number;
   hotelCost?: number;
   notes?: string;
+  shortDescriptionBn?: string;
+  notesBn?: string;
 }
 
 export function createClientStopId(): string {
@@ -286,6 +288,8 @@ export interface WizardItineraryStop {
   transportOption?: import('../types/trips').TransportTypePreference;
   hotelOption?: import('../types/trips').HotelTypePreference;
   notes?: string;
+  shortDescriptionBn?: string;
+  notesBn?: string;
 }
 
 export function toPersonalPlanStartIso(dateYmd: string): string {
@@ -310,12 +314,14 @@ export function wizardStopsToDaySegments(stops: WizardStop[]): PersonalDaySegmen
     dayNumber: stop.dayNumber,
     segmentOrder: stop.segmentOrder,
     shortDescription: stop.shortDescription.trim(),
+    shortDescriptionBn: stop.shortDescriptionBn?.trim() || undefined,
     tourSpotId: stop.tourSpotId || undefined,
     activitySpotId: stop.activitySpotId || undefined,
     transportOption: stop.transportOption || undefined,
     hotelOption: stop.hotelOption || undefined,
     hotelId: stop.hotelId || undefined,
     notes: stop.notes?.trim() || undefined,
+    notesBn: stop.notesBn?.trim() || undefined,
   }));
 }
 

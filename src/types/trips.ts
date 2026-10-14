@@ -100,6 +100,8 @@ export interface PersonalDaySegmentApi {
   hotelId?: string | null;
   transportId?: string | null;
   notes?: string | null;
+  shortDescriptionBn?: string | null;
+  notesBn?: string | null;
   startTime?: string | null;
   endTime?: string | null;
   estimatedCost?: number | null;
@@ -121,6 +123,8 @@ export interface PersonalDaySegmentInput {
   hotelId?: string;
   transportId?: string;
   notes?: string;
+  shortDescriptionBn?: string;
+  notesBn?: string;
 }
 
 /**
@@ -132,6 +136,8 @@ export interface UserSegment {
   dayNumber: number;
   segmentOrder: number;
   shortDescription?: string;
+  shortDescriptionBn?: string | null;
+  notesBn?: string | null;
   tourSpotName?: string;
   activitySpotName?: string;
   hotelName?: string;
@@ -183,6 +189,9 @@ export interface TripPlan {
   images?: { url: string; altText?: string }[];
   tourType?: string;
   duration?: number;
+  contentLanguage?: 'en' | 'bn';
+  packageNameBn?: string | null;
+  shortDescriptionBn?: string | null;
   shortDescription?: string;
   maxGroupSize?: number;
   rating?: number;

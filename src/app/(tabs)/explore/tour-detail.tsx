@@ -10,6 +10,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useDispatch, useSelector } from 'react-redux';
 import { useTranslation } from 'react-i18next';
+import { useLanguage } from '../../../providers/LanguageProvider';
 import { AppDispatch, RootState } from '../../../store/store';
 import { fetchTourPlanDetail } from '../../../store/slices/tourBuilderSlice';
 import { DaySegmentCard } from '../../../components/tourBuilder/DaySegmentCard';
@@ -28,6 +29,7 @@ export default function TourDetailPage() {
   const insets = useSafeAreaInsets();
   const { isDark } = useTheme();
   const { t } = useTranslation();
+  const { currentLanguage } = useLanguage();
   const dispatch = useDispatch<AppDispatch>();
   const { isAdmin, isAuthenticated } = useAuthWithAdminCheck();
   const { detail, detailLoading, detailError } = useSelector((state: RootState) => state.tourBuilder);
@@ -43,9 +45,9 @@ export default function TourDetailPage() {
   useEffect(() => {
     if (id) {
       console.log('[TourDetailPage] Mounting, fetching tour:', id);
-      dispatch(fetchTourPlanDetail(id));
+      dispatch(fetchTourPlanDetail({ tourPackageId: id, localize: true }));
     }
-  }, [id]);
+  }, [id, currentLanguage]);
 
   const handleBack = () => {
     console.log('[TourDetailPage] Going back to tour list');

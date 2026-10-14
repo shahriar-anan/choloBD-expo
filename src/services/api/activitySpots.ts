@@ -4,6 +4,7 @@
 
 import { getApiInstance } from './axiosClient';
 import { unwrapList } from './personalPlanMapping';
+import { withCatalogLang } from './catalogLang';
 import type { PagedResult } from './tourSpots';
 
 export interface ActivitySpot {
@@ -53,7 +54,7 @@ export async function getActivitySpots(filters?: ActivitySpotFilters): Promise<P
   if (filters?.limit !== undefined) params.limit = filters.limit;
 
   try {
-    const response = await api.get('/api/activity-spots', { params });
+    const response = await api.get('/api/activity-spots', { params: withCatalogLang(params) });
     return readPage(response.data?.data);
   } catch (error: unknown) {
     throw new Error(readApiMessage(error));
@@ -63,7 +64,7 @@ export async function getActivitySpots(filters?: ActivitySpotFilters): Promise<P
 export async function getActivitySpotById(activitySpotId: string): Promise<ActivitySpot | null> {
   const api = getApiInstance();
   try {
-    const response = await api.get(`/api/activity-spots/${activitySpotId}`);
+    const response = await api.get(`/api/activity-spots/${activitySpotId}`, { params: withCatalogLang() });
     const spot = response.data?.data;
     if (!spot) return null;
     return mapActivitySpot(spot);
@@ -75,7 +76,7 @@ export async function getActivitySpotById(activitySpotId: string): Promise<Activ
 export async function getPopularActivitySpots(limit = 8): Promise<ActivitySpot[]> {
   const api = getApiInstance();
   try {
-    const response = await api.get('/api/activity-spots/popular', { params: { limit } });
+    const response = await api.get('/api/activity-spots/popular', { params: withCatalogLang({ limit }) });
     return readPage(response.data?.data).results;
   } catch (error: unknown) {
     throw new Error(readApiMessage(error));

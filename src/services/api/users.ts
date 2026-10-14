@@ -46,6 +46,8 @@ export interface UpdateHotelProfileData {
   checkOutTime?: string;
   amenities?: string[];
   policies?: string[];
+  amenitiesBn?: string[];
+  policiesBn?: string[];
   nearbyTourSpots?: string[];
   nearbyActivitySpots?: string[];
 }

@@ -1566,5 +1566,14 @@
     "pointsCost": "Uses {{points}} Wallet coins (80% of the total)",
     "insufficientPoints": "Not enough Wallet coins for this booking",
     "pointsProcessing": "Charging Wallet coins..."
+  },
+  "contentLanguage": {
+    "writeIn": "Write this in",
+    "english": "English",
+    "bangla": "Bangla",
+    "banglaOnlyHint": "Bangla is required. English can be added later.",
+    "englishOptionalHint": "English is required. Bangla is optional.",
+    "optionalBangla": "Bangla (optional)",
+    "optionalBanglaPh": "Bangla text"
   }
 }

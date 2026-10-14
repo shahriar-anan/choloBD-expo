@@ -4,6 +4,7 @@
  */
 
 import { getApiInstance } from './axiosClient';
+import { withCatalogLang } from './catalogLang';
 import {
   PackageBooking,
   CreatePackageBookingData,
@@ -127,7 +128,7 @@ export async function getUserPackageBookings(
 
     const res = await api.get<PackageBookingApiResponse<PackageBooking[]>>(
       '/api/bookings/package-bookings/my-bookings',
-      { params }
+      { params: withCatalogLang(params) }
     );
 
     console.log('[packageBookings.ts] getUserPackageBookings success, count:', res.data.data?.length);
@@ -153,7 +154,8 @@ export async function getPackageBookingById(bookingId: string): Promise<PackageB
     const api = getApiInstance();
 
     const res = await api.get<PackageBookingApiResponse<PackageBooking>>(
-      `/api/bookings/package-bookings/${bookingId}`
+      `/api/bookings/package-bookings/${bookingId}`,
+      { params: withCatalogLang() },
     );
 
     console.log('[packageBookings.ts] getPackageBookingById success');
@@ -239,7 +241,7 @@ export async function getPackageBookingsByPackageId(
 
     const res = await api.get<PackageBookingApiResponse<PackageBooking[]>>(
       `/api/bookings/package-bookings/package/${tourPackageId}`,
-      { params }
+      { params: withCatalogLang(params) }
     );
 
     console.log('[packageBookings.ts] getPackageBookingsByPackageId success, count:', res.data.data?.length);

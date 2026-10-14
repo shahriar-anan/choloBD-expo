@@ -3,6 +3,7 @@
  */
 
 import { getApiInstance } from './axiosClient';
+import { withCatalogLang } from './catalogLang';
 import {
   TripPlan,
   TripSummary,
@@ -124,7 +125,7 @@ export async function getTrips(
     if (filters?.page) params.page = filters.page;
     if (filters?.limit) params.limit = filters.limit;
 
-    const res = await api.get<TripApiResponse<any>>('/api/tour-builder/my', { params });
+    const res = await api.get<TripApiResponse<any>>('/api/tour-builder/my', { params: withCatalogLang(params) });
     const raw = unwrapList<any>(res.data.data);
     const trips = raw.map(mapPersonalPackageToTripPlan);
     const page = Number(res.data.data?.page || params.page || 1);
@@ -186,6 +187,10 @@ export async function addSegment(tripId: string, payload: CreateSegmentData): Pr
   }
   const nextOrder = payload.segmentOrder ?? dayStops.length + 1;
   const segmentInput = mapCreateSegmentToDaySegment({ ...payload, segmentOrder: nextOrder }, dayNumber);
+  if (trip.contentLanguage === 'bn') {
+    segmentInput.shortDescriptionBn = segmentInput.shortDescription;
+    if (segmentInput.notes?.trim()) segmentInput.notesBn = segmentInput.notes;
+  }
   const next = [...daySegmentsForPut(existing), segmentInput];
   const api = getApiInstance();
   const res = await api.put<TripApiResponse<any>>(`/api/tour-builder/my/${tripId}`, {
@@ -206,6 +211,15 @@ export async function updateSegment(
     throw mapApiError({ response: { status: 404, data: { message: 'Segment not found' } } });
   }
   const merged = mergeSegmentUpdate(existing[idx], payload);
+  if (trip.contentLanguage === 'bn') {
+    const previous = existing[idx];
+    if (!previous.shortDescriptionBn || previous.shortDescriptionBn === previous.shortDescription) {
+      merged.shortDescriptionBn = merged.shortDescription;
+    }
+    if (merged.notes && (!previous.notesBn || previous.notesBn === previous.notes)) {
+      merged.notesBn = merged.notes;
+    }
+  }
   const next = existing.map((s, i) =>
     i === idx ? { ...s, ...merged, shortDescription: merged.shortDescription } : s
   );
