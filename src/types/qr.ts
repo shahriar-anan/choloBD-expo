@@ -3,7 +3,7 @@ export interface QRGenerateResponse {
   message: string;
   data?: {
     qrToken: string;
-    expiresAt: string;
+    expiresAt?: string;
   };
 }
 
@@ -19,10 +19,32 @@ export interface QRScanResponse {
   };
 }
 
+export interface QrScanHistoryItem {
+  id: string;
+  bookingId: string;
+  confirmationCode: string;
+  guestLabel: string;
+  detailLabel: string;
+  paymentStatus: string;
+  scannedAt: string;
+  checkedInAt: string | null;
+}
+
+export interface QrScanDetailResponse {
+  status: 'success' | 'failed';
+  message: string;
+  data?: {
+    booking: QRBookingDetail | Record<string, unknown>;
+    scannedAt: string;
+    checkedInAt: string | null;
+  };
+}
+
 export interface QRBookingDetail {
   id: string;
   confirmationCode: string;
   status: string;
+  checkedInAt?: string | null;
   checkInDate: string;
   checkOutDate: string;
   totalPrice: number;

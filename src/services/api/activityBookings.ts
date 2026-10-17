@@ -4,6 +4,7 @@
 
 import { getApiInstance } from './axiosClient';
 import { withCatalogLang } from './catalogLang';
+import type { QrScanDetailResponse, QrScanHistoryItem } from '../../types/qr';
 
 export interface CreateActivityBookingInput {
   activitySpotId: string;
@@ -27,7 +28,16 @@ export interface ActivityBookingRecord {
   price?: number | null;
   paymentMethod?: string | null;
   bookedAt?: string | null;
+  checkedInAt?: string | null;
   bookingConfirmInstruction?: string | null;
+  user?: {
+    id: string;
+    userName?: string;
+    firstName?: string | null;
+    lastName?: string | null;
+    email?: string;
+    phoneNumber?: string | null;
+  } | null;
   activitySpot?: {
     id: string;
     name: string;
@@ -80,18 +90,57 @@ export async function cancelActivityBooking(bookingId: string): Promise<void> {
   }
 }
 
-export async function generateActivityQr(bookingId: string): Promise<{ qrToken: string; expiresAt: string }> {
+export async function generateActivityQr(bookingId: string): Promise<{ qrToken: string }> {
   const api = getApiInstance();
   try {
     const response = await api.post(`/api/bookings/activity-spots/${bookingId}/qr-generate`, {});
-    const data = response.data?.data as { qrToken?: string; expiresAt?: string } | undefined;
+    const data = response.data?.data as { qrToken?: string } | undefined;
     if (!data?.qrToken) {
       throw new Error(response.data?.message || 'QR code could not be created');
     }
-    return { qrToken: data.qrToken, expiresAt: data.expiresAt || '' };
+    return { qrToken: data.qrToken };
   } catch (error: unknown) {
     throw new Error(apiMessage(error, 'QR code could not be created'));
   }
+}
+
+export async function scanActivityQr(qrToken: string): Promise<ActivityBookingRecord> {
+  const api = getApiInstance();
+  try {
+    const response = await api.post('/api/bookings/activity-spots/qr-scan', { qrToken });
+    const booking = response.data?.data?.booking as ActivityBookingRecord | undefined;
+    if (!booking?.id) {
+      throw new Error(response.data?.message || 'Failed to validate QR code');
+    }
+    return booking;
+  } catch (error: unknown) {
+    throw new Error(apiMessage(error, 'Failed to validate QR code'));
+  }
+}
+
+export async function listActivityQrScans(date?: string): Promise<QrScanHistoryItem[]> {
+  const api = getApiInstance();
+  const response = await api.get('/api/bookings/activity-spots/qr-scans', {
+    params: date ? { date } : undefined,
+  });
+  const body = response.data as { data?: { results?: QrScanHistoryItem[] } };
+  return body.data?.results ?? [];
+}
+
+export async function getActivityQrScanDetail(scanId: string): Promise<QrScanDetailResponse> {
+  const api = getApiInstance();
+  const response = await api.get(`/api/bookings/activity-spots/qr-scans/${scanId}`);
+  return response.data as QrScanDetailResponse;
+}
+
+export async function activityQrCheckIn(bookingId: string): Promise<{ checkedInAt: string }> {
+  const api = getApiInstance();
+  const response = await api.post(`/api/bookings/activity-spots/${bookingId}/qr-check-in`, {});
+  const checkedInAt = response.data?.data?.checkedInAt as string | undefined;
+  if (!checkedInAt) {
+    throw new Error(response.data?.message || 'Check-in failed');
+  }
+  return { checkedInAt };
 }
 
 export async function getActivityBooking(bookingId: string): Promise<ActivityBookingRecord> {

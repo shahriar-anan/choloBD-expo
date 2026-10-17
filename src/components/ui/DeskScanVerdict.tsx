@@ -8,23 +8,37 @@ import { TRANSLATION_KEYS } from '../../constants/translationKeys';
 
 interface DeskScanVerdictProps {
   unpaid: boolean;
+  checkedInAt?: string | null;
 }
 
-export function DeskScanVerdict({ unpaid }: DeskScanVerdictProps) {
+export function DeskScanVerdict({ unpaid, checkedInAt }: DeskScanVerdictProps) {
   const { t } = useTranslation();
   const { isDark } = useTheme();
-  const color = unpaid
-    ? (isDark ? theme.colors['warning-dark'] : theme.colors.warning)
-    : (isDark ? theme.colors['success-dark'] : theme.colors.success);
+  const checkedIn = Boolean(checkedInAt);
+  const color = checkedIn
+    ? (isDark ? theme.colors['primary-dark'] : theme.colors.primary)
+    : unpaid
+      ? (isDark ? theme.colors['warning-dark'] : theme.colors.warning)
+      : (isDark ? theme.colors['success-dark'] : theme.colors.success);
+
+  const label = checkedIn
+    ? t(TRANSLATION_KEYS.QR.VERDICT_CHECKED_IN, {
+        time: new Date(checkedInAt as string).toLocaleString(),
+      })
+    : unpaid
+      ? t(TRANSLATION_KEYS.QR.VERDICT_UNPAID)
+      : t(TRANSLATION_KEYS.QR.VERDICT_VALID);
+
+  const icon = unpaid && !checkedIn ? 'alert-circle' : 'checkmark-circle';
 
   return (
     <View
       className="flex-row items-center px-4 py-3 rounded-2xl"
       style={{ backgroundColor: `${color}22` }}
     >
-      <Ionicons name={unpaid ? 'alert-circle' : 'checkmark-circle'} size={22} color={color} />
+      <Ionicons name={icon} size={22} color={color} />
       <Text className="flex-1 ml-2 text-base font-bold" style={{ color }}>
-        {unpaid ? t(TRANSLATION_KEYS.QR.VERDICT_UNPAID) : t(TRANSLATION_KEYS.QR.VERDICT_VALID)}
+        {label}
       </Text>
     </View>
   );

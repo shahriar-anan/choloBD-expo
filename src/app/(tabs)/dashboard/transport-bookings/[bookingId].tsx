@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import { ActivityIndicator, Alert, Modal, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -36,9 +37,13 @@ export default function TransportBookingDetailPage() {
   const borderColor = isDark ? theme.colors['border-dark'] : theme.colors.border;
   const onPrimary = isDark ? theme.colors['onPrimary-dark'] : theme.colors.onPrimary;
 
-  const reload = async () => {
+  const bookingRef = useRef<TransportBooking | null>(null);
+  bookingRef.current = booking;
+
+  const reload = useCallback(async () => {
     if (!bookingId) return;
-    setLoading(true);
+    const silent = Boolean(bookingRef.current);
+    if (!silent) setLoading(true);
     const row = await fetchBookingDetail(bookingId);
     setBooking(row);
     if (row && shouldFetchCancellationEligibility(row.status)) {
@@ -46,12 +51,14 @@ export default function TransportBookingDetailPage() {
     } else {
       setEligibility(null);
     }
-    setLoading(false);
-  };
+    if (!silent) setLoading(false);
+  }, [bookingId, fetchBookingDetail, loadEligibility]);
 
-  useEffect(() => {
-    reload();
-  }, [bookingId]);
+  useFocusEffect(
+    useCallback(() => {
+      void reload();
+    }, [reload])
+  );
 
   useEffect(() => {
     if (action !== 'pay' || !booking || !bookingId) return;
@@ -92,6 +99,7 @@ export default function TransportBookingDetailPage() {
     Boolean(
       booking &&
         booking.transportType === 'BUS' &&
+        !booking.checkedInAt &&
         String(booking.status || '').toUpperCase() !== 'CANCELLED'
     );
   const title = booking?.transport?.name || t(TRANSLATION_KEYS.TRANSPORT_BOOKING.DETAILS);

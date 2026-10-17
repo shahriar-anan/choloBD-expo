@@ -15,6 +15,7 @@ export interface RecentBookingView {
   imageUrl: string | null;
   /** Set for transport rows when the ticket is a bus booking (boarding QR eligible). */
   busTicket?: boolean;
+  checkedInAt?: string | null;
 }
 
 export interface TravelerBookingSources {
@@ -95,6 +96,7 @@ export function mapHotel(booking: any): RecentBookingView | null {
     price: money(booking.totalPrice),
     sortTime: bookingSortTime(booking),
     imageUrl: imageUrlFrom(booking.hotel?.images) || imageUrlFrom(booking.hotelDetails?.images) || imageUrlFrom(booking.hotel?.imageUrl),
+    checkedInAt: booking.checkedInAt ?? null,
   };
 }
 
@@ -114,6 +116,7 @@ export function mapTransport(booking: any): RecentBookingView | null {
     sortTime: bookingSortTime(booking),
     imageUrl: transportBookingCoverUrl(booking),
     busTicket: booking.transportType === 'BUS',
+    checkedInAt: booking.checkedInAt ?? null,
   };
 }
 
@@ -129,6 +132,7 @@ function mapActivity(booking: any): RecentBookingView | null {
     price: money(booking.totalPrice ?? booking.price),
     sortTime: bookingSortTime(booking),
     imageUrl: imageUrlFrom(booking.activitySpot?.images) || imageUrlFrom(booking.activitySpot?.imageUrl),
+    checkedInAt: booking.checkedInAt ?? null,
   };
 }
 

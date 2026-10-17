@@ -22,8 +22,6 @@ export function BusBoardingQrScreen({ bookingId }: BusBoardingQrScreenProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [qrToken, setQrToken] = useState<string | null>(null);
-  const [expiresAt, setExpiresAt] = useState<string | null>(null);
-
   useEffect(() => {
     if (!bookingId) return;
     let active = true;
@@ -33,7 +31,6 @@ export function BusBoardingQrScreen({ bookingId }: BusBoardingQrScreenProps) {
       .then((result) => {
         if (!active) return;
         setQrToken(result.qrToken);
-        setExpiresAt(result.expiresAt || null);
       })
       .catch((err: unknown) => {
         if (!active) return;
@@ -63,11 +60,20 @@ export function BusBoardingQrScreen({ bookingId }: BusBoardingQrScreenProps) {
           <ActivityIndicator size="large" color={theme.colors.primary} />
           <Text className="mt-4 text-muted dark:text-muted-dark">{t(TRANSLATION_KEYS.QR.GENERATING)}</Text>
         </View>
+      ) : /already checked in/i.test(error || '') ? (
+        <View className="items-center justify-center flex-1 px-8">
+          <Ionicons name="checkmark-circle" size={56} color={isDark ? theme.colors['primary-dark'] : theme.colors.primary} />
+          <Text className="mt-4 text-xl font-bold text-center text-text dark:text-text-dark">
+            {t(TRANSLATION_KEYS.QR.CHECKED_IN)}
+          </Text>
+          <Pressable onPress={() => goBack(router)} className="items-center px-6 py-3 mt-8 rounded-lg bg-primary dark:bg-primary-dark">
+            <Text className="font-semibold text-white">{t(TRANSLATION_KEYS.QR.DONE)}</Text>
+          </Pressable>
+        </View>
       ) : qrToken ? (
         <ScrollView className="flex-1 px-6 py-6" contentContainerStyle={{ paddingBottom: 24, gap: 16 }}>
           <QRCodeDisplay
             qrToken={qrToken}
-            expiresAt={expiresAt ?? undefined}
             label={t(TRANSLATION_KEYS.QR.BUS_BOARDING_TITLE)}
             hint={t(TRANSLATION_KEYS.QR.BUS_SHOW_STAFF)}
           />

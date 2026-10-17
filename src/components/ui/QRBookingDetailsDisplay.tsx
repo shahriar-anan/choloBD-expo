@@ -33,8 +33,12 @@ export const QRBookingDetailsDisplay: React.FC<QRBookingDetailsDisplayProps> = (
   const method = paymentMethodLabel(booking.paymentMethod, t);
 
   return (
-    <ScrollView className="flex-1 bg-background dark:bg-background-dark" contentContainerStyle={{ padding: 16, paddingBottom: 24 }}>
-      <DeskScanVerdict unpaid={unpaid} />
+    <ScrollView
+      style={{ flex: 1 }}
+      className="bg-background dark:bg-background-dark"
+      contentContainerStyle={{ padding: 16, paddingBottom: 24 }}
+    >
+      <DeskScanVerdict unpaid={unpaid} checkedInAt={booking.checkedInAt} />
 
       <Text className="mt-5 text-3xl font-bold text-text dark:text-text-dark">{guestName}</Text>
       {booking.user?.phoneNumber || booking.guestPhoneNumber ? (

@@ -19,7 +19,6 @@ export function BookingQrSheet({ visible, mode, bookingId, onClose }: BookingQrS
   const { isDark } = useTheme();
   const [loading, setLoading] = useState(false);
   const [qrToken, setQrToken] = useState<string | null>(null);
-  const [expiresAt, setExpiresAt] = useState<string | undefined>(undefined);
   const [error, setError] = useState<string | null>(null);
   const surface = isDark ? theme.colors['surface-dark'] : theme.colors.surface;
   const primary = isDark ? theme.colors['primary-dark'] : theme.colors.primary;
@@ -27,7 +26,6 @@ export function BookingQrSheet({ visible, mode, bookingId, onClose }: BookingQrS
   useEffect(() => {
     if (!visible) {
       setQrToken(null);
-      setExpiresAt(undefined);
       setError(null);
       setLoading(false);
       return;
@@ -42,7 +40,6 @@ export function BookingQrSheet({ visible, mode, bookingId, onClose }: BookingQrS
       .then((result) => {
         if (!active) return;
         setQrToken(result.qrToken);
-        setExpiresAt(result.expiresAt || undefined);
       })
       .catch((err: unknown) => {
         if (!active) return;
@@ -77,10 +74,15 @@ export function BookingQrSheet({ visible, mode, bookingId, onClose }: BookingQrS
             <View className="items-center py-8">
               <ActivityIndicator color={primary} />
             </View>
+          ) : /already checked in/i.test(error || '') ? (
+            <View className="items-center py-6">
+              <Text className="text-lg font-bold text-text dark:text-text-dark">
+                {t(TRANSLATION_KEYS.QR.CHECKED_IN)}
+              </Text>
+            </View>
           ) : qrToken ? (
             <QRCodeDisplay
               qrToken={qrToken}
-              expiresAt={expiresAt}
               size={220}
               label={t(TRANSLATION_KEYS.BOOKING.QR_CODE)}
               hint={t(TRANSLATION_KEYS.DASHBOARD.ATTRACTION_BOOKINGS.QR_HINT)}

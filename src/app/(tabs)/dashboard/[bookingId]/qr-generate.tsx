@@ -20,8 +20,6 @@ export default function BookingQRGeneratePage() {
 
   const { generateQRToken, loading, error } = useQRGeneration();
   const [qrToken, setQRToken] = useState<string | null>(null);
-  const [expiresAt, setExpiresAt] = useState<string | null>(null);
-
   useEffect(() => {
     if (!bookingId) {
       return;
@@ -32,9 +30,6 @@ export default function BookingQRGeneratePage() {
         const token = await generateQRToken(bookingId);
         if (!active || !token) return;
         setQRToken(token);
-        const expiryTime = new Date();
-        expiryTime.setMinutes(expiryTime.getMinutes() + 10);
-        setExpiresAt(expiryTime.toISOString());
       } catch {
         if (!active) return;
       }
@@ -59,9 +54,22 @@ export default function BookingQRGeneratePage() {
           <ActivityIndicator size="large" color={theme.colors.primary} />
           <Text className="mt-4 text-muted dark:text-muted-dark">{t(TRANSLATION_KEYS.QR.GENERATING)}</Text>
         </View>
+      ) : /already checked in/i.test(error || '') ? (
+        <View className="items-center justify-center flex-1 px-8">
+          <Ionicons name="checkmark-circle" size={56} color={isDark ? theme.colors['primary-dark'] : theme.colors.primary} />
+          <Text className="mt-4 text-xl font-bold text-center text-text dark:text-text-dark">
+            {t(TRANSLATION_KEYS.QR.CHECKED_IN)}
+          </Text>
+          <Text className="mt-2 text-sm text-center text-muted dark:text-muted-dark">
+            {t(TRANSLATION_KEYS.QR.SHOW_STAFF)}
+          </Text>
+          <Pressable onPress={() => goBack(router)} className="items-center px-6 py-3 mt-8 rounded-lg bg-primary dark:bg-primary-dark">
+            <Text className="font-semibold text-white">{t(TRANSLATION_KEYS.QR.DONE)}</Text>
+          </Pressable>
+        </View>
       ) : qrToken ? (
         <ScrollView className="flex-1 px-6 py-6" contentContainerStyle={{ paddingBottom: 24, gap: 16 }}>
-          <QRCodeDisplay qrToken={qrToken} expiresAt={expiresAt ?? undefined} />
+          <QRCodeDisplay qrToken={qrToken} />
 
           <View className="p-4 rounded-xl bg-surface-2 dark:bg-surface-2-dark border border-border dark:border-border-dark">
             <View className="flex-row items-center mb-2">

@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import { View, Text, ActivityIndicator, Pressable, Modal, Alert, Image } from 'react-native';
 import { KeyboardAwareScroll } from '../../../components/ui/KeyboardAwareScroll';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -55,29 +56,36 @@ export default function BookingTrackingPage() {
   const [actionBarHeight, setActionBarHeight] = useState(160);
 
   const { fetchBookingDetails, editBooking, submitting, loadEligibility, cancelBooking } = useBookingLogic();
+  const bookingRef = useRef<typeof booking>(null);
+  const editingRef = useRef(false);
+  bookingRef.current = booking;
+  editingRef.current = isEditing;
 
-  useEffect(() => {
+  const reloadBooking = useCallback(async () => {
     if (!bookingId) return;
-    const load = async () => {
-      setLoading(true);
-      try {
-        const res = await fetchBookingDetails(bookingId);
-        setBooking(res ?? null);
-        if (res) {
-          // Prefill edit form fields
-          setEditCheckInDate(res.checkInDate?.split('T')[0] || '');
-          setEditCheckOutDate(res.checkOutDate?.split('T')[0] || '');
-          setEditPaymentMethod(res.paymentMethod || '');
-          setEditSpecialRequests(res.specialRequests || '');
-        }
-      } catch (e) {
-        console.error('[BookingTrackingPage] error', e);
-      } finally {
-        setLoading(false);
+    const silent = Boolean(bookingRef.current);
+    if (!silent) setLoading(true);
+    try {
+      const res = await fetchBookingDetails(bookingId);
+      setBooking(res ?? null);
+      if (res && !editingRef.current) {
+        setEditCheckInDate(res.checkInDate?.split('T')[0] || '');
+        setEditCheckOutDate(res.checkOutDate?.split('T')[0] || '');
+        setEditPaymentMethod(res.paymentMethod || '');
+        setEditSpecialRequests(res.specialRequests || '');
       }
-    };
-    load();
+    } catch (e) {
+      console.error('[BookingTrackingPage] error', e);
+    } finally {
+      if (!silent) setLoading(false);
+    }
   }, [bookingId, fetchBookingDetails]);
+
+  useFocusEffect(
+    useCallback(() => {
+      void reloadBooking();
+    }, [reloadBooking])
+  );
 
   useEffect(() => {
     if (action !== 'pay' || !booking || !bookingId) return;
@@ -365,7 +373,11 @@ export default function BookingTrackingPage() {
                 {booking.confirmationCode}
               </Text>
             </View>
-            {String(booking.status || '').toUpperCase() !== 'CANCELLED' ? (
+            {booking.checkedInAt ? (
+              <Text className="text-sm font-bold text-primary dark:text-primary-dark">
+                {t(TRANSLATION_KEYS.QR.CHECKED_IN)}
+              </Text>
+            ) : String(booking.status || '').toUpperCase() !== 'CANCELLED' ? (
             <Pressable
               onPress={() => router.push(`/(tabs)/dashboard/${bookingId}/qr-generate`)}
               accessibilityRole="button"

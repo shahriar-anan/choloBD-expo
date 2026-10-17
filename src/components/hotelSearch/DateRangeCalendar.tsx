@@ -45,7 +45,11 @@ export function DateRangeCalendar({
             onChange(iso, null);
             return;
         }
-        if (day <= start) {
+        if (isSameDay(day, start)) {
+            onChange(format(start, 'yyyy-MM-dd'), iso);
+            return;
+        }
+        if (day < start) {
             onChange(iso, null);
             return;
         }

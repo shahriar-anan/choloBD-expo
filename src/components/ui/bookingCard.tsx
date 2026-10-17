@@ -225,7 +225,9 @@ export function BookingCard({ booking, onPress, showGenerateQr = false, showRoom
                 {booking.confirmationCode || booking.id?.substring(0, 16) || 'N/A'}
               </Text>
             </View>
-            {showGenerateQr && String(booking.status || '').toUpperCase() !== 'CANCELLED' ? (
+            {showGenerateQr &&
+            !booking.checkedInAt &&
+            String(booking.status || '').toUpperCase() !== 'CANCELLED' ? (
               <Pressable
                 onPress={() => router.push(`/(tabs)/dashboard/${booking.id}/qr-generate`)}
                 accessibilityRole="button"
@@ -237,6 +239,10 @@ export function BookingCard({ booking, onPress, showGenerateQr = false, showRoom
                   {t(TRANSLATION_KEYS.BOOKING.QR_CODE)}
                 </Text>
               </Pressable>
+            ) : booking.checkedInAt ? (
+              <Text className="ml-2 text-sm font-semibold text-primary dark:text-primary-dark">
+                {t(TRANSLATION_KEYS.QR.CHECKED_IN)}
+              </Text>
             ) : null}
           </View>
 

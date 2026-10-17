@@ -155,6 +155,11 @@ export default function AttractionBookingDetailPage() {
               <Text className="text-xs" style={{ color: muted }}>{t(TRANSLATION_KEYS.BOOKING.CONFIRMATION_CODE)}</Text>
               <Text className="text-sm font-semibold text-text dark:text-text-dark">{booking.confirmationCode}</Text>
             </View>
+            {bookingKind === 'activity' && activity?.checkedInAt ? (
+              <Text className="text-sm font-bold text-primary dark:text-primary-dark">
+                {t(TRANSLATION_KEYS.QR.CHECKED_IN)}
+              </Text>
+            ) : bookingKind === 'activity' ? (
             <Pressable
               onPress={() => setQrOpen(true)}
               accessibilityRole="button"
@@ -165,6 +170,7 @@ export default function AttractionBookingDetailPage() {
               <Ionicons name="qr-code" size={20} color={primary} />
               <Text className="ml-2 text-sm font-bold" style={{ color: primary }}>{t(TRANSLATION_KEYS.BOOKING.QR_CODE)}</Text>
             </Pressable>
+            ) : null}
           </View>
           <View className="flex-row items-center mt-3">
             <Text className="mr-2 text-sm font-semibold text-text dark:text-text-dark">{booking.status}</Text>

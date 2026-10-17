@@ -145,7 +145,10 @@ export function RecentBookingCard({ item, onPress, onDelete, onQrPress, compact 
         ) : null}
         {onPress ? <Ionicons name="chevron-forward" size={16} color={muted} /> : null}
       </View>
-      {onQrPress && String(item.status || '').toUpperCase() !== 'CANCELLED' && (item.kind === 'hotel' || item.kind === 'activity' || (item.kind === 'transport' && item.busTicket)) ? (
+      {onQrPress &&
+      !item.checkedInAt &&
+      String(item.status || '').toUpperCase() !== 'CANCELLED' &&
+      (item.kind === 'hotel' || item.kind === 'activity' || (item.kind === 'transport' && item.busTicket)) ? (
         <Pressable
           onPress={() => onQrPress(item)}
           accessibilityRole="button"
@@ -156,6 +159,11 @@ export function RecentBookingCard({ item, onPress, onDelete, onQrPress, compact 
           <Ionicons name="qr-code" size={16} color={primary} />
           <Text className="ml-2 text-xs font-bold" style={{ color: primary }}>{t(TRANSLATION_KEYS.BOOKING.QR_CODE)}</Text>
         </Pressable>
+      ) : item.checkedInAt &&
+        (item.kind === 'hotel' || item.kind === 'activity' || (item.kind === 'transport' && item.busTicket)) ? (
+        <Text className="mt-3 text-xs font-bold text-primary dark:text-primary-dark">
+          {t(TRANSLATION_KEYS.QR.CHECKED_IN)}
+        </Text>
       ) : null}
     </View>
   );

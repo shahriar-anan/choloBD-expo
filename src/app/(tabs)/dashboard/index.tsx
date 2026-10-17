@@ -37,6 +37,9 @@ export default function DashboardPage() {
   const isTransportOperator =
     auth.user?.role === 'SERVICE_ADMIN' && serviceType === 'TRANSPORT_SERVICE';
 
+  const isActivityOperator =
+    auth.user?.role === 'SERVICE_ADMIN' && serviceType === 'ACTIVITY_BOOKING';
+
   const waitingForAssignment =
     (auth.user?.role === 'SERVICE_ADMIN' || auth.user?.role === 'EMPLOYEE') &&
     !operatorProfileLoaded;
@@ -98,6 +101,7 @@ export default function DashboardPage() {
   if (auth.user?.role === 'SERVICE_ADMIN') {
     return (
       <ServiceAdminDashboard
+        activityOperator={isActivityOperator}
         userName={profileDisplayName(auth.user) || auth.user?.userName}
         email={auth.user?.email}
         imageUrl={profileImageUrl || auth.user?.imageUrl}

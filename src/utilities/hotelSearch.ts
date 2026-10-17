@@ -37,6 +37,9 @@ export function isValidStay(checkIn: string, checkOut: string, today = new Date(
         return false;
     }
     const nights = differenceInCalendarDays(end, start);
+    if (nights === 0) {
+        return true;
+    }
     return nights >= 1 && nights <= MAX_NIGHTS;
 }
 

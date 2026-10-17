@@ -55,6 +55,7 @@ export interface HotelBooking {
   paymentMethod?: string;
   checkInDate: string;
   checkOutDate: string;
+  checkedInAt?: string | null;
   totalPrice: number;
   specialRequests?: string;
   hotel?: {

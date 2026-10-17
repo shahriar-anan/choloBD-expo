@@ -56,7 +56,7 @@ export default function ExploreBooking() {
 
   if (!hotelDetail) return null;
 
-  const nights = checkInDate && checkOutDate ? Math.max(0, nightsBetween(checkInDate, checkOutDate)) : 0;
+  const nights = checkInDate && checkOutDate ? Math.max(1, nightsBetween(checkInDate, checkOutDate)) : 0;
   const roomTypes = (hotelDetail.roomTypes || []) as RoomType[];
   const chosen = roomTypes
     .map((room) => ({ room, qty: selectedRoomsMap[room.id] || 0 }))

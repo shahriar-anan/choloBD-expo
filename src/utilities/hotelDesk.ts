@@ -75,7 +75,9 @@ export function canRecordStay(booking: DeskBooking, now = new Date()): boolean {
   if (String(booking.status || '').toUpperCase() !== 'CONFIRMED') return false;
   if (String(booking.paymentStatus || '').toUpperCase() !== 'PAID') return false;
   if (!booking.checkInDate) return false;
-  return now >= new Date(booking.checkInDate);
+  const ymd = (value: Date | string) =>
+    new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Dhaka' }).format(new Date(value));
+  return ymd(now) >= ymd(booking.checkInDate);
 }
 
 export function summarizeBookings(bookings: DeskBooking[]): {

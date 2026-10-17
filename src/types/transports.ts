@@ -278,6 +278,7 @@ export interface TransportBooking {
   paymentMethod?: string | null;
   specialRequests?: string | null;
   bookedAt: string;
+  checkedInAt?: string | null;
   confirmedAt?: string | null;
   cancelledAt?: string | null;
   cancellationReason?: string | null;

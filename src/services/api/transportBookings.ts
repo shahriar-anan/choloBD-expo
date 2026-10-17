@@ -12,6 +12,7 @@ import {
   TransportBookingListPage,
   TransportRoundTripBookingResult,
 } from '../../types/transports';
+import type { QrScanDetailResponse, QrScanHistoryItem } from '../../types/qr';
 import { assertOnPlatformTransport, getTransportById } from './transports';
 
 function apiMessage(error: unknown, fallback: string): string {
@@ -153,19 +154,54 @@ export async function getTransportCancellationEligibility(
   }
 }
 
-export async function generateTransportBoardingQr(
-  bookingId: string
-): Promise<{ qrToken: string; expiresAt: string }> {
+export async function generateTransportBoardingQr(bookingId: string): Promise<{ qrToken: string }> {
   try {
     const api = getApiInstance();
     const res = await api.post(`/api/bookings/transports/${bookingId}/qr-generate`, {});
-    const data = res.data?.data as { qrToken?: string; expiresAt?: string } | undefined;
+    const data = res.data?.data as { qrToken?: string } | undefined;
     if (!data?.qrToken) {
       throw new Error(res.data?.message || 'QR code could not be created');
     }
-    return { qrToken: data.qrToken, expiresAt: data.expiresAt || '' };
+    return { qrToken: data.qrToken };
   } catch (error: unknown) {
     throw new Error(apiMessage(error, 'QR code could not be created'));
+  }
+}
+
+export async function listTransportQrScans(date?: string): Promise<QrScanHistoryItem[]> {
+  try {
+    const api = getApiInstance();
+    const res = await api.get('/api/bookings/transports/qr-scans', {
+      params: date ? { date } : undefined,
+    });
+    const body = res.data as { data?: { results?: QrScanHistoryItem[] } };
+    return body.data?.results ?? [];
+  } catch (error: unknown) {
+    throw new Error(apiMessage(error, 'Failed to load scan history'));
+  }
+}
+
+export async function getTransportQrScanDetail(scanId: string): Promise<QrScanDetailResponse> {
+  try {
+    const api = getApiInstance();
+    const res = await api.get(`/api/bookings/transports/qr-scans/${scanId}`);
+    return res.data as QrScanDetailResponse;
+  } catch (error: unknown) {
+    throw new Error(apiMessage(error, 'Failed to load scan detail'));
+  }
+}
+
+export async function transportQrCheckIn(bookingId: string): Promise<{ checkedInAt: string }> {
+  try {
+    const api = getApiInstance();
+    const res = await api.post(`/api/bookings/transports/${bookingId}/qr-check-in`, {});
+    const checkedInAt = res.data?.data?.checkedInAt as string | undefined;
+    if (!checkedInAt) {
+      throw new Error(res.data?.message || 'Check-in failed');
+    }
+    return { checkedInAt };
+  } catch (error: unknown) {
+    throw new Error(apiMessage(error, 'Check-in failed'));
   }
 }
 

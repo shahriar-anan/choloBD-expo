@@ -17,6 +17,7 @@ interface ServiceAdminDashboardProps {
   userStatus?: string;
   onLogout: () => void;
   hotelOperator?: boolean;
+  activityOperator?: boolean;
 }
 
 export function ServiceAdminDashboard({
@@ -27,6 +28,7 @@ export function ServiceAdminDashboard({
   userStatus,
   onLogout,
   hotelOperator = false,
+  activityOperator = false,
 }: ServiceAdminDashboardProps) {
   const router = useRouter();
   const { t } = useTranslation();
@@ -129,7 +131,13 @@ export function ServiceAdminDashboard({
             <AdminCard
               title={t(TRANSLATION_KEYS.DASHBOARD.ADMIN_CARDS.QR_SCANNER)}
               subtitle={hotelOperator ? undefined : t(TRANSLATION_KEYS.DASHBOARD.ADMIN_CARDS.QR_SCANNER_DESC)}
-              onPress={() => router.push('/(tabs)/dashboard/service-admin/qr-scanner')}
+              onPress={() =>
+                router.push(
+                  activityOperator
+                    ? '/(tabs)/dashboard/service-admin/activity-qr-scanner'
+                    : '/(tabs)/dashboard/service-admin/qr-scanner'
+                )
+              }
             />
             {hotelOperator ? (
               <AdminCard

@@ -15,7 +15,7 @@ import { RecentBookingCard } from '../../../components/ui/recentBookingCard';
 import { BookingQrSheet } from '../../../components/booking/BookingQrSheet';
 import { useHotelAdminSession } from '../../../hooks/useHotelAdminSession';
 import { HotelGuestBookings } from '../../../components/hotel/HotelGuestBookings';
-import { tabBarClearance } from '../../../hooks/useHideTabBar';
+import { tabBarClearance, usePathTabBar } from '../../../hooks/useHideTabBar';
 import { bookingCardKey, dismissBookingCard, loadDismissedBookingKeys } from '../../../utilities/dismissedBookings';
 
 type Chip = 'recent' | 'all' | 'hotels' | 'tickets' | 'activities';
@@ -79,6 +79,7 @@ function TravelerBookingsScreen() {
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
   const [qrItem, setQrItem] = useState<RecentBookingView | null>(null);
+  usePathTabBar(qrItem != null);
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());
   const primary = isDark ? theme.colors['primary-dark'] : theme.colors.primary;
 

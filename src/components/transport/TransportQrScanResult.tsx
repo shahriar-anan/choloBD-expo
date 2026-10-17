@@ -29,7 +29,7 @@ export function TransportQrScanResult({ booking }: TransportQrScanResultProps) {
 
   return (
     <ScrollView className="flex-1 bg-background dark:bg-background-dark" contentContainerStyle={{ padding: 16, paddingBottom: 24 }}>
-      <DeskScanVerdict unpaid={unpaid} />
+      <DeskScanVerdict unpaid={unpaid} checkedInAt={booking.checkedInAt} />
 
       <Text className="mt-5 text-3xl font-bold text-text dark:text-text-dark">{lead}</Text>
       <Text className="mt-1 text-base font-semibold text-text dark:text-text-dark">

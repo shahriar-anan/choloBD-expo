@@ -11,9 +11,10 @@ import theme from '../../constants/theme';
 interface QRCodeScannerProps {
   onScan: (qrToken: string) => void;
   isLoading?: boolean;
+  footer?: React.ReactNode;
 }
 
-export const QRCodeScanner: React.FC<QRCodeScannerProps> = ({ onScan, isLoading = false }) => {
+export const QRCodeScanner: React.FC<QRCodeScannerProps> = ({ onScan, isLoading = false, footer }) => {
   const { isDark } = useTheme();
   const { t } = useTranslation();
   const [manualInput, setManualInput] = useState('');
@@ -96,6 +97,7 @@ export const QRCodeScanner: React.FC<QRCodeScannerProps> = ({ onScan, isLoading 
             {scanMethod === 'camera' ? t(TRANSLATION_KEYS.QR.CAMERA_STEPS) : t(TRANSLATION_KEYS.QR.MANUAL_STEPS)}
           </Text>
         </View>
+        {footer}
     </KeyboardAwareScroll>
   );
 };

@@ -126,6 +126,16 @@ export function useTripPlannerTabBar(pathname: string, forceHide = false): void 
 }
 
 export function isDashboardBookingChromeHidden(pathname: string): boolean {
+    if (
+        pathname === '/qr-scanner'
+        || pathname.includes('/service-admin/qr-scanner')
+        || pathname.includes('/service-admin/qr-scan-history')
+    ) {
+        return true;
+    }
+    if (pathname.includes('/qr-generate') || pathname.includes('bus-boarding-qr')) {
+        return true;
+    }
     if (pathname.includes('/service-admin/hotel-info')) {
         return true;
     }

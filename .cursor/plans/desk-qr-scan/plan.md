@@ -2,7 +2,7 @@
 
 **Folder:** `desk-qr-scan` · **Rules:** [rules.md](rules.md) · **Tests:** [tests.md](tests.md)
 
-Status: **Result UI in progress.** Scan history waits on the log table in the API plan. Do not add that table in this pass.
+Status: **Superseded by [qr-overhaul](../qr-overhaul/plan.md).** Do not implement this folder. History is the scan log. The QR is rejected only after check-in.
 
 The hotel check-in scanner and the bus ticket scanner already validate a code. What opens after a successful scan is a raw field dump, and leaving that screen forgets the scan. This plan polishes that result and keeps a recent list on the same scanner page.
 
