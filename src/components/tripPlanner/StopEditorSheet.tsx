@@ -4,7 +4,6 @@
 
 import React, { useMemo, useRef, useState } from 'react';
 import {
-  Alert,
   Modal,
   View,
   Text,
@@ -12,6 +11,7 @@ import {
   TouchableOpacity,
   SafeAreaView,
 } from 'react-native';
+import { appAlert } from '../ui/appAlert';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { KeyboardAwareScroll } from '../ui/KeyboardAwareScroll';
 import { useKeyboardVisible } from '../../hooks/useKeyboardVisible';
@@ -173,7 +173,7 @@ export function StopEditorSheet({
       onClose();
       return;
     }
-    Alert.alert(
+    appAlert(
       t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_DISCARD_STOP_TITLE),
       t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_DISCARD_STOP_BODY),
       [

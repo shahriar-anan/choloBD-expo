@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TextInput, Pressable, Alert } from 'react-native';
+import { View, Text, TextInput, Pressable } from 'react-native';
+import { appAlert } from '../ui/appAlert';
 import { useTranslation } from 'react-i18next';
 import { useSelector } from 'react-redux';
 import { TRANSLATION_KEYS } from '../../constants/translationKeys';
@@ -81,12 +82,12 @@ export function HotelStayDesk({ booking, onUpdated }: HotelStayDeskProps) {
     try {
       const updated = await updateHotelDesk(booking.id, payload);
       onUpdated(updated);
-      Alert.alert(t(TRANSLATION_KEYS.HOTEL_DESK.STAFF_NOTE), t(TRANSLATION_KEYS.HOTEL_DESK.DESK_SAVED));
+      appAlert(t(TRANSLATION_KEYS.HOTEL_DESK.STAFF_NOTE), t(TRANSLATION_KEYS.HOTEL_DESK.DESK_SAVED), undefined, 'success');
     } catch (error: any) {
-      Alert.alert(
+      appAlert(
         t(TRANSLATION_KEYS.HOTEL_DESK.STAFF_NOTE),
         error?.response?.data?.message || t(TRANSLATION_KEYS.HOTEL_DESK.LOAD_FAILED)
-      );
+      , undefined, 'error');
     } finally {
       setSaving(false);
     }

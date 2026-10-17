@@ -4,7 +4,8 @@
  */
 
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
+import { appAlert } from '../../ui/appAlert';
 import { Feather } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { TRANSLATION_KEYS } from '../../../constants/translationKeys';
@@ -63,7 +64,7 @@ export function DayPlanTab({ trip }: DayPlanTabProps) {
         setDeleteModalVisible(false);
       }
     } catch (error: any) {
-      Alert.alert(t(TRANSLATION_KEYS.COMMON.ERROR), error?.message || 'Failed to delete segment');
+      appAlert(t(TRANSLATION_KEYS.COMMON.ERROR), error?.message || 'Failed to delete segment', undefined, 'error');
     }
   };
 
@@ -312,7 +313,7 @@ export function DayPlanTab({ trip }: DayPlanTabProps) {
             <TouchableOpacity
               onPress={() => {
                 if (countStopsForDay(trip.userSegments?.map(segmentToWizard) || [], dayNum) >= MAX_STOPS_PER_DAY) {
-                  Alert.alert(t(TRANSLATION_KEYS.COMMON.ERROR), t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_STOP_LIMIT, { max: MAX_STOPS_PER_DAY }));
+                  appAlert(t(TRANSLATION_KEYS.COMMON.ERROR), t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_STOP_LIMIT, { max: MAX_STOPS_PER_DAY }), undefined, 'error');
                   return;
                 }
                 openAddModal(dayNum);
@@ -371,7 +372,7 @@ export function DayPlanTab({ trip }: DayPlanTabProps) {
           }}
           onSave={(stop) => {
             void handleSaveStop(stop, addModalVisible ? 'add' : 'edit').catch((error: any) => {
-              Alert.alert(t(TRANSLATION_KEYS.COMMON.ERROR), error?.message || 'Failed to save segment');
+              appAlert(t(TRANSLATION_KEYS.COMMON.ERROR), error?.message || 'Failed to save segment', undefined, 'error');
             });
           }}
         />

@@ -1,5 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, ScrollView, Text, View } from 'react-native';
+import { appAlert } from '../../../components/ui/appAlert';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
@@ -126,7 +127,7 @@ function TravelerBookingsScreen() {
 
   const removeCard = (item: RecentBookingView) => {
     if (!userId) return;
-    Alert.alert(t(TRANSLATION_KEYS.BOOKINGS_TAB.DELETE_TITLE), t(TRANSLATION_KEYS.BOOKINGS_TAB.DELETE_BODY), [
+    appAlert(t(TRANSLATION_KEYS.BOOKINGS_TAB.DELETE_TITLE), t(TRANSLATION_KEYS.BOOKINGS_TAB.DELETE_BODY), [
       { text: t(TRANSLATION_KEYS.COMMON.CANCEL), style: 'cancel' },
       {
         text: t(TRANSLATION_KEYS.COMMON.DELETE),

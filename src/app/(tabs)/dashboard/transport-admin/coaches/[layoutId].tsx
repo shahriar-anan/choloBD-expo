@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Image,
   Pressable,
   ScrollView,
@@ -9,6 +8,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { appAlert } from '../../../../../components/ui/appAlert';
 import { KeyboardAwareScroll } from '../../../../../components/ui/KeyboardAwareScroll';
 import { format, parseISO } from 'date-fns';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -166,7 +166,7 @@ export default function TransportAdminCoachDetailPage() {
   const markSeat = async (seat: TransportSeat) => {
     if (!openTripId || markingSeatId) return;
     if (!seat.isAvailable && !seat.operatorManaged) {
-      Alert.alert(t(TRANSLATION_KEYS.TRANSPORT_OPERATOR.OCCUPANCY));
+      appAlert(t(TRANSLATION_KEYS.TRANSPORT_OPERATOR.OCCUPANCY));
       return;
     }
     setMarkingSeatId(seat.id);
@@ -182,10 +182,10 @@ export default function TransportAdminCoachDetailPage() {
         )
       );
     } catch (error) {
-      Alert.alert(
+      appAlert(
         t(TRANSLATION_KEYS.TRANSPORT_OPERATOR.FAILED),
         error instanceof Error ? error.message : undefined
-      );
+      , undefined, 'error');
     } finally {
       setMarkingSeatId(null);
     }
@@ -245,7 +245,7 @@ export default function TransportAdminCoachDetailPage() {
     if (!layout) return;
     const fare = Number(editFare);
     if (!editName.trim() || !Number.isFinite(fare) || fare <= 0) {
-      Alert.alert(t(TRANSLATION_KEYS.TRANSPORT_OPERATOR.FILL_REQUIRED));
+      appAlert(t(TRANSLATION_KEYS.TRANSPORT_OPERATOR.FILL_REQUIRED));
       return;
     }
     setBusy(true);
@@ -267,10 +267,10 @@ export default function TransportAdminCoachDetailPage() {
       setEditing(false);
       await reload();
     } catch (error: unknown) {
-      Alert.alert(
+      appAlert(
         t(TRANSLATION_KEYS.TRANSPORT_OPERATOR.FAILED),
         error instanceof Error ? error.message : undefined
-      );
+      , undefined, 'error');
     } finally {
       setBusy(false);
     }
@@ -290,17 +290,17 @@ export default function TransportAdminCoachDetailPage() {
       }
       goBack(router);
     } catch (error: unknown) {
-      Alert.alert(
+      appAlert(
         t(TRANSLATION_KEYS.TRANSPORT_OPERATOR.FAILED),
         error instanceof Error ? error.message : undefined
-      );
+      , undefined, 'error');
     } finally {
       setBusy(false);
     }
   };
 
   const confirmDeleteCoach = () => {
-    Alert.alert(t(TRANSLATION_KEYS.COMMON.DELETE), t(TRANSLATION_KEYS.TRANSPORT_OPERATOR.DELETE_COACH_CONFIRM), [
+    appAlert(t(TRANSLATION_KEYS.COMMON.DELETE), t(TRANSLATION_KEYS.TRANSPORT_OPERATOR.DELETE_COACH_CONFIRM), [
       { text: t(TRANSLATION_KEYS.COMMON.CANCEL), style: 'cancel' },
       { text: t(TRANSLATION_KEYS.COMMON.DELETE), style: 'destructive', onPress: () => { void removeCoach(); } },
     ]);
@@ -316,17 +316,17 @@ export default function TransportAdminCoachDetailPage() {
       }
       await reload();
     } catch (error: unknown) {
-      Alert.alert(
+      appAlert(
         t(TRANSLATION_KEYS.TRANSPORT_OPERATOR.FAILED),
         error instanceof Error ? error.message : undefined
-      );
+      , undefined, 'error');
     } finally {
       setBusy(false);
     }
   };
 
   const confirmDeleteDeparture = (tripId: string) => {
-    Alert.alert(t(TRANSLATION_KEYS.TRANSPORT_OPERATOR.DELETE_DEPARTURE), t(TRANSLATION_KEYS.TRANSPORT_OPERATOR.DELETE_DEPARTURE_CONFIRM), [
+    appAlert(t(TRANSLATION_KEYS.TRANSPORT_OPERATOR.DELETE_DEPARTURE), t(TRANSLATION_KEYS.TRANSPORT_OPERATOR.DELETE_DEPARTURE_CONFIRM), [
       { text: t(TRANSLATION_KEYS.COMMON.CANCEL), style: 'cancel' },
       { text: t(TRANSLATION_KEYS.COMMON.DELETE), style: 'destructive', onPress: () => { void removeDeparture(tripId); } },
     ]);

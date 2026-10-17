@@ -10,9 +10,9 @@ import {
   TouchableOpacity,
   Modal,
   ScrollView,
-  Alert,
   ActivityIndicator,
 } from 'react-native';
+import { appAlert } from '../../ui/appAlert';
 import { Feather } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { TRANSLATION_KEYS } from '../../../constants/translationKeys';
@@ -55,7 +55,7 @@ export function LinkHotelModal({
 
   const handleConfirm = async () => {
     if (!selectedDay) {
-      Alert.alert('Error', 'Please select a day to link this hotel booking');
+      appAlert('Error', 'Please select a day to link this hotel booking', undefined, 'error');
       return;
     }
 
@@ -65,7 +65,7 @@ export function LinkHotelModal({
       setSelectedDay(null);
       onClose();
     } catch (error: any) {
-      Alert.alert('Error', error?.message || 'Failed to link hotel booking');
+      appAlert('Error', error?.message || 'Failed to link hotel booking', undefined, 'error');
     } finally {
       setIsProcessing(false);
     }

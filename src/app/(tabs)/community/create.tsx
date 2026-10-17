@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
+import { appAlert } from '../../../components/ui/appAlert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -26,7 +27,7 @@ export default function CommunityCreatePage() {
 
   const handleSubmit = async (values: { userTripPlanId?: string; caption?: string; images: { url: string; order?: number; altText?: string }[] }) => {
     if (!isAuthenticated) {
-      Alert.alert(t(TRANSLATION_KEYS.COMMUNITY.LOGIN_REQUIRED), t(TRANSLATION_KEYS.COMMUNITY.JOIN_DESC));
+      appAlert(t(TRANSLATION_KEYS.COMMUNITY.LOGIN_REQUIRED), t(TRANSLATION_KEYS.COMMUNITY.JOIN_DESC));
       return;
     }
 
@@ -40,7 +41,7 @@ export default function CommunityCreatePage() {
       // Images are required by backend, so always attach them
       await uploadImagesAndAttach(draft.id, values.images);
 
-      Alert.alert(t('common.success'), t(TRANSLATION_KEYS.COMMUNITY.DRAFT_CREATED));
+      appAlert(t('common.success'), t(TRANSLATION_KEYS.COMMUNITY.DRAFT_CREATED), undefined, 'success');
       goBack(router);
     } finally {
       setIsSubmitting(false);

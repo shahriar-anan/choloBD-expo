@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Switch, Text, TextInput, View } from 'react-native';
+import { Switch, Text, TextInput, View } from 'react-native';
+import { appAlert } from '../../../../../components/ui/appAlert';
 import { useTranslation } from 'react-i18next';
 import { DeskCard, DeskScreen, FieldLabel, PrimaryButton, useLeaveGuard } from '../../../../../components/hotelDesk/chrome';
 import { clockValue } from '../../../../../components/hotelDesk/draft';
@@ -34,7 +35,7 @@ export default function StayTimesScreen() {
 
   const save = async () => {
     if (!CLOCK.test(draft.checkInTime.trim()) || !CLOCK.test(draft.checkOutTime.trim())) {
-      Alert.alert(t(TRANSLATION_KEYS.HOTEL_DESK.STAY_TIMES), t(TRANSLATION_KEYS.HOTEL_DESK.TIME_HINT));
+      appAlert(t(TRANSLATION_KEYS.HOTEL_DESK.STAY_TIMES), t(TRANSLATION_KEYS.HOTEL_DESK.TIME_HINT));
       return;
     }
     try {
@@ -42,18 +43,18 @@ export default function StayTimesScreen() {
       const checkOutTime = draft.checkOutTime.trim();
       await saveProfile({ checkInTime, checkOutTime });
       setDraft({ checkInTime, checkOutTime });
-      Alert.alert(t(TRANSLATION_KEYS.HOTEL_DESK.PROFILE_SAVED_TITLE), t(TRANSLATION_KEYS.HOTEL_DESK.PROFILE_SAVED));
+      appAlert(t(TRANSLATION_KEYS.HOTEL_DESK.PROFILE_SAVED_TITLE), t(TRANSLATION_KEYS.HOTEL_DESK.PROFILE_SAVED), undefined, 'success');
     } catch (error: any) {
-      Alert.alert(
+      appAlert(
         t(TRANSLATION_KEYS.HOTEL_DESK.PROFILE_SAVED_TITLE),
         error?.response?.data?.message || t(TRANSLATION_KEYS.HOTEL_DESK.COULD_NOT_SAVE_PROFILE),
-      );
+       undefined, 'error');
     }
   };
 
   const askMode = (value: boolean) => {
     setSwitchEpoch((current) => current + 1);
-    Alert.alert(
+    appAlert(
       t(TRANSLATION_KEYS.HOTEL_DESK.ALLOW_SHIFT_BOOKINGS),
       t(TRANSLATION_KEYS.HOTEL_DESK.SHIFT_MODE_LOCK_CONFIRM),
       [
@@ -63,10 +64,10 @@ export default function StayTimesScreen() {
           onPress: () => {
             void saveBookingMode(value).catch((error: any) => {
               setSwitchEpoch((current) => current + 1);
-              Alert.alert(
+              appAlert(
                 t(TRANSLATION_KEYS.HOTEL_DESK.ALLOW_SHIFT_BOOKINGS),
                 error?.response?.data?.message || t(TRANSLATION_KEYS.HOTEL_DESK.COULD_NOT_UPDATE_SHIFT_MODE),
-              );
+               undefined, 'error');
             });
           },
         },

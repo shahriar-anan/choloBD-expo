@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
-import { Alert, Text, TouchableOpacity, View } from 'react-native';
+import { Text, TouchableOpacity, View } from 'react-native';
+import { appAlert } from '../ui/appAlert';
 import { useNavigation, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
@@ -20,7 +21,7 @@ export function useLeaveGuard(dirty: boolean): { allowLeave: () => void } {
     const unsubscribe = navigation.addListener('beforeRemove', (event: any) => {
       if (!dirtyRef.current || bypassRef.current) return;
       event.preventDefault();
-      Alert.alert(
+      appAlert(
         t(TRANSLATION_KEYS.HOTEL_DESK.DISCARD_TITLE),
         t(TRANSLATION_KEYS.HOTEL_DESK.DISCARD_BODY),
         [

@@ -4,7 +4,8 @@
  */
 
 import React from 'react';
-import { View, Text, TouchableOpacity, Alert, Modal } from 'react-native';
+import { View, Text, TouchableOpacity, Modal } from 'react-native';
+import { appAlert } from '../../ui/appAlert';
 import { Feather } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { TRANSLATION_KEYS } from '../../../constants/translationKeys';
@@ -43,7 +44,7 @@ export function DeleteSegmentConfirm({
       console.log('[DeleteSegmentConfirm] Delete confirmed successfully');
     } catch (error: any) {
       console.error('[DeleteSegmentConfirm] Delete error:', error);
-      Alert.alert('Error', error?.message || 'Failed to delete segment');
+      appAlert('Error', error?.message || 'Failed to delete segment', undefined, 'error');
     }
   };
 

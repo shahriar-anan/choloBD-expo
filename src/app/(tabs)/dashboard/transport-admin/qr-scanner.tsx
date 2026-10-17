@@ -1,5 +1,6 @@
 import React, { useCallback, useState } from 'react';
-import { Alert, Pressable, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
+import { appAlert } from '../../../../components/ui/appAlert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
@@ -59,11 +60,11 @@ export default function TransportAdminQrScannerPage() {
       const payload = detail.data;
       const booking = payload?.booking as TransportBooking | undefined;
       if (!booking?.id) return;
-      const checkedInAt = payload.checkedInAt ?? booking.checkedInAt ?? null;
+      const checkedInAt = payload?.checkedInAt ?? booking.checkedInAt ?? null;
       setDeskResult({ booking: { ...booking, checkedInAt }, checkedInAt });
     } catch (detailError: unknown) {
       const message = detailError instanceof Error ? detailError.message : t(TRANSLATION_KEYS.QR.SCAN_FAILED_BODY);
-      Alert.alert(t(TRANSLATION_KEYS.QR.SCAN_FAILED), message);
+      appAlert(t(TRANSLATION_KEYS.QR.SCAN_FAILED), message, undefined, 'error');
     } finally {
       setRecentLoading(false);
     }
@@ -81,7 +82,7 @@ export default function TransportAdminQrScannerPage() {
         await loadRecent();
       } catch (checkInError: unknown) {
         const message = checkInError instanceof Error ? checkInError.message : t(TRANSLATION_KEYS.QR.SCAN_FAILED_BODY);
-        Alert.alert(t(TRANSLATION_KEYS.QR.CHECK_IN_GUEST), message);
+        appAlert(t(TRANSLATION_KEYS.QR.CHECK_IN_GUEST), message);
       } finally {
         setCheckInBusy(false);
       }
@@ -97,7 +98,7 @@ export default function TransportAdminQrScannerPage() {
       }
     } catch (scanError: unknown) {
       const message = scanError instanceof Error ? scanError.message : t(TRANSLATION_KEYS.QR.SCAN_FAILED_BODY);
-      Alert.alert(t(TRANSLATION_KEYS.QR.SCAN_FAILED), message);
+      appAlert(t(TRANSLATION_KEYS.QR.SCAN_FAILED), message, undefined, 'error');
     }
   };
 

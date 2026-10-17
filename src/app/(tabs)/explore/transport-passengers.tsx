@@ -1,12 +1,12 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Pressable,
   Text,
   TextInput,
   View,
 } from 'react-native';
+import { appAlert } from '../../../components/ui/appAlert';
 import { KeyboardAwareScroll } from '../../../components/ui/KeyboardAwareScroll';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -109,7 +109,7 @@ export default function TransportPassengersPage() {
       setHoldSeconds(remaining);
       if (remaining <= 0) {
         if (leavingRef.current || !isFocused) return;
-        Alert.alert(
+        appAlert(
           t(TRANSLATION_KEYS.TRANSPORT.HOLD_EXPIRED_TITLE),
           t(TRANSLATION_KEYS.TRANSPORT.HOLD_EXPIRED_BODY),
           [{
@@ -140,22 +140,22 @@ export default function TransportPassengersPage() {
 
   const validate = (): boolean => {
     if (!contactPhone.trim() || contactPhone.trim().length > 20) {
-      Alert.alert(t(TRANSLATION_KEYS.TRANSPORT.CONTACT_PHONE), t(TRANSLATION_KEYS.TRANSPORT.CONTACT_PHONE_HINT));
+      appAlert(t(TRANSLATION_KEYS.TRANSPORT.CONTACT_PHONE), t(TRANSLATION_KEYS.TRANSPORT.CONTACT_PHONE_HINT));
       return false;
     }
     if (!contactEmail.trim()) {
-      Alert.alert(t(TRANSLATION_KEYS.TRANSPORT.CONTACT_EMAIL), t(TRANSLATION_KEYS.TRANSPORT.CONTACT_EMAIL_HINT));
+      appAlert(t(TRANSLATION_KEYS.TRANSPORT.CONTACT_EMAIL), t(TRANSLATION_KEYS.TRANSPORT.CONTACT_EMAIL_HINT));
       return false;
     }
     const allRows = [...outboundRows, ...returnRows];
     for (const row of allRows) {
       if (!row.firstName.trim() || !row.lastName.trim()) {
-        Alert.alert(t(TRANSLATION_KEYS.TRANSPORT.PASSENGER_DETAILS), t(TRANSLATION_KEYS.TRANSPORT.PASSENGER_NAME_REQUIRED));
+        appAlert(t(TRANSLATION_KEYS.TRANSPORT.PASSENGER_DETAILS), t(TRANSLATION_KEYS.TRANSPORT.PASSENGER_NAME_REQUIRED));
         return false;
       }
     }
     if (holdSeconds <= 0) {
-      Alert.alert(t(TRANSLATION_KEYS.TRANSPORT.HOLD_EXPIRED_TITLE), t(TRANSLATION_KEYS.TRANSPORT.HOLD_EXPIRED_BODY));
+      appAlert(t(TRANSLATION_KEYS.TRANSPORT.HOLD_EXPIRED_TITLE), t(TRANSLATION_KEYS.TRANSPORT.HOLD_EXPIRED_BODY));
       return false;
     }
     return true;

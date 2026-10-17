@@ -1,5 +1,6 @@
+import { appAlert } from '../components/ui/appAlert';
 import { useCallback, useState } from 'react';
-import { Alert } from 'react-native';
+
 import { useTranslation } from 'react-i18next';
 import { TRANSLATION_KEYS } from '../constants/translationKeys';
 import { useSelector } from 'react-redux';
@@ -41,7 +42,7 @@ export function useTransportBookingLogic() {
     data: CreateTransportBookingData
   ): Promise<CreateTransportBookingResult | null> => {
     if (!auth.user?.id) {
-      Alert.alert('Authentication required', 'Please login to create a booking');
+      appAlert('Authentication required', 'Please login to create a booking');
       return null;
     }
 
@@ -50,7 +51,7 @@ export function useTransportBookingLogic() {
       return await createTransportBooking(data);
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Failed to create booking';
-      Alert.alert('Booking failed', message);
+      appAlert('Booking failed', message, undefined, 'error');
       return null;
     } finally {
       setSubmitting(false);
@@ -79,7 +80,7 @@ export function useTransportBookingLogic() {
       return page;
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Failed to load bookings';
-      Alert.alert('Error', message);
+      appAlert('Error', message, undefined, 'error');
       return { results: [], total: 0, page: 1, limit: 20 };
     } finally {
       setLoadingBookings(false);
@@ -93,7 +94,7 @@ export function useTransportBookingLogic() {
       return await getTransportBookingById(bookingId);
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Failed to load booking';
-      Alert.alert('Error', message);
+      appAlert('Error', message, undefined, 'error');
       return null;
     }
   }, []);
@@ -120,7 +121,7 @@ export function useTransportBookingLogic() {
     try {
       const eligibility = await getTransportCancellationEligibility(bookingId);
       if (!eligibility.canCancel) {
-        Alert.alert('Cannot cancel', eligibility.reason || 'This booking cannot be cancelled');
+        appAlert('Cannot cancel', eligibility.reason || 'This booking cannot be cancelled', undefined, 'error');
         return;
       }
 
@@ -130,11 +131,11 @@ export function useTransportBookingLogic() {
       if (result.emailDispatched) {
         message += t(TRANSLATION_KEYS.BOOKING.CANCEL_EMAIL_NOTE);
       }
-      Alert.alert('Success', message);
+      appAlert('Success', message, undefined, 'success');
       onSuccess?.();
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Failed to cancel booking';
-      Alert.alert('Cancellation failed', message);
+      appAlert('Cancellation failed', message, undefined, 'error');
     } finally {
       setCancelSubmitting(false);
     }

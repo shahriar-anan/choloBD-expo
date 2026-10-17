@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Alert, Text } from 'react-native';
+import { Text } from 'react-native';
+import { appAlert } from '../../../../../../components/ui/appAlert';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { DeskCard, DeskScreen, MenuRow } from '../../../../../../components/hotelDesk/chrome';
@@ -22,10 +23,10 @@ export default function RoomsScreen() {
       await setRoomStatus(selected.id, status);
       setSelectedId(null);
     } catch (error: any) {
-      Alert.alert(
+      appAlert(
         t(TRANSLATION_KEYS.HOTEL_DESK.ROOM_STATUS_TITLE),
         error?.response?.data?.message || t(TRANSLATION_KEYS.HOTEL_DESK.COULD_NOT_UPDATE_ROOM),
-      );
+       undefined, 'error');
     }
   };
 

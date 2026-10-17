@@ -1,13 +1,13 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Linking,
   Pressable,
   ScrollView,
   Text,
   View,
 } from 'react-native';
+import { appAlert } from '../../../components/ui/appAlert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -121,7 +121,7 @@ export default function TransportTripPage() {
         } catch (error: unknown) {
           if (!cancelled) {
             const message = error instanceof Error ? error.message : t(TRANSLATION_KEYS.TRANSPORT.LOAD_FAILED);
-            Alert.alert(t(TRANSLATION_KEYS.COMMON.ERROR), message);
+            appAlert(t(TRANSLATION_KEYS.COMMON.ERROR), message, undefined, 'error');
           }
         } finally {
           if (!cancelled) setLoading(false);
@@ -202,11 +202,11 @@ export default function TransportTripPage() {
   const continueWithHold = async () => {
     if (!transportId || !tripId) return;
     if (selected.length === 0) {
-      Alert.alert(t(TRANSLATION_KEYS.TRANSPORT.SELECT_SEATS));
+      appAlert(t(TRANSLATION_KEYS.TRANSPORT.SELECT_SEATS));
       return;
     }
     if (!isReturnLeg && (!boardingId || !droppingId)) {
-      Alert.alert(t(TRANSLATION_KEYS.TRANSPORT.STOPS_REQUIRED));
+      appAlert(t(TRANSLATION_KEYS.TRANSPORT.STOPS_REQUIRED));
       return;
     }
     setHolding(true);
@@ -248,7 +248,7 @@ export default function TransportTripPage() {
       router.push('/(tabs)/explore/transport-passengers');
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : t(TRANSLATION_KEYS.TRANSPORT.HOLD_FAILED);
-      Alert.alert(t(TRANSLATION_KEYS.COMMON.ERROR), message);
+      appAlert(t(TRANSLATION_KEYS.COMMON.ERROR), message, undefined, 'error');
     } finally {
       setHolding(false);
     }

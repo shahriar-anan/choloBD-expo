@@ -1,13 +1,13 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Image,
   Pressable,
   Text,
   TextInput,
   View,
 } from 'react-native';
+import { appAlert } from '../../../components/ui/appAlert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -113,10 +113,10 @@ export default function AccountScreen() {
       ? await ImagePicker.requestMediaLibraryPermissionsAsync()
       : await ImagePicker.requestCameraPermissionsAsync();
     if (!permission.granted) {
-      Alert.alert(
+      appAlert(
         t(TRANSLATION_KEYS.COMMON.ERROR),
         t(source === 'library' ? TRANSLATION_KEYS.PROFILE.PHOTO_PERMISSION : TRANSLATION_KEYS.PROFILE.CAMERA_PERMISSION),
-      );
+       undefined, 'error');
       return;
     }
 
@@ -188,7 +188,7 @@ export default function AccountScreen() {
         dispatch(setAuthUser(nextUser));
       }
 
-      Alert.alert(t(TRANSLATION_KEYS.COMMON.SUCCESS), t(TRANSLATION_KEYS.PROFILE.SAVED));
+      appAlert(t(TRANSLATION_KEYS.COMMON.SUCCESS), t(TRANSLATION_KEYS.PROFILE.SAVED), undefined, 'success');
       goBack(router);
     } catch (error: unknown) {
       setFormError(serverMessage(error, t(TRANSLATION_KEYS.PROFILE.SAVE_FAILED)));

@@ -1,7 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Image,
   KeyboardAvoidingView,
   Platform,
@@ -11,6 +10,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { appAlert } from '../../../../components/ui/appAlert';
 import * as ImagePicker from 'expo-image-picker';
 import { KeyboardAwareScroll } from '../../../../components/ui/KeyboardAwareScroll';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -176,7 +176,7 @@ export default function TransportAdminVehiclesPage() {
     if (!transportId || !editor) return;
     const rate = Number(dailyRate);
     if (!carName.trim() || !plate.trim() || !Number.isFinite(rate) || rate <= 0) {
-      Alert.alert(t(TRANSLATION_KEYS.TRANSPORT_OPERATOR.FILL_REQUIRED));
+      appAlert(t(TRANSLATION_KEYS.TRANSPORT_OPERATOR.FILL_REQUIRED));
       return;
     }
     setBusy(true);
@@ -222,10 +222,10 @@ export default function TransportAdminVehiclesPage() {
       setEditor(null);
       await reload();
     } catch (error: unknown) {
-      Alert.alert(
+      appAlert(
         t(TRANSLATION_KEYS.TRANSPORT_OPERATOR.FAILED),
         error instanceof Error ? error.message : undefined
-      );
+      , undefined, 'error');
     } finally {
       setBusy(false);
     }
@@ -238,17 +238,17 @@ export default function TransportAdminVehiclesPage() {
       setEditor(null);
       await reload();
     } catch (error: unknown) {
-      Alert.alert(
+      appAlert(
         t(TRANSLATION_KEYS.TRANSPORT_OPERATOR.FAILED),
         error instanceof Error ? error.message : undefined
-      );
+      , undefined, 'error');
     } finally {
       setBusy(false);
     }
   };
 
   const confirmDeleteCar = (vehicleId: string) => {
-    Alert.alert(t(TRANSLATION_KEYS.COMMON.DELETE), t(TRANSLATION_KEYS.TRANSPORT_OPERATOR.DELETE_CAR_CONFIRM), [
+    appAlert(t(TRANSLATION_KEYS.COMMON.DELETE), t(TRANSLATION_KEYS.TRANSPORT_OPERATOR.DELETE_CAR_CONFIRM), [
       { text: t(TRANSLATION_KEYS.COMMON.CANCEL), style: 'cancel' },
       { text: t(TRANSLATION_KEYS.COMMON.DELETE), style: 'destructive', onPress: () => { void removeCar(vehicleId); } },
     ]);

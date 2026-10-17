@@ -1,5 +1,6 @@
 import React, { useCallback, useState } from 'react';
-import { View, Text, Pressable, ActivityIndicator, TextInput, Alert } from 'react-native';
+import { View, Text, Pressable, ActivityIndicator, TextInput } from 'react-native';
+import { appAlert } from '../../../../components/ui/appAlert';
 import { KeyboardAwareScroll } from '../../../../components/ui/KeyboardAwareScroll';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -77,7 +78,7 @@ export default function CleaningTasksPage() {
 
   const sendTask = async () => {
     if (!hotelId || !assigneeId) {
-      Alert.alert(t(TRANSLATION_KEYS.HOTEL_DESK.TASKS_TITLE), t(TRANSLATION_KEYS.HOTEL_DESK.NO_ASSIGNEE));
+      appAlert(t(TRANSLATION_KEYS.HOTEL_DESK.TASKS_TITLE), t(TRANSLATION_KEYS.HOTEL_DESK.NO_ASSIGNEE));
       return;
     }
     setSaving(true);
@@ -92,17 +93,17 @@ export default function CleaningTasksPage() {
       setAssigneeId(null);
       await load();
     } catch (sendError: any) {
-      Alert.alert(
+      appAlert(
         t(TRANSLATION_KEYS.HOTEL_DESK.TASKS_TITLE),
         sendError?.response?.data?.message || t(TRANSLATION_KEYS.HOTEL_DESK.LOAD_FAILED)
-      );
+      , undefined, 'error');
     } finally {
       setSaving(false);
     }
   };
 
   const finishTask = (task: HotelTaskRow) => {
-    Alert.alert(t(TRANSLATION_KEYS.HOTEL_DESK.COMPLETE_TASK), task.hotelRoom?.roomNumber ? `Room ${task.hotelRoom.roomNumber}` : '', [
+    appAlert(t(TRANSLATION_KEYS.HOTEL_DESK.COMPLETE_TASK), task.hotelRoom?.roomNumber ? `Room ${task.hotelRoom.roomNumber}` : '', [
       { text: t(TRANSLATION_KEYS.COMMON.CANCEL), style: 'cancel' },
       {
         text: t(TRANSLATION_KEYS.HOTEL_DESK.COMPLETE_TASK),
@@ -112,10 +113,10 @@ export default function CleaningTasksPage() {
               await completeHotelTask(task.id);
               await load();
             } catch (finishError: any) {
-              Alert.alert(
+              appAlert(
                 t(TRANSLATION_KEYS.HOTEL_DESK.TASKS_TITLE),
                 finishError?.response?.data?.message || t(TRANSLATION_KEYS.HOTEL_DESK.LOAD_FAILED)
-              );
+              , undefined, 'error');
             }
           })();
         },

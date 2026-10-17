@@ -3,7 +3,8 @@
  */
 
 import React, { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Text, TouchableOpacity, View } from 'react-native';
+import { appAlert } from '../../../components/ui/appAlert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -46,7 +47,7 @@ export default function TripDetails() {
 
   const confirmDelete = () => {
     if (!currentTrip) return;
-    Alert.alert(
+    appAlert(
       t(TRANSLATION_KEYS.TRIP_PLANNER.DETAIL_DELETE_TITLE),
       t(TRANSLATION_KEYS.TRIP_PLANNER.DETAIL_DELETE_BODY),
       [
@@ -59,7 +60,7 @@ export default function TripDetails() {
               await deleteTrip(currentTrip.id);
               goBack(router);
             } catch (error: any) {
-              Alert.alert(t(TRANSLATION_KEYS.COMMON.ERROR), error?.message || t(TRANSLATION_KEYS.COMMON.ERROR));
+              appAlert(t(TRANSLATION_KEYS.COMMON.ERROR), error?.message || t(TRANSLATION_KEYS.COMMON.ERROR), undefined, 'error');
             }
           },
         },

@@ -12,6 +12,7 @@ import { API_BASE_URL } from '../constants/api';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as SplashScreen from 'expo-splash-screen';
 import { SplashScreen as CustomSplash } from '../components/splash';
+import { AlertHost } from '../components/ui/appAlert';
 import { useState, useEffect } from 'react';
 
 // Keep the native splash visible until the animated splash has painted.
@@ -44,6 +45,7 @@ function AppContentLayout() {
         <CustomSplash onComplete={() => setSplashDone(true)} />
       ) : null}
       {assetsReady && splashDone ? <AppContentStack /> : null}
+      <AlertHost />
     </SafeAreaProvider>
   );
 }

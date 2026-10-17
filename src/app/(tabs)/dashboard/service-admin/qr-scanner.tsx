@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Alert, Pressable, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
+import { appAlert } from '../../../../components/ui/appAlert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { usePathname, useRouter } from 'expo-router';
@@ -32,7 +33,7 @@ export default function QRScannerPage() {
     } catch (scanError: unknown) {
       const err = scanError as { response?: { data?: { message?: string } }; message?: string };
       const message = err?.response?.data?.message || err?.message || t(TRANSLATION_KEYS.QR.SCAN_FAILED_BODY);
-      Alert.alert(t(TRANSLATION_KEYS.QR.SCAN_FAILED), message);
+      appAlert(t(TRANSLATION_KEYS.QR.SCAN_FAILED), message, undefined, 'error');
     }
   };
 

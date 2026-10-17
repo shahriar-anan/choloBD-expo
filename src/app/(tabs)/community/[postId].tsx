@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
-import { View, Text, Image, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, Image, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { appAlert } from '../../../components/ui/appAlert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -36,7 +37,7 @@ export default function CommunityPostDetailPage() {
   const handleReact = async () => {
     if (!post?.id) return;
     if (!isAuthenticated) {
-      Alert.alert(t(TRANSLATION_KEYS.COMMUNITY.LOGIN_REQUIRED), t(TRANSLATION_KEYS.COMMUNITY.SUBTITLE));
+      appAlert(t(TRANSLATION_KEYS.COMMUNITY.LOGIN_REQUIRED), t(TRANSLATION_KEYS.COMMUNITY.SUBTITLE));
       return;
     }
     await toggleReact(post.id);

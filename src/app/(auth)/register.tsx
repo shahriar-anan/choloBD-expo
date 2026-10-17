@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
-import { Alert, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { appAlert } from '../../components/ui/appAlert';
 import { Link, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Controller, useForm } from 'react-hook-form';
@@ -47,7 +48,7 @@ export default function Register() {
         })
       ).unwrap();
       if (result.emailDispatched) {
-        Alert.alert(
+        appAlert(
           t(TRANSLATION_KEYS.AUTH.REGISTER.CREATE_ACCOUNT),
           t(TRANSLATION_KEYS.AUTH.REGISTER.WELCOME_EMAIL)
         );

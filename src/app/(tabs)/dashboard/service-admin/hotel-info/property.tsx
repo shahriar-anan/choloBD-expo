@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, TextInput } from 'react-native';
+import { TextInput } from 'react-native';
+import { appAlert } from '../../../../../components/ui/appAlert';
 import { useTranslation } from 'react-i18next';
 import { ChipEditor } from '../../../../../components/hotelDesk/ChipEditor';
 import { DeskScreen, FieldLabel, PrimaryButton, useLeaveGuard } from '../../../../../components/hotelDesk/chrome';
@@ -80,12 +81,12 @@ export default function PropertyDetailsScreen() {
         email: current.email.trim(),
         website: current.website.trim(),
       }));
-      Alert.alert(t(TRANSLATION_KEYS.HOTEL_DESK.PROFILE_SAVED_TITLE), t(TRANSLATION_KEYS.HOTEL_DESK.PROFILE_SAVED));
+      appAlert(t(TRANSLATION_KEYS.HOTEL_DESK.PROFILE_SAVED_TITLE), t(TRANSLATION_KEYS.HOTEL_DESK.PROFILE_SAVED), undefined, 'success');
     } catch (error: any) {
-      Alert.alert(
+      appAlert(
         t(TRANSLATION_KEYS.HOTEL_DESK.PROFILE_SAVED_TITLE),
         error?.response?.data?.message || t(TRANSLATION_KEYS.HOTEL_DESK.COULD_NOT_SAVE_PROFILE),
-      );
+       undefined, 'error');
     }
   };
 

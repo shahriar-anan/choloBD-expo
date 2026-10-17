@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
+import { appAlert } from '../../../components/ui/appAlert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -90,11 +91,11 @@ export default function HotelSearchPage() {
 
     const search = () => {
         if (!params.destination?.locationId) {
-            Alert.alert(t(TRANSLATION_KEYS.HOTEL_SEARCH.DESTINATION), t(TRANSLATION_KEYS.HOTEL_SEARCH.CHOOSE_DESTINATION));
+            appAlert(t(TRANSLATION_KEYS.HOTEL_SEARCH.DESTINATION), t(TRANSLATION_KEYS.HOTEL_SEARCH.CHOOSE_DESTINATION));
             return;
         }
         if (!datesReady) {
-            Alert.alert(t(TRANSLATION_KEYS.HOTEL_SEARCH.SELECT_DATES), t(TRANSLATION_KEYS.HOTEL_SEARCH.PICK_DATES));
+            appAlert(t(TRANSLATION_KEYS.HOTEL_SEARCH.SELECT_DATES), t(TRANSLATION_KEYS.HOTEL_SEARCH.PICK_DATES));
             return;
         }
         router.push('/(tabs)/explore/hotel-results');

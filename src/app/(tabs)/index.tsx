@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, ScrollView, Alert } from 'react-native';
+import { View, ScrollView } from 'react-native';
+import { appAlert } from '../../components/ui/appAlert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useDispatch, useSelector } from 'react-redux';
 import { useRouter } from 'expo-router';
@@ -50,10 +51,10 @@ function TravelerHome() {
         router.push('/(tabs)/dashboard/service-admin/qr-scanner');
         break;
       case 'wallet':
-        Alert.alert('Coming Soon', 'Wallet feature is not yet available in this version.');
+        appAlert('Coming Soon', 'Wallet feature is not yet available in this version.');
         break;
       case 'payment':
-        Alert.alert('Coming Soon', 'Payment feature is not yet available in this version.');
+        appAlert('Coming Soon', 'Payment feature is not yet available in this version.');
         break;
       case 'track':
         router.push('/(tabs)/tracking');
@@ -62,13 +63,13 @@ function TravelerHome() {
         router.push('/(tabs)/dashboard');
         break;
       case 'settings':
-        Alert.alert('Info', 'Settings page is not yet available.');
+        appAlert('Info', 'Settings page is not yet available.');
         break;
       case 'help':
-        Alert.alert('Help', 'Help page is not yet available.');
+        appAlert('Help', 'Help page is not yet available.');
         break;
       case 'about':
-        Alert.alert('About', 'About page is not yet available.');
+        appAlert('About', 'About page is not yet available.');
         break;
       default:
         console.log('Navigation not implemented for:', item);

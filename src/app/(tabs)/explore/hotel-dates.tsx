@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Alert, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
+import { appAlert } from '../../../components/ui/appAlert';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -33,7 +34,7 @@ export default function HotelDatesPage() {
                 checkOut={shiftStay ? checkIn : checkOut}
                 singleDate={shiftStay}
                 onRangeAttempt={(iso) => {
-                    Alert.alert(
+                    appAlert(
                         t(TRANSLATION_KEYS.HOTEL_SEARCH.SHIFT_ONE_DAY_TITLE),
                         t(TRANSLATION_KEYS.HOTEL_SEARCH.SHIFT_ONE_DAY_BODY),
                         [
@@ -83,7 +84,7 @@ export default function HotelDatesPage() {
                         }
                         if (shiftStay && params.shift !== 'ALL_DAY' && shiftClosedForStay(checkIn, params.shift)) {
                             const spoken = shiftSpoken(params.shift);
-                            Alert.alert(
+                            appAlert(
                                 t(TRANSLATION_KEYS.HOTEL_SEARCH.SHIFT_CLOSED_TITLE),
                                 t(TRANSLATION_KEYS.HOTEL_SEARCH.SHIFT_CLOSED_BODY, {
                                     shift: t(spoken.name),
@@ -93,7 +94,7 @@ export default function HotelDatesPage() {
                             return;
                         }
                         if (params.shift === 'NIGHT' && checkIn === dhakaYmd() && runningNightOpen()) {
-                            Alert.alert(
+                            appAlert(
                                 t(TRANSLATION_KEYS.HOTEL_SEARCH.WHICH_NIGHT_TITLE),
                                 t(TRANSLATION_KEYS.HOTEL_SEARCH.WHICH_NIGHT_BODY),
                                 [

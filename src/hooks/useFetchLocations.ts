@@ -1,5 +1,6 @@
+import { appAlert } from '../components/ui/appAlert';
 import { useEffect, useState } from 'react';
-import { Alert } from 'react-native';
+
 import { fetchLocations } from '../services/api/locations';
 import { Location } from '../types/locations';
 import { useLanguage } from '../providers/LanguageProvider';
@@ -20,7 +21,7 @@ export function useFetchLocations() {
       setLocations(data);
     } catch (e: any) {
       if (__DEV__) console.error('[useFetchLocations] error', e?.response?.data || e.message);
-      Alert.alert('Error', 'Failed to load locations');
+      appAlert('Error', 'Failed to load locations', undefined, 'error');
     } finally {
       setLoading(false);
     }

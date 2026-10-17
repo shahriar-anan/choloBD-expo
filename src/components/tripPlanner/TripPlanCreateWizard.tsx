@@ -9,13 +9,13 @@ import {
   TextInput,
   TouchableOpacity,
   ActivityIndicator,
-  Alert,
   Image,
   Modal,
   Platform,
   Keyboard,
   ScrollView,
 } from 'react-native';
+import { appAlert } from '../ui/appAlert';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
 import { KeyboardAwareScroll } from '../ui/KeyboardAwareScroll';
@@ -287,7 +287,7 @@ export function TripPlanCreateWizard({
     const unsubscribe = navigation.addListener('beforeRemove', (event) => {
       if (allowLeaveRef.current || !isDirty) return;
       event.preventDefault();
-      Alert.alert(
+      appAlert(
         t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_DISCARD_TITLE),
         t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_DISCARD_BODY),
         [
@@ -333,7 +333,7 @@ export function TripPlanCreateWizard({
       } catch (error: any) {
         if (!cancelled) {
           setBasedOnPackageId('');
-          Alert.alert(t(TRANSLATION_KEYS.COMMON.ERROR), error?.message || 'Could not load this template');
+          appAlert(t(TRANSLATION_KEYS.COMMON.ERROR), error?.message || 'Could not load this template', undefined, 'error');
         }
       } finally {
         if (!cancelled) setCloning(false);
@@ -386,10 +386,10 @@ export function TripPlanCreateWizard({
 
   const openAdd = () => {
     if (countStopsForDay(stops, activeDay) >= MAX_STOPS_PER_DAY) {
-      Alert.alert(
+      appAlert(
         t(TRANSLATION_KEYS.COMMON.ERROR),
         t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_STOP_LIMIT, { max: MAX_STOPS_PER_DAY, day: activeDay })
-      );
+      , undefined, 'error');
       return;
     }
     setEditor(createBlankStop(activeDay, nextSegmentOrderForDay(stops, activeDay)));
@@ -431,7 +431,7 @@ export function TripPlanCreateWizard({
     if (room <= 0) return;
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
-      Alert.alert(t(TRANSLATION_KEYS.COMMON.ERROR), t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_PHOTO_PERMISSION));
+      appAlert(t(TRANSLATION_KEYS.COMMON.ERROR), t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_PHOTO_PERMISSION), undefined, 'error');
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -517,19 +517,19 @@ export function TripPlanCreateWizard({
           return;
         } catch (error: any) {
           allowLeaveRef.current = true;
-          Alert.alert(
+          appAlert(
             t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_SAVED_TITLE),
             error?.message || t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_PHOTO_FAIL)
-          );
+          , undefined, 'error');
         }
       }
       allowLeaveRef.current = true;
       onSaved(saved);
     } catch (error: any) {
-      Alert.alert(
+      appAlert(
         t(TRANSLATION_KEYS.COMMON.ERROR),
         error?.message || t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_SAVE_FAIL)
-      );
+      , undefined, 'error');
     } finally {
       setSaving(false);
       setUploadLabel(null);

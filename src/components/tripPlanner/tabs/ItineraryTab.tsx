@@ -4,7 +4,8 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Alert, ScrollView, FlatList } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, FlatList } from 'react-native';
+import { appAlert } from '../../ui/appAlert';
 import { Feather } from '@expo/vector-icons';
 import { useDispatch } from 'react-redux';
 import { useTranslation } from 'react-i18next';
@@ -111,7 +112,7 @@ export function ItineraryTab({ trip, onTripUpdate }: ItineraryTabProps) {
           onTripUpdate(updatedTrip);
         }
 
-        Alert.alert('Success', t(TRANSLATION_KEYS.TRIP_PLANNER.ITINERARY_NOTES_SAVED, { count: notesList.length }));
+        appAlert('Success', t(TRANSLATION_KEYS.TRIP_PLANNER.ITINERARY_NOTES_SAVED, { count: notesList.length }), undefined, 'success');
       } else {
         throw new Error('Failed to save notes');
       }
@@ -119,14 +120,14 @@ export function ItineraryTab({ trip, onTripUpdate }: ItineraryTabProps) {
       const errorMsg = err instanceof Error ? err.message : 'Failed to save notes';
       if (__DEV__) console.error('[ItineraryTab] Error saving notes:', err);
       setError(errorMsg);
-      Alert.alert('Error', errorMsg);
+      appAlert('Error', errorMsg, undefined, 'error');
     } finally {
       setIsSaving(false);
     }
   };
 
   const handleClear = () => {
-    Alert.alert(
+    appAlert(
       t(TRANSLATION_KEYS.TRIP_PLANNER.ITINERARY_CLEAR_ALL_CONFIRM),
       t(TRANSLATION_KEYS.TRIP_PLANNER.ITINERARY_CLEAR_ALL_WARNING),
       [
@@ -146,7 +147,7 @@ export function ItineraryTab({ trip, onTripUpdate }: ItineraryTabProps) {
 
   const handleCancel = () => {
     if (hasUnsavedChanges) {
-      Alert.alert(
+      appAlert(
         t(TRANSLATION_KEYS.TRIP_PLANNER.ITINERARY_DISCARD_CHANGES),
         t(TRANSLATION_KEYS.TRIP_PLANNER.ITINERARY_DISCARD_WARNING),
         [

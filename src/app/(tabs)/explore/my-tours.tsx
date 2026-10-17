@@ -4,7 +4,8 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { View, ScrollView, Text, ActivityIndicator, TouchableOpacity, Alert } from 'react-native';
+import { View, ScrollView, Text, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { appAlert } from '../../../components/ui/appAlert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -48,7 +49,7 @@ export default function MyToursPage() {
   };
 
   const handleDeleteTour = (tourId: string) => {
-    Alert.alert(
+    appAlert(
       t(TRANSLATION_KEYS.TOUR_BUILDER.DELETE_TOUR_TITLE),
       t(TRANSLATION_KEYS.TOUR_BUILDER.DELETE_TOUR_BODY),
       [
@@ -59,9 +60,9 @@ export default function MyToursPage() {
           onPress: async () => {
             try {
               await deleteTour(tourId);
-              Alert.alert(t(TRANSLATION_KEYS.TOUR_BUILDER.DELETED_TITLE), t(TRANSLATION_KEYS.TOUR_BUILDER.DELETED_BODY));
+              appAlert(t(TRANSLATION_KEYS.TOUR_BUILDER.DELETED_TITLE), t(TRANSLATION_KEYS.TOUR_BUILDER.DELETED_BODY));
             } catch {
-              Alert.alert(t(TRANSLATION_KEYS.COMMON.ERROR), t(TRANSLATION_KEYS.TOUR_BUILDER.DELETE_FAILED));
+              appAlert(t(TRANSLATION_KEYS.COMMON.ERROR), t(TRANSLATION_KEYS.TOUR_BUILDER.DELETE_FAILED), undefined, 'error');
             }
           },
         },

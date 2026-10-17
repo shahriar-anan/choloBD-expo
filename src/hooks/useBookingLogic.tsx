@@ -1,5 +1,6 @@
+import { appAlert } from '../components/ui/appAlert';
 import { useState, useCallback, useRef } from 'react';
-import { Alert } from 'react-native';
+
 import { useTranslation } from 'react-i18next';
 import { TRANSLATION_KEYS } from '../constants/translationKeys';
 import { useSelector } from 'react-redux';
@@ -33,24 +34,24 @@ export function useBookingLogic() {
       guestCount: number;
     }) => {
     if (!bookingData.hotelId) {
-      Alert.alert('Error', 'Hotel ID is required');
+      appAlert('Error', 'Hotel ID is required', undefined, 'error');
       return null;
     }
     if (!bookingData.checkInDate || !bookingData.checkOutDate) {
-      Alert.alert('Error', 'Please enter check-in and check-out dates');
+      appAlert('Error', 'Please enter check-in and check-out dates', undefined, 'error');
       return null;
     }
     const anyRooms = Object.values(bookingData.selectedRoomsMap).some((v) => v > 0);
     if (!anyRooms) {
-      Alert.alert('Error', 'Please select at least one room');
+      appAlert('Error', 'Please select at least one room', undefined, 'error');
       return null;
     }
     if (!guestContactIsComplete(bookingData.guestName, bookingData.guestEmail, bookingData.guestPhoneNumber)) {
-      Alert.alert('Error', 'Enter the guest name, a valid email, and a mobile number');
+      appAlert('Error', 'Enter the guest name, a valid email, and a mobile number', undefined, 'error');
       return null;
     }
     if (!bookingData.totalPrice || bookingData.totalPrice <= 0) {
-      Alert.alert('Error', 'Select a room with a price for this stay');
+      appAlert('Error', 'Select a room with a price for this stay', undefined, 'error');
       return null;
     }
     if (submitLock.current) {
@@ -62,7 +63,7 @@ export function useBookingLogic() {
     try {
       const userId = auth.user?.id;
       if (!userId) {
-        Alert.alert('Authentication required', 'Please login to create a booking');
+        appAlert('Authentication required', 'Please login to create a booking');
         return null;
       }
       // Exclude empty paymentMethod for new bookings (payment happens via gateway later)
@@ -76,7 +77,7 @@ export function useBookingLogic() {
     } catch (e: any) {
       if (__DEV__) console.error('[useBookingLogic] submitBooking error', e?.response?.data || e.message);
       const serverMessage = e?.response?.data?.message;
-      Alert.alert('Error', typeof serverMessage === 'string' && serverMessage ? serverMessage : 'Failed to create booking');
+      appAlert('Error', typeof serverMessage === 'string' && serverMessage ? serverMessage : 'Failed to create booking', undefined, 'error');
       return null;
     } finally {
       submitLock.current = false;
@@ -126,7 +127,7 @@ export function useBookingLogic() {
     // Validate required dates
     if (updateData.checkInDate && updateData.checkOutDate) {
       if (updateData.checkInDate >= updateData.checkOutDate) {
-        Alert.alert('Error', 'Check-out date must be after check-in date');
+        appAlert('Error', 'Check-out date must be after check-in date', undefined, 'error');
         return null;
       }
     }
@@ -154,7 +155,7 @@ export function useBookingLogic() {
       }
 
       const result = await updateBooking(bookingId, payload);
-      Alert.alert('Success', 'Booking updated successfully');
+      appAlert('Success', 'Booking updated successfully', undefined, 'success');
       if (result && typeof onSuccess === 'function') {
         try {
           onSuccess(result);
@@ -166,7 +167,7 @@ export function useBookingLogic() {
     } catch (e: any) {
       if (__DEV__) console.error('[useBookingLogic] editBooking error', e?.response?.data || e.message);
       const errorMsg = e?.response?.data?.message || 'Failed to update booking';
-      Alert.alert('Error', errorMsg);
+      appAlert('Error', errorMsg, undefined, 'error');
       return null;
     } finally {
       submitLock.current = false;
@@ -209,7 +210,7 @@ export function useBookingLogic() {
       } catch (e: any) {
         if (__DEV__) console.error('[useBookingLogic] loadEligibility error', e);
         const errorMsg = e?.response?.data?.message || 'Failed to load cancellation eligibility';
-        Alert.alert('Error', errorMsg);
+        appAlert('Error', errorMsg, undefined, 'error');
         return null;
       }
     }, []),
@@ -225,7 +226,7 @@ export function useBookingLogic() {
           if (payload?.emailDispatched) {
             message += t(TRANSLATION_KEYS.BOOKING.CANCEL_EMAIL_NOTE);
           }
-          Alert.alert('Success', message);
+          appAlert('Success', message, undefined, 'success');
           if (typeof onSuccess === 'function') {
             onSuccess(payload);
           }
@@ -234,7 +235,7 @@ export function useBookingLogic() {
           if (__DEV__) console.error('[useBookingLogic] cancelBooking error', e?.response?.data || e.message);
           const errorMsg =
             e?.message || e?.response?.data?.message || 'Failed to cancel booking';
-          Alert.alert('Cancellation Failed', errorMsg);
+          appAlert('Cancellation Failed', errorMsg, undefined, 'error');
           return null;
         }
       },

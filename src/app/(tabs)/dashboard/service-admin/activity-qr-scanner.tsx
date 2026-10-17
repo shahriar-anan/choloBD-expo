@@ -1,5 +1,6 @@
 import React, { useCallback, useState } from 'react';
-import { View, Text, Alert } from 'react-native';
+import { View, Text } from 'react-native';
+import { appAlert } from '../../../../components/ui/appAlert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -60,11 +61,11 @@ export default function ActivityQrScannerPage() {
       const payload = detail.data;
       const booking = payload?.booking as ActivityBookingRecord | undefined;
       if (!booking?.id) return;
-      const checkedInAt = payload.checkedInAt ?? booking.checkedInAt ?? null;
+      const checkedInAt = payload?.checkedInAt ?? booking.checkedInAt ?? null;
       setDeskResult({ booking: { ...booking, checkedInAt }, checkedInAt });
     } catch (detailError: unknown) {
       const err = detailError as { message?: string };
-      Alert.alert(t(TRANSLATION_KEYS.QR.SCAN_FAILED), err?.message || t(TRANSLATION_KEYS.QR.SCAN_FAILED_BODY));
+      appAlert(t(TRANSLATION_KEYS.QR.SCAN_FAILED), err?.message || t(TRANSLATION_KEYS.QR.SCAN_FAILED_BODY), undefined, 'error');
     } finally {
       setRecentLoading(false);
     }
@@ -82,7 +83,7 @@ export default function ActivityQrScannerPage() {
         await loadRecent();
       } catch (checkInError: unknown) {
         const err = checkInError as { message?: string };
-        Alert.alert(t(TRANSLATION_KEYS.QR.CHECK_IN_GUEST), err?.message || t(TRANSLATION_KEYS.QR.SCAN_FAILED_BODY));
+        appAlert(t(TRANSLATION_KEYS.QR.CHECK_IN_GUEST), err?.message || t(TRANSLATION_KEYS.QR.SCAN_FAILED_BODY), undefined, 'error');
       } finally {
         setCheckInBusy(false);
       }
@@ -98,7 +99,7 @@ export default function ActivityQrScannerPage() {
       }
     } catch (scanError: unknown) {
       const err = scanError as { message?: string };
-      Alert.alert(t(TRANSLATION_KEYS.QR.SCAN_FAILED), err?.message || t(TRANSLATION_KEYS.QR.SCAN_FAILED_BODY));
+      appAlert(t(TRANSLATION_KEYS.QR.SCAN_FAILED), err?.message || t(TRANSLATION_KEYS.QR.SCAN_FAILED_BODY), undefined, 'error');
     }
   };
 

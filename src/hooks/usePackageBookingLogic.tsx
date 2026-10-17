@@ -1,10 +1,11 @@
+import { appAlert } from '../components/ui/appAlert';
 /**
  * Package Booking Logic Hook
  * Business logic for purchasing and managing package bookings
  */
 
 import { useState, useCallback } from 'react';
-import { Alert } from 'react-native';
+
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '../store/store';
 import {
@@ -38,7 +39,7 @@ export function usePackageBookingLogic() {
       onSuccess?: (booking: any) => void
     ) => {
       if (!auth.user?.id) {
-        Alert.alert('Authentication Required', 'Please login to book a tour package');
+        appAlert('Authentication Required', 'Please login to book a tour package');
         return null;
       }
 
@@ -55,7 +56,7 @@ export function usePackageBookingLogic() {
       } catch (error: any) {
         console.error('[usePackageBookingLogic] Purchase error:', error);
         const errorMessage = error?.message || 'Failed to book tour package. Please try again.';
-        Alert.alert('Booking Failed', errorMessage);
+        appAlert('Booking Failed', errorMessage, undefined, 'error');
         return null;
       }
     },
@@ -73,7 +74,7 @@ export function usePackageBookingLogic() {
       } catch (error: any) {
         console.error('[usePackageBookingLogic] Fetch bookings error:', error);
         const errorMessage = error?.message || 'Failed to load bookings';
-        Alert.alert('Error', errorMessage);
+        appAlert('Error', errorMessage, undefined, 'error');
       }
     },
     [dispatch]
@@ -91,7 +92,7 @@ export function usePackageBookingLogic() {
       } catch (error: any) {
         console.error('[usePackageBookingLogic] Fetch booking detail error:', error);
         const errorMessage = error?.message || 'Failed to load booking details';
-        Alert.alert('Error', errorMessage);
+        appAlert('Error', errorMessage, undefined, 'error');
         return null;
       }
     },
@@ -106,7 +107,7 @@ export function usePackageBookingLogic() {
       try {
         const eligibility = await getPackageCancellationEligibility(bookingId);
         if (!eligibility.canCancel) {
-          Alert.alert('Cannot cancel', eligibility.reason || 'This booking cannot be cancelled');
+          appAlert('Cannot cancel', eligibility.reason || 'This booking cannot be cancelled', undefined, 'error');
           return;
         }
 
@@ -123,7 +124,7 @@ export function usePackageBookingLogic() {
 
         if (__DEV__) console.log('[usePackageBookingLogic] Cancellation successful');
         const message = buildCancelSuccessMessage('Booking cancelled successfully', result);
-        Alert.alert('Success', message);
+        appAlert('Success', message, undefined, 'success');
 
         if (onSuccess) {
           onSuccess();
@@ -132,7 +133,7 @@ export function usePackageBookingLogic() {
         console.error('[usePackageBookingLogic] Cancel error:', error);
         const errorMessage =
           error?.message || error?.reason || 'Failed to cancel booking. Please try again.';
-        Alert.alert('Cancellation Failed', errorMessage);
+        appAlert('Cancellation Failed', errorMessage, undefined, 'error');
       }
     },
     [dispatch]

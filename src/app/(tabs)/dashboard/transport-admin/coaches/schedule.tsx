@@ -1,12 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Pressable,
   Text,
   TextInput,
   View,
 } from 'react-native';
+import { appAlert } from '../../../../../components/ui/appAlert';
 import { KeyboardAwareScroll } from '../../../../../components/ui/KeyboardAwareScroll';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -59,11 +59,11 @@ export default function TransportAdminCoachSchedulePage() {
 
   const publish = async () => {
     if (!transportId || !layoutId || !routeId) {
-      Alert.alert(t(TRANSLATION_KEYS.TRANSPORT_OPERATOR.FILL_REQUIRED));
+      appAlert(t(TRANSLATION_KEYS.TRANSPORT_OPERATOR.FILL_REQUIRED));
       return;
     }
     if (!(departureAt < arrivalAt)) {
-      Alert.alert(t(TRANSLATION_KEYS.TRANSPORT_OPERATOR.ARRIVAL_AFTER));
+      appAlert(t(TRANSLATION_KEYS.TRANSPORT_OPERATOR.ARRIVAL_AFTER));
       return;
     }
     setBusy(true);
@@ -76,13 +76,13 @@ export default function TransportAdminCoachSchedulePage() {
         arrivalDateTime: arrivalAt.toISOString(),
         coachLabel: coachLabel.trim() || undefined,
       });
-      Alert.alert(t(TRANSLATION_KEYS.TRANSPORT_OPERATOR.SAVED));
+      appAlert(t(TRANSLATION_KEYS.TRANSPORT_OPERATOR.SAVED));
       goBack(router);
     } catch (error: unknown) {
-      Alert.alert(
+      appAlert(
         t(TRANSLATION_KEYS.TRANSPORT_OPERATOR.FAILED),
         error instanceof Error ? error.message : undefined
-      );
+      , undefined, 'error');
     } finally {
       setBusy(false);
     }

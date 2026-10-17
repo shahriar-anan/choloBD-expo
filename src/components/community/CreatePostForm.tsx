@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, Alert, Image, Linking } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, Image, Linking } from 'react-native';
+import { appAlert } from '../ui/appAlert';
 import { KeyboardAwareScroll } from '../ui/KeyboardAwareScroll';
 import { useForm, Controller, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -83,7 +84,7 @@ export function CreatePostForm({ initialValues, onSubmit, isSubmitting }: Create
   const handleInvalidSubmit = (errors: any) => {
     const firstError = Object.values(errors)[0] as any;
     const message = firstError?.message || t(TRANSLATION_KEYS.COMMUNITY.FORM_ERRORS);
-    Alert.alert(t(TRANSLATION_KEYS.COMMON.ERROR), message);
+    appAlert(t(TRANSLATION_KEYS.COMMON.ERROR), message, undefined, 'error');
   };
 
   const handlePickAndUploadImages = async () => {
@@ -108,7 +109,7 @@ export function CreatePostForm({ initialValues, onSubmit, isSubmitting }: Create
     if (isSubmitting || isTakingPhoto) return;
 
     if (cameraPermission === false) {
-      Alert.alert(
+      appAlert(
         t(TRANSLATION_KEYS.COMMUNITY.CAMERA_DENIED),
         t(TRANSLATION_KEYS.COMMUNITY.CAMERA_DENIED_BODY),
         [

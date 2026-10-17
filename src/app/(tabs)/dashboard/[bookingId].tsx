@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
-import { View, Text, ActivityIndicator, Pressable, Modal, Alert, Image } from 'react-native';
+import { View, Text, ActivityIndicator, Pressable, Modal, Image } from 'react-native';
+import { appAlert } from '../../../components/ui/appAlert';
 import { KeyboardAwareScroll } from '../../../components/ui/KeyboardAwareScroll';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -191,7 +192,7 @@ export default function BookingTrackingPage() {
 
   const handleCancelPress = () => {
     if (!eligibility?.canCancel) {
-      Alert.alert(
+      appAlert(
         t(TRANSLATION_KEYS.PACKAGE_BOOKING.CANNOT_CANCEL),
         eligibility?.reason || t(TRANSLATION_KEYS.PACKAGE_BOOKING.CANNOT_CANCEL_DESC)
       );

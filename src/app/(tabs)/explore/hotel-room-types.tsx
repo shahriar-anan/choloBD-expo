@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Image, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Image, Pressable, ScrollView, Text, View } from 'react-native';
+import { appAlert } from '../../../components/ui/appAlert';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -158,7 +159,7 @@ export default function HotelRoomTypesPage() {
             return;
         }
         if (roomsTooSmallForGuests(payableSelected, rooms, params.guestCount)) {
-            Alert.alert(
+            appAlert(
                 t(TRANSLATION_KEYS.HOTEL_SEARCH.ROOM_CAPACITY_TITLE),
                 t(TRANSLATION_KEYS.HOTEL_SEARCH.ROOM_CAPACITY_BODY, {
                     count: params.guestCount,

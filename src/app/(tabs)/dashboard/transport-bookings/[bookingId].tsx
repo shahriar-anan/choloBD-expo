@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
-import { ActivityIndicator, Alert, Modal, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Modal, Pressable, Text, View } from 'react-native';
+import { appAlert } from '../../../../components/ui/appAlert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, usePathname, useRouter } from 'expo-router';
@@ -181,7 +182,7 @@ export default function TransportBookingDetailPage() {
                 <Pressable
                   onPress={() => {
                     if (!eligibility?.canCancel) {
-                      Alert.alert(
+                      appAlert(
                         t(TRANSLATION_KEYS.PACKAGE_BOOKING.CANNOT_CANCEL),
                         eligibility?.reason || t(TRANSLATION_KEYS.PACKAGE_BOOKING.CANNOT_CANCEL_DESC)
                       );

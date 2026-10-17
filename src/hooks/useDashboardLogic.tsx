@@ -1,5 +1,6 @@
+import { appAlert } from '../components/ui/appAlert';
 import { useEffect, useState, useCallback } from 'react';
-import { Alert } from 'react-native';
+
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '../store/store';
 import { logoutUser, setAuthUser } from '../store/slices/authSlice';
@@ -61,7 +62,7 @@ export function useDashboardLogic() {
     } catch (e: any) {
       if (!isSignedOutError(e)) {
         console.error('[useDashboardLogic] fetchBookings error', e?.message ?? e);
-        Alert.alert('Error', 'Could not load bookings');
+        appAlert('Error', 'Could not load bookings', undefined, 'error');
       }
     } finally {
       setLoading(false);
@@ -183,7 +184,7 @@ export function useDashboardLogic() {
       await dispatch(logoutUser());
       router.replace('/(auth)/login');
     } catch (e) {
-      Alert.alert('Error', 'Logout failed');
+      appAlert('Error', 'Logout failed', undefined, 'error');
     }
   };
 

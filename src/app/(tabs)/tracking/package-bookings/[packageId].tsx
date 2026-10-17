@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { View, ScrollView, Text, FlatList, ActivityIndicator, TouchableOpacity, RefreshControl, Alert } from 'react-native';
+import { View, ScrollView, Text, FlatList, ActivityIndicator, TouchableOpacity, RefreshControl } from 'react-native';
+import { appAlert } from '../../../../components/ui/appAlert';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useDispatch, useSelector } from 'react-redux';
 import { useTranslation } from 'react-i18next';
@@ -40,7 +41,7 @@ export default function PackageBookingDetailsPage() {
   };
 
   const handleCancel = (bookingId: string) => {
-    Alert.alert(
+    appAlert(
       t(TRANSLATION_KEYS.PACKAGE_BOOKING.CANCEL_BOOKING),
       t(TRANSLATION_KEYS.PACKAGE_BOOKING.CANCEL_CONFIRMATION),
       [

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Alert, Pressable, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
+import { appAlert } from '../ui/appAlert';
 import { useTranslation } from 'react-i18next';
 import { TRANSLATION_KEYS } from '../../constants/translationKeys';
 import { QRBookingDetailsDisplay } from '../ui/QRBookingDetailsDisplay';
@@ -31,7 +32,7 @@ export function HotelDeskScanPanel({ result, onChange, onScanAnother }: HotelDes
       status === 'COMPLETED'
         ? t(TRANSLATION_KEYS.HOTEL_DESK.CHECK_OUT)
         : t(TRANSLATION_KEYS.HOTEL_DESK.NO_SHOW);
-    Alert.alert(label, t(TRANSLATION_KEYS.HOTEL_DESK.SCAN_DOES_NOT_CHANGE), [
+    appAlert(label, t(TRANSLATION_KEYS.HOTEL_DESK.SCAN_DOES_NOT_CHANGE), [
       { text: t(TRANSLATION_KEYS.COMMON.BACK), style: 'cancel' },
       {
         text: label,
@@ -46,10 +47,10 @@ export function HotelDeskScanPanel({ result, onChange, onScanAnother }: HotelDes
               });
             } catch (stayError: unknown) {
               const err = stayError as { response?: { data?: { message?: string } } };
-              Alert.alert(
+              appAlert(
                 label,
                 err?.response?.data?.message || t(TRANSLATION_KEYS.HOTEL_DESK.COULD_NOT_UPDATE_STAY)
-              );
+              , undefined, 'error');
             } finally {
               setStayBusy(false);
             }
@@ -71,10 +72,10 @@ export function HotelDeskScanPanel({ result, onChange, onScanAnother }: HotelDes
         });
       } catch (checkInError: unknown) {
         const err = checkInError as { response?: { data?: { message?: string } }; message?: string };
-        Alert.alert(
+        appAlert(
           t(TRANSLATION_KEYS.QR.CHECK_IN_GUEST),
           err?.response?.data?.message || err?.message || t(TRANSLATION_KEYS.QR.SCAN_FAILED_BODY)
-        );
+        , undefined, 'error');
       } finally {
         setCheckInBusy(false);
       }

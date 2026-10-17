@@ -1,5 +1,6 @@
 import React, { useCallback, useState } from 'react';
-import { Alert, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { appAlert } from '../../../../components/ui/appAlert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
@@ -59,10 +60,10 @@ export default function HotelQrScanHistoryPage() {
       });
     } catch (detailError: unknown) {
       const err = detailError as { response?: { data?: { message?: string } }; message?: string };
-      Alert.alert(
+      appAlert(
         t(TRANSLATION_KEYS.QR.SCAN_FAILED),
         err?.response?.data?.message || err?.message || t(TRANSLATION_KEYS.QR.SCAN_FAILED_BODY)
-      );
+      , undefined, 'error');
     } finally {
       setLoading(false);
     }

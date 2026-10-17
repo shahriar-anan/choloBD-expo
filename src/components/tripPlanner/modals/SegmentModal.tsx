@@ -4,7 +4,8 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert, KeyboardAvoidingView, Platform, Modal, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, Modal, ActivityIndicator } from 'react-native';
+import { appAlert } from '../../ui/appAlert';
 import { KeyboardAwareScroll } from '../../ui/KeyboardAwareScroll';
 import { Feather } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
@@ -125,7 +126,7 @@ export function SegmentModal({
   // ==== SUBMIT ====
   const handleSubmit = async () => {
     if (!validateForm()) {
-      Alert.alert(t(TRANSLATION_KEYS.TRIP_PLANNER.SEGMENT_VALIDATION_ERROR), t(TRANSLATION_KEYS.TRIP_PLANNER.SEGMENT_VALIDATION_FAIL));
+      appAlert(t(TRANSLATION_KEYS.TRIP_PLANNER.SEGMENT_VALIDATION_ERROR), t(TRANSLATION_KEYS.TRIP_PLANNER.SEGMENT_VALIDATION_FAIL));
       return;
     }
 
@@ -175,7 +176,7 @@ export function SegmentModal({
       }
       onClose();
     } catch (error: any) {
-      Alert.alert('Error', error?.message || 'Failed to save segment');
+      appAlert('Error', error?.message || 'Failed to save segment', undefined, 'error');
     }
   };
 

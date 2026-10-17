@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { View, Text, Modal, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, ActivityIndicator } from 'react-native';
 import { KeyboardAwareScroll } from '../../../components/ui/KeyboardAwareScroll';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -21,6 +21,7 @@ import { theme } from '../../../constants/theme';
 import { TRANSLATION_KEYS } from '../../../constants/translationKeys';
 import { roleBookings } from '../../../utilities/travelerShell';
 import { goBack } from '../../../utilities/navigation';
+import { AppAlert } from '../../../components/ui/appAlert';
 
 console.log('[TourBookingPage] Component loaded');
 
@@ -47,8 +48,6 @@ export default function TourBookingPage() {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   const primaryColor = isDark ? theme.colors['primary-dark'] : theme.colors.primary;
-  const successColor = isDark ? theme.colors['success-dark'] : theme.colors.success;
-  const textColor = isDark ? theme.colors['text-dark'] : theme.colors.text;
   const mutedColor = isDark ? theme.colors['muted-dark'] : theme.colors.muted;
 
   // Fetch package details on mount
@@ -157,82 +156,18 @@ export default function TourBookingPage() {
         </View>
       </KeyboardAwareScroll>
 
-      {/* Success Modal */}
-      <Modal
+      <AppAlert
         visible={showSuccessModal}
-        transparent
-        animationType="fade"
-        onRequestClose={handleCloseSuccessModal}
-      >
-        <View className="flex-1 items-center justify-center bg-black/50">
-          <View
-            className="w-11/12 p-6 rounded-2xl"
-            style={{
-              backgroundColor: isDark ? theme.colors['surface-dark'] : theme.colors.surface,
-              maxWidth: 400,
-            }}
-          >
-            {/* Success Icon */}
-            <View className="items-center mb-4">
-              <View
-                className="items-center justify-center w-20 h-20 rounded-full"
-                style={{ backgroundColor: `${successColor}20` }}
-              >
-                <Ionicons name="checkmark-circle" size={48} color={successColor} />
-              </View>
-            </View>
-
-            {/* Title */}
-            <Text className="mb-2 text-2xl font-bold text-center text-text dark:text-text-dark">
-              {t(TRANSLATION_KEYS.PACKAGE_BOOKING.BOOKING_SUCCESS)}
-            </Text>
-
-            {/* Confirmation Code */}
-            {lastPurchasedBooking && (
-              <View className="items-center mb-4">
-                <Text className="mb-1 text-sm text-muted dark:text-muted-dark">
-                  {t(TRANSLATION_KEYS.PACKAGE_BOOKING.CONFIRMATION_CODE)}
-                </Text>
-                <View
-                  className="px-4 py-2 rounded-lg"
-                  style={{ backgroundColor: `${primaryColor}15`, borderWidth: 1, borderColor: `${primaryColor}40` }}
-                >
-                  <Text className="text-xl font-bold" style={{ color: primaryColor }}>
-                    {lastPurchasedBooking.confirmationCode}
-                  </Text>
-                </View>
-              </View>
-            )}
-
-            {/* Message */}
-            <Text className="mb-6 text-sm text-center text-muted dark:text-muted-dark">
-              {t(TRANSLATION_KEYS.PACKAGE_BOOKING.BOOKING_SUCCESS_DESC)}
-            </Text>
-
-            {/* Payment Notice */}
-            <View
-              className="p-3 mb-6 rounded-lg"
-              style={{ backgroundColor: `${mutedColor}10`, borderWidth: 1, borderColor: `${mutedColor}30` }}
-            >
-              <Text className="text-xs text-center text-muted dark:text-muted-dark">
-                {t(TRANSLATION_KEYS.PACKAGE_BOOKING.PAYMENT_COMING_SOON)}
-              </Text>
-            </View>
-
-            {/* Action Button */}
-            <TouchableOpacity
-              onPress={handleCloseSuccessModal}
-              className="p-4 rounded-xl"
-              style={{ backgroundColor: primaryColor }}
-              activeOpacity={0.8}
-            >
-              <Text className="text-base font-bold text-center text-white">
-                {t(TRANSLATION_KEYS.PACKAGE_BOOKING.VIEW_MY_BOOKINGS)}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
+        tone="success"
+        title={t(TRANSLATION_KEYS.PACKAGE_BOOKING.BOOKING_SUCCESS)}
+        message={t(TRANSLATION_KEYS.PACKAGE_BOOKING.BOOKING_SUCCESS_DESC)}
+        detailLabel={t(TRANSLATION_KEYS.PACKAGE_BOOKING.CONFIRMATION_CODE)}
+        detail={lastPurchasedBooking?.confirmationCode}
+        footnote={t(TRANSLATION_KEYS.PACKAGE_BOOKING.PAYMENT_COMING_SOON)}
+        actions={[{ label: t(TRANSLATION_KEYS.PACKAGE_BOOKING.VIEW_MY_BOOKINGS), tone: 'primary' }]}
+        onDismiss={handleCloseSuccessModal}
+        onAction={handleCloseSuccessModal}
+      />
     </SafeAreaView>
   );
 }

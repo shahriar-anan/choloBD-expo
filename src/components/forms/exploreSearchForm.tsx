@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, TouchableOpacity, Text, ActivityIndicator, Alert } from 'react-native';
+import { View, TouchableOpacity, Text, ActivityIndicator } from 'react-native';
+import { appAlert } from '../ui/appAlert';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../hooks/useTheme';
 import { theme } from '../../constants/theme';
@@ -38,10 +39,10 @@ export function ExploreSearchForm({
 
   const handleSearch = () => {
     if (!selectedLocationId) {
-      Alert.alert(
+      appAlert(
         t(TRANSLATION_KEYS.COMMON.ERROR),
         t(TRANSLATION_KEYS.EXPLORE.CHOOSE_LOCATION)
-      );
+      , undefined, 'error');
       return;
     }
 

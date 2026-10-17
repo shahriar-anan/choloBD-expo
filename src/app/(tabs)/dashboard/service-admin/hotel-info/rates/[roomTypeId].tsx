@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { appAlert } from '../../../../../../components/ui/appAlert';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
@@ -91,16 +92,16 @@ export default function RoomRateEditor() {
   const save = async () => {
     const price = Number(draft.price.trim());
     if (!draft.price.trim() || !Number.isFinite(price) || price < 0) {
-      Alert.alert(t(TRANSLATION_KEYS.HOTEL_DESK.ROOM_RATE_TITLE), t(TRANSLATION_KEYS.HOTEL_DESK.PRICE_INVALID));
+      appAlert(t(TRANSLATION_KEYS.HOTEL_DESK.ROOM_RATE_TITLE), t(TRANSLATION_KEYS.HOTEL_DESK.PRICE_INVALID));
       return;
     }
     if (guestIsInvalid(draft.guests)) {
-      Alert.alert(t(TRANSLATION_KEYS.HOTEL_DESK.ROOM_RATE_TITLE), t(TRANSLATION_KEYS.HOTEL_DESK.MAX_GUESTS_INVALID));
+      appAlert(t(TRANSLATION_KEYS.HOTEL_DESK.ROOM_RATE_TITLE), t(TRANSLATION_KEYS.HOTEL_DESK.MAX_GUESTS_INVALID));
       return;
     }
     const invalidSlot = SLOT_KEYS.some((key) => draft.open[key] && slotIsInvalid(draft.slots[key]));
     if (invalidSlot) {
-      Alert.alert(t(TRANSLATION_KEYS.HOTEL_DESK.ROOM_RATE_TITLE), t(TRANSLATION_KEYS.HOTEL_DESK.SLOT_PRICE_INVALID));
+      appAlert(t(TRANSLATION_KEYS.HOTEL_DESK.ROOM_RATE_TITLE), t(TRANSLATION_KEYS.HOTEL_DESK.SLOT_PRICE_INVALID));
       return;
     }
     const guests = Number(draft.guests.trim());
@@ -129,15 +130,15 @@ export default function RoomRateEditor() {
         });
       }
       allowLeave();
-      Alert.alert(t(TRANSLATION_KEYS.HOTEL_DESK.ROOM_RATE_SAVED_TITLE), t(TRANSLATION_KEYS.HOTEL_DESK.ROOM_RATE_SAVED));
+      appAlert(t(TRANSLATION_KEYS.HOTEL_DESK.ROOM_RATE_SAVED_TITLE), t(TRANSLATION_KEYS.HOTEL_DESK.ROOM_RATE_SAVED), undefined, 'success');
       router.back();
     } catch (error: any) {
-      Alert.alert(
+      appAlert(
         t(TRANSLATION_KEYS.HOTEL_DESK.ROOM_RATE_TITLE),
         error?.response?.data?.message || t(isNew
           ? TRANSLATION_KEYS.HOTEL_DESK.COULD_NOT_ADD_ROOM_TYPE
           : TRANSLATION_KEYS.HOTEL_DESK.COULD_NOT_UPDATE_RATE),
-      );
+       undefined, 'error');
     }
   };
 

@@ -1,5 +1,6 @@
+import { appAlert } from '../components/ui/appAlert';
 import { useEffect, useRef, useState } from 'react';
-import { Alert } from 'react-native';
+
 import { fetchHotelById } from '../services/api/hotelDetail';
 import { HotelDetail } from '../types/hotels';
 import { useLanguage } from '../providers/LanguageProvider';
@@ -19,7 +20,7 @@ export function useFetchHotelDetail() {
       return data;
     } catch (e: any) {
       if (__DEV__) console.error('[useFetchHotelDetail] error', e?.response?.data || e.message);
-      Alert.alert('Error', 'Failed to load hotel details');
+      appAlert('Error', 'Failed to load hotel details', undefined, 'error');
       return null;
     } finally {
       setLoading(false);

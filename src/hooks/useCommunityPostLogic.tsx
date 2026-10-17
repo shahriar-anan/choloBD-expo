@@ -1,5 +1,6 @@
+import { appAlert } from '../components/ui/appAlert';
 import { useCallback } from 'react';
-import { Alert } from 'react-native';
+
 import * as ImagePicker from 'expo-image-picker';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '../store/store';
@@ -25,7 +26,7 @@ export function useCommunityPostLogic() {
       return res;
     } catch (error: any) {
       console.error('[useCommunityPostLogic] createDraft error:', error);
-      Alert.alert('Error', error?.message || 'Failed to create draft post');
+      appAlert('Error', error?.message || 'Failed to create draft post', undefined, 'error');
       return null;
     }
   }, [dispatch]);
@@ -37,7 +38,7 @@ export function useCommunityPostLogic() {
         return res;
       } catch (error: any) {
         console.error('[useCommunityPostLogic] updatePostImages error:', error);
-        Alert.alert('Error', error?.message || 'Failed to upload images');
+        appAlert('Error', error?.message || 'Failed to upload images', undefined, 'error');
         return null;
       }
     },
@@ -47,13 +48,13 @@ export function useCommunityPostLogic() {
   const pickAndUploadImages = useCallback(async (currentCount = 0) => {
     try {
       if (!COMMUNITY_IMAGE_UPLOAD_ENABLED) {
-        Alert.alert('Image upload unavailable', 'The app is currently configured for manual image URLs only.');
+        appAlert('Image upload unavailable', 'The app is currently configured for manual image URLs only.');
         return [] as Array<{ url: string; order?: number; altText?: string }>;
       }
 
       const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!permission.granted) {
-        Alert.alert('Permission required', 'Please allow access to your photo library to add images.');
+        appAlert('Permission required', 'Please allow access to your photo library to add images.');
         return [] as Array<{ url: string; order?: number; altText?: string }>;
       }
 
@@ -85,14 +86,14 @@ export function useCommunityPostLogic() {
           });
         } catch (uploadError: any) {
           console.error('[useCommunityPostLogic] uploadCommunityImage error:', uploadError);
-          Alert.alert('Upload failed', uploadError?.message || 'Could not upload one of the selected images.');
+          appAlert('Upload failed', uploadError?.message || 'Could not upload one of the selected images.', undefined, 'error');
         }
       }
 
       return uploads;
     } catch (error: any) {
       console.error('[useCommunityPostLogic] pickAndUploadImages error:', error);
-      Alert.alert('Error', error?.message || 'Failed to select images.');
+      appAlert('Error', error?.message || 'Failed to select images.', undefined, 'error');
       return [] as Array<{ url: string; order?: number; altText?: string }>;
     }
   }, []);
@@ -100,13 +101,13 @@ export function useCommunityPostLogic() {
   const takeAndUploadPhoto = useCallback(async () => {
     try {
       if (!COMMUNITY_IMAGE_UPLOAD_ENABLED) {
-        Alert.alert('Image upload unavailable', 'The app is currently configured for manual image URLs only.');
+        appAlert('Image upload unavailable', 'The app is currently configured for manual image URLs only.');
         return null;
       }
 
       const permission = await ImagePicker.requestCameraPermissionsAsync();
       if (!permission.granted) {
-        Alert.alert('Permission required', 'Please allow access to your camera to take photos.');
+        appAlert('Permission required', 'Please allow access to your camera to take photos.');
         return null;
       }
 
@@ -135,12 +136,12 @@ export function useCommunityPostLogic() {
         };
       } catch (uploadError: any) {
         console.error('[useCommunityPostLogic] uploadCommunityImage error:', uploadError);
-        Alert.alert('Upload failed', uploadError?.message || 'Could not upload the captured photo.');
+        appAlert('Upload failed', uploadError?.message || 'Could not upload the captured photo.', undefined, 'error');
         return null;
       }
     } catch (error: any) {
       console.error('[useCommunityPostLogic] takeAndUploadPhoto error:', error);
-      Alert.alert('Error', error?.message || 'Failed to take photo.');
+      appAlert('Error', error?.message || 'Failed to take photo.', undefined, 'error');
       return null;
     }
   }, []);
@@ -151,7 +152,7 @@ export function useCommunityPostLogic() {
       return res;
     } catch (error: any) {
       console.error('[useCommunityPostLogic] tagUser error:', error);
-      Alert.alert('Error', error?.message || 'Failed to tag user');
+      appAlert('Error', error?.message || 'Failed to tag user', undefined, 'error');
       return null;
     }
   }, [dispatch]);
@@ -162,7 +163,7 @@ export function useCommunityPostLogic() {
       return res;
     } catch (error: any) {
       console.error('[useCommunityPostLogic] respondToTag error:', error);
-      Alert.alert('Error', error?.message || 'Failed to respond to tag');
+      appAlert('Error', error?.message || 'Failed to respond to tag', undefined, 'error');
       return null;
     }
   }, [dispatch]);
@@ -173,7 +174,7 @@ export function useCommunityPostLogic() {
       return res;
     } catch (error: any) {
       console.error('[useCommunityPostLogic] removeTag error:', error);
-      Alert.alert('Error', error?.message || 'Failed to remove tag');
+      appAlert('Error', error?.message || 'Failed to remove tag', undefined, 'error');
       return null;
     }
   }, [dispatch]);
@@ -184,7 +185,7 @@ export function useCommunityPostLogic() {
       return res;
     } catch (error: any) {
       console.error('[useCommunityPostLogic] reactToPost error:', error);
-      Alert.alert('Error', error?.message || 'Failed to react to post');
+      appAlert('Error', error?.message || 'Failed to react to post', undefined, 'error');
       return null;
     }
   }, [dispatch]);
@@ -195,7 +196,7 @@ export function useCommunityPostLogic() {
       return res;
     } catch (error: any) {
       console.error('[useCommunityPostLogic] deactivatePost error:', error);
-      Alert.alert('Error', error?.message || 'Failed to deactivate post');
+      appAlert('Error', error?.message || 'Failed to deactivate post', undefined, 'error');
       return null;
     }
   }, [dispatch]);

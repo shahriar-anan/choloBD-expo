@@ -1,5 +1,6 @@
 import React, { useCallback, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, ScrollView, Text, View } from 'react-native';
+import { appAlert } from '../../../components/ui/appAlert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
@@ -58,7 +59,7 @@ export default function AttractionBookingsPage() {
   };
 
   const confirmCancel = (bookingId: string, kind: 'activity' | 'guide') => {
-    Alert.alert(t(TRANSLATION_KEYS.BOOKING.CANCEL), undefined, [
+    appAlert(t(TRANSLATION_KEYS.BOOKING.CANCEL), undefined, [
       { text: t(TRANSLATION_KEYS.COMMON.CANCEL), style: 'cancel' },
       {
         text: t(TRANSLATION_KEYS.BOOKING.CANCEL),
@@ -81,7 +82,7 @@ export default function AttractionBookingsPage() {
       await refresh();
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : t(TRANSLATION_KEYS.DASHBOARD.ATTRACTION_BOOKINGS.NOT_FOUND);
-      Alert.alert(t(TRANSLATION_KEYS.BOOKING.CANCEL), message);
+      appAlert(t(TRANSLATION_KEYS.BOOKING.CANCEL), message);
     } finally {
       setCancellingId(null);
     }

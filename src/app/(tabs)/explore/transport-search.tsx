@@ -1,5 +1,6 @@
 import React from 'react';
-import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
+import { appAlert } from '../../../components/ui/appAlert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -38,15 +39,15 @@ export default function TransportSearchPage() {
     const search = () => {
         if (isRental) {
             if (!params.from?.locationId) {
-                Alert.alert(t(TRANSLATION_KEYS.TRANSPORT.PICKUP_LOCATION), t(TRANSLATION_KEYS.TRANSPORT.CHOOSE_PICKUP));
+                appAlert(t(TRANSLATION_KEYS.TRANSPORT.PICKUP_LOCATION), t(TRANSLATION_KEYS.TRANSPORT.CHOOSE_PICKUP));
                 return;
             }
             if (!params.date || !params.returnDate) {
-                Alert.alert(t(TRANSLATION_KEYS.TRANSPORT.RENTAL_PICKUP_LABEL), t(TRANSLATION_KEYS.TRANSPORT.CHOOSE_DATES));
+                appAlert(t(TRANSLATION_KEYS.TRANSPORT.RENTAL_PICKUP_LABEL), t(TRANSLATION_KEYS.TRANSPORT.CHOOSE_DATES));
                 return;
             }
             if (!isBefore(startOfDay(parseISO(params.date)), startOfDay(parseISO(params.returnDate)))) {
-                Alert.alert(t(TRANSLATION_KEYS.TRANSPORT.RENTAL_RETURN_LABEL), t(TRANSLATION_KEYS.TRANSPORT.RETURN_AFTER_PICKUP));
+                appAlert(t(TRANSLATION_KEYS.TRANSPORT.RENTAL_RETURN_LABEL), t(TRANSLATION_KEYS.TRANSPORT.RETURN_AFTER_PICKUP));
                 return;
             }
             router.push({
@@ -63,22 +64,22 @@ export default function TransportSearchPage() {
         }
 
         if (!params.from?.locationId) {
-            Alert.alert(t(TRANSLATION_KEYS.TRANSPORT.FROM), t(TRANSLATION_KEYS.TRANSPORT.CHOOSE_LOCATIONS));
+            appAlert(t(TRANSLATION_KEYS.TRANSPORT.FROM), t(TRANSLATION_KEYS.TRANSPORT.CHOOSE_LOCATIONS));
             return;
         }
         if (!params.to?.locationId) {
-            Alert.alert(t(TRANSLATION_KEYS.TRANSPORT.TO), t(TRANSLATION_KEYS.TRANSPORT.CHOOSE_LOCATIONS));
+            appAlert(t(TRANSLATION_KEYS.TRANSPORT.TO), t(TRANSLATION_KEYS.TRANSPORT.CHOOSE_LOCATIONS));
             return;
         }
         if (!params.date) {
-            Alert.alert(t(TRANSLATION_KEYS.TRANSPORT.DATE), t(TRANSLATION_KEYS.TRANSPORT.SELECT_DATE));
+            appAlert(t(TRANSLATION_KEYS.TRANSPORT.DATE), t(TRANSLATION_KEYS.TRANSPORT.SELECT_DATE));
             return;
         }
         if (
             params.returnDate &&
             isBefore(startOfDay(parseISO(params.returnDate)), startOfDay(parseISO(params.date)))
         ) {
-            Alert.alert(t(TRANSLATION_KEYS.TRANSPORT.RETURN_DATE), t(TRANSLATION_KEYS.TRANSPORT.RETURN_DATE_INVALID));
+            appAlert(t(TRANSLATION_KEYS.TRANSPORT.RETURN_DATE), t(TRANSLATION_KEYS.TRANSPORT.RETURN_DATE_INVALID));
             return;
         }
 

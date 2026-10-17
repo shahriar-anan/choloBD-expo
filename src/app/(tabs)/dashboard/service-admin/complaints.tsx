@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, Pressable, ActivityIndicator, TextInput, Alert } from 'react-native';
+import { View, Text, Pressable, ActivityIndicator, TextInput } from 'react-native';
+import { appAlert } from '../../../../components/ui/appAlert';
 import { KeyboardAwareScroll } from '../../../../components/ui/KeyboardAwareScroll';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -32,7 +33,7 @@ export default function HotelComplaintsPage() {
     try {
       setComplaints(await getComplaintInbox());
     } catch (error: any) {
-      Alert.alert(t(TRANSLATION_KEYS.DASHBOARD.ADMIN_CARDS.COMPLAINTS), error?.response?.data?.message || t(TRANSLATION_KEYS.HOTEL_DESK.COULD_NOT_LOAD_COMPLAINTS));
+      appAlert(t(TRANSLATION_KEYS.DASHBOARD.ADMIN_CARDS.COMPLAINTS), error?.response?.data?.message || t(TRANSLATION_KEYS.HOTEL_DESK.COULD_NOT_LOAD_COMPLAINTS), undefined, 'error');
     } finally {
       setLoading(false);
     }
@@ -48,7 +49,7 @@ export default function HotelComplaintsPage() {
     try {
       setComments(await getComplaintComments(complaint.id));
     } catch (error: any) {
-      Alert.alert(t(TRANSLATION_KEYS.DASHBOARD.ADMIN_CARDS.COMPLAINTS), error?.response?.data?.message || t(TRANSLATION_KEYS.HOTEL_DESK.COULD_NOT_LOAD_COMMENTS));
+      appAlert(t(TRANSLATION_KEYS.DASHBOARD.ADMIN_CARDS.COMPLAINTS), error?.response?.data?.message || t(TRANSLATION_KEYS.HOTEL_DESK.COULD_NOT_LOAD_COMMENTS), undefined, 'error');
     }
   };
 
@@ -60,7 +61,7 @@ export default function HotelComplaintsPage() {
       setDraft('');
       setComments(await getComplaintComments(complaintId));
     } catch (error: any) {
-      Alert.alert(t(TRANSLATION_KEYS.DASHBOARD.ADMIN_CARDS.COMPLAINTS), error?.response?.data?.message || t(TRANSLATION_KEYS.HOTEL_DESK.COULD_NOT_ADD_COMMENT));
+      appAlert(t(TRANSLATION_KEYS.DASHBOARD.ADMIN_CARDS.COMPLAINTS), error?.response?.data?.message || t(TRANSLATION_KEYS.HOTEL_DESK.COULD_NOT_ADD_COMMENT), undefined, 'error');
     } finally {
       setBusy(false);
     }
@@ -73,7 +74,7 @@ export default function HotelComplaintsPage() {
       await load();
       setOpenId(null);
     } catch (error: any) {
-      Alert.alert(t(TRANSLATION_KEYS.DASHBOARD.ADMIN_CARDS.COMPLAINTS), error?.response?.data?.message || t(TRANSLATION_KEYS.HOTEL_DESK.COULD_NOT_UPDATE_COMPLAINT));
+      appAlert(t(TRANSLATION_KEYS.DASHBOARD.ADMIN_CARDS.COMPLAINTS), error?.response?.data?.message || t(TRANSLATION_KEYS.HOTEL_DESK.COULD_NOT_UPDATE_COMPLAINT), undefined, 'error');
     } finally {
       setBusy(false);
     }

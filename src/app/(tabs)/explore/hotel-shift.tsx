@@ -1,5 +1,6 @@
 import React from 'react';
-import { Alert, Pressable, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
+import { appAlert } from '../../../components/ui/appAlert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -31,7 +32,7 @@ export default function HotelShiftPage() {
     const chooseNight = () => {
         const today = dhakaYmd();
         if (stayDay === today && runningNightOpen()) {
-            Alert.alert(
+            appAlert(
                 t(TRANSLATION_KEYS.HOTEL_SEARCH.WHICH_NIGHT_TITLE),
                 t(TRANSLATION_KEYS.HOTEL_SEARCH.WHICH_NIGHT_BODY),
                 [

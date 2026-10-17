@@ -263,6 +263,7 @@ export const TRANSLATION_KEYS = {
     ENGLISH: 'common.english',
     VIEW_DETAILS: 'common.viewDetails',
     CONFIRM: 'common.confirm',
+    OK: 'common.ok',
     COMING_SOON: 'common.comingSoon',
   },
   AUTH: {

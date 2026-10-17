@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, Pressable, Text, View, type ScrollView } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, Text, View, type ScrollView } from 'react-native';
+import { appAlert } from '../../../components/ui/appAlert';
 import { KeyboardAwareScroll } from '../../../components/ui/KeyboardAwareScroll';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -97,7 +98,7 @@ export default function ExploreBooking() {
       return;
     }
     if (roomsTooSmallForGuests(selectedRoomsMap, availableRooms, guestCount)) {
-      Alert.alert(
+      appAlert(
         t(TRANSLATION_KEYS.HOTEL_SEARCH.ROOM_CAPACITY_TITLE),
         t(TRANSLATION_KEYS.HOTEL_SEARCH.ROOM_CAPACITY_BODY, {
           count: guestCount,

@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Image,
   Pressable,
   Text,
   TextInput,
   View,
 } from 'react-native';
+import { appAlert } from '../../../../../components/ui/appAlert';
 import { KeyboardAwareScroll } from '../../../../../components/ui/KeyboardAwareScroll';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -100,7 +100,7 @@ export default function TransportAdminCoachWizardPage() {
   const districts = locations.filter((row) => String(row.locationType || '').toUpperCase() === 'DISTRICT');
 
   const notifyFail = (error: unknown) => {
-    Alert.alert(t(TRANSLATION_KEYS.TRANSPORT_OPERATOR.FAILED), error instanceof Error ? error.message : undefined);
+    appAlert(t(TRANSLATION_KEYS.TRANSPORT_OPERATOR.FAILED), error instanceof Error ? error.message : undefined, undefined, 'error');
   };
 
   const inputClass =
@@ -141,7 +141,7 @@ export default function TransportAdminCoachWizardPage() {
     }
     const price = Number(classPrice);
     if (!transportId || !className.trim() || !(price > 0)) {
-      Alert.alert(t(TRANSLATION_KEYS.TRANSPORT_OPERATOR.FILL_REQUIRED));
+      appAlert(t(TRANSLATION_KEYS.TRANSPORT_OPERATOR.FILL_REQUIRED));
       return;
     }
     setBusy(true);
@@ -182,11 +182,11 @@ export default function TransportAdminCoachWizardPage() {
       return;
     }
     if (!transportId || !originId || !destinationId || !boardingName.trim() || !droppingName.trim()) {
-      Alert.alert(t(TRANSLATION_KEYS.TRANSPORT_OPERATOR.FILL_REQUIRED));
+      appAlert(t(TRANSLATION_KEYS.TRANSPORT_OPERATOR.FILL_REQUIRED));
       return;
     }
     if (originId === destinationId) {
-      Alert.alert(t(TRANSLATION_KEYS.TRANSPORT_OPERATOR.SAME_PLACES));
+      appAlert(t(TRANSLATION_KEYS.TRANSPORT_OPERATOR.SAME_PLACES));
       return;
     }
     setBusy(true);
@@ -221,11 +221,11 @@ export default function TransportAdminCoachWizardPage() {
 
   const publish = async () => {
     if (!transportId || !layoutId || !routeId) {
-      Alert.alert(t(TRANSLATION_KEYS.TRANSPORT_OPERATOR.FILL_REQUIRED));
+      appAlert(t(TRANSLATION_KEYS.TRANSPORT_OPERATOR.FILL_REQUIRED));
       return;
     }
     if (!(departureAt < arrivalAt)) {
-      Alert.alert(t(TRANSLATION_KEYS.TRANSPORT_OPERATOR.ARRIVAL_AFTER));
+      appAlert(t(TRANSLATION_KEYS.TRANSPORT_OPERATOR.ARRIVAL_AFTER));
       return;
     }
     setBusy(true);

@@ -3,7 +3,7 @@
  * Helper functions for OAuth error handling, validation, and state management
  */
 
-import { Alert } from 'react-native';
+import { appAlert } from '../components/ui/appAlert';
 import { TRANSLATION_KEYS } from '../constants/translationKeys';
 import i18next from 'i18next';
 
@@ -79,7 +79,7 @@ export function validateOAuthResponse(response: any): boolean {
  * @param message - Alert message
  */
 export function showOAuthErrorAlert(title: string, message: string): void {
-  Alert.alert(title, message, [{ text: 'OK', onPress: () => {} }]);
+  void appAlert(title, message, undefined, 'error');
 }
 
 /**

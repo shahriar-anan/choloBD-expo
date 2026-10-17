@@ -1,13 +1,13 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Linking,
   Pressable,
   ScrollView,
   Text,
   View,
 } from 'react-native';
+import { appAlert } from '../../../components/ui/appAlert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -60,7 +60,7 @@ export default function TransportStopsPage() {
       } catch (error: unknown) {
         if (!cancelled) {
           const message = error instanceof Error ? error.message : t(TRANSLATION_KEYS.TRANSPORT.LOAD_FAILED);
-          Alert.alert(t(TRANSLATION_KEYS.COMMON.ERROR), message);
+          appAlert(t(TRANSLATION_KEYS.COMMON.ERROR), message, undefined, 'error');
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -93,7 +93,7 @@ export default function TransportStopsPage() {
 
   const continueNext = () => {
     if (!boardingId || !droppingId) {
-      Alert.alert(t(TRANSLATION_KEYS.TRANSPORT.STOPS_REQUIRED));
+      appAlert(t(TRANSLATION_KEYS.TRANSPORT.STOPS_REQUIRED));
       return;
     }
     setStops(boardingId, droppingId);

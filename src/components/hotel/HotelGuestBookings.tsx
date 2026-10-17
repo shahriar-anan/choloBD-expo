@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, ScrollView, ActivityIndicator, Pressable, Alert, TextInput } from 'react-native';
+import { View, Text, ScrollView, ActivityIndicator, Pressable, TextInput } from 'react-native';
+import { appAlert } from '../ui/appAlert';
 import { KeyboardAwareScroll } from '../ui/KeyboardAwareScroll';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -117,7 +118,7 @@ export function HotelGuestBookings({
 
   const onStay = (booking: { id: string; roomDetails?: Array<{ hotelRoomId?: string }> }, status: 'COMPLETED' | 'NO_SHOW') => {
     const label = status === 'COMPLETED' ? t(TRANSLATION_KEYS.HOTEL_DESK.CHECK_OUT) : t(TRANSLATION_KEYS.HOTEL_DESK.NO_SHOW);
-    Alert.alert(label, t(TRANSLATION_KEYS.HOTEL_DESK.STAY_ACTION_BODY), [
+    appAlert(label, t(TRANSLATION_KEYS.HOTEL_DESK.STAY_ACTION_BODY), [
       { text: t(TRANSLATION_KEYS.COMMON.BACK), style: 'cancel' },
       {
         text: label,
@@ -130,19 +131,19 @@ export function HotelGuestBookings({
               if (status !== 'COMPLETED') return;
               const roomIds = (booking.roomDetails || []).map((detail) => detail.hotelRoomId).filter((id): id is string => Boolean(id));
               if (roomIds.length === 0) return;
-              Alert.alert(t(TRANSLATION_KEYS.HOTEL_DESK.NEEDS_CLEANING), t(TRANSLATION_KEYS.HOTEL_DESK.NEEDS_CLEANING_BODY), [
+              appAlert(t(TRANSLATION_KEYS.HOTEL_DESK.NEEDS_CLEANING), t(TRANSLATION_KEYS.HOTEL_DESK.NEEDS_CLEANING_BODY), [
                 { text: t(TRANSLATION_KEYS.HOTEL_DESK.SKIP), style: 'cancel' },
                 {
                   text: t(TRANSLATION_KEYS.HOTEL_DESK.NEEDS_CLEANING),
                   onPress: () => {
                     void Promise.all(roomIds.map((roomId) => updateHotelRoomStatus(roomId, 'MAINTENANCE'))).catch(() => {
-                      Alert.alert(t(TRANSLATION_KEYS.HOTEL_DESK.NEEDS_CLEANING), t(TRANSLATION_KEYS.HOTEL_DESK.COULD_NOT_MARK_CLEANING));
+                      appAlert(t(TRANSLATION_KEYS.HOTEL_DESK.NEEDS_CLEANING), t(TRANSLATION_KEYS.HOTEL_DESK.COULD_NOT_MARK_CLEANING), undefined, 'error');
                     });
                   },
                 },
               ]);
             } catch (stayError: any) {
-              Alert.alert(label, stayError?.response?.data?.message || t(TRANSLATION_KEYS.HOTEL_DESK.COULD_NOT_UPDATE_STAY));
+              appAlert(label, stayError?.response?.data?.message || t(TRANSLATION_KEYS.HOTEL_DESK.COULD_NOT_UPDATE_STAY), undefined, 'error');
             } finally {
               setStayId(null);
             }
@@ -162,11 +163,11 @@ export function HotelGuestBookings({
         setCancellingId(booking.id);
         const eligibility = await getHotelCancellationEligibility(booking.id);
         if (!eligibility?.canCancel) {
-          Alert.alert(t(TRANSLATION_KEYS.HOTEL_DESK.CANCEL_BOOKING), eligibility?.reason || t(TRANSLATION_KEYS.HOTEL_DESK.CANNOT_CANCEL));
+          appAlert(t(TRANSLATION_KEYS.HOTEL_DESK.CANCEL_BOOKING), eligibility?.reason || t(TRANSLATION_KEYS.HOTEL_DESK.CANNOT_CANCEL));
           return;
         }
         const label = getCancelActionLabel(eligibility);
-        Alert.alert(label, eligibility.reason, [
+        appAlert(label, eligibility.reason, [
           { text: t(TRANSLATION_KEYS.COMMON.BACK), style: 'cancel' },
           {
             text: label,
@@ -177,14 +178,14 @@ export function HotelGuestBookings({
                   await cancelHotelBooking(booking.id);
                   await refetch();
                 } catch (cancelError: any) {
-                  Alert.alert(t(TRANSLATION_KEYS.HOTEL_DESK.CANCEL_BOOKING), cancelError?.response?.data?.message || t(TRANSLATION_KEYS.HOTEL_DESK.COULD_NOT_CANCEL));
+                  appAlert(t(TRANSLATION_KEYS.HOTEL_DESK.CANCEL_BOOKING), cancelError?.response?.data?.message || t(TRANSLATION_KEYS.HOTEL_DESK.COULD_NOT_CANCEL), undefined, 'error');
                 }
               })();
             },
           },
         ]);
       } catch (eligibilityError: any) {
-        Alert.alert(t(TRANSLATION_KEYS.HOTEL_DESK.CANCEL_BOOKING), eligibilityError?.response?.data?.message || t(TRANSLATION_KEYS.HOTEL_DESK.COULD_NOT_CHECK_CANCEL));
+        appAlert(t(TRANSLATION_KEYS.HOTEL_DESK.CANCEL_BOOKING), eligibilityError?.response?.data?.message || t(TRANSLATION_KEYS.HOTEL_DESK.COULD_NOT_CHECK_CANCEL), undefined, 'error');
       } finally {
         setCancellingId(null);
       }

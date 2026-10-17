@@ -12,8 +12,8 @@ import {
   ActivityIndicator,
   ScrollView,
   Image,
-  Alert,
 } from 'react-native';
+import { appAlert } from '../../../components/ui/appAlert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -149,7 +149,7 @@ export default function TripPlannerIndex() {
   };
 
   const confirmDelete = (tripId: string, tripName: string) => {
-    Alert.alert(
+    appAlert(
       t(TRANSLATION_KEYS.TRIP_PLANNER.DELETE_TRIP_TITLE),
       t(TRANSLATION_KEYS.TRIP_PLANNER.DELETE_TRIP_MESSAGE, { name: tripName }),
       [
@@ -165,7 +165,7 @@ export default function TripPlannerIndex() {
               const message = error && typeof error === 'object' && 'message' in error
                 ? String((error as { message?: string }).message)
                 : t(TRANSLATION_KEYS.COMMON.ERROR);
-              Alert.alert(t(TRANSLATION_KEYS.COMMON.ERROR), message);
+              appAlert(t(TRANSLATION_KEYS.COMMON.ERROR), message, undefined, 'error');
             }
           },
         },
