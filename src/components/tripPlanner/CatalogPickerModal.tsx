@@ -50,6 +50,7 @@ interface CatalogPickerModalProps {
     kind: CatalogPickKind;
     divisionId: string;
     selectedId?: string;
+    remainingBudget?: number;
     onClose: () => void;
     onSelect: (result: CatalogPickResult) => void;
 }
@@ -85,6 +86,7 @@ function listItemFromActivity(
 
 function listItemFromHotel(
     hotel: { id: string; name: string; images?: Array<{ url: string }>; location?: { name?: string }; rating?: number; hotelType?: string; roomTypes?: Array<{ pricePerNight?: number }> },
+    fromNightLabel: (amount: string) => string,
 ): CatalogListItem {
     const minPrice = hotelStartingPrice(hotel.roomTypes);
     return {
@@ -94,15 +96,25 @@ function listItemFromHotel(
         locationName: hotel.location?.name,
         rating: hotel.rating,
         badgeLabel: hotel.hotelType ? formatEnumLabel(hotel.hotelType) : undefined,
-        priceLabel: minPrice !== undefined ? `${formatTaka(minPrice)} / night` : undefined,
+        priceLabel: minPrice !== undefined ? fromNightLabel(formatTaka(minPrice)) : undefined,
         hotelType: hotel.hotelType,
         rawCost: minPrice,
+        overBudget: false,
     };
+}
+
+function withOverBudget(items: CatalogListItem[], remaining?: number): CatalogListItem[] {
+    if (typeof remaining !== 'number') return items;
+    return items.map((item) => ({
+        ...item,
+        overBudget: typeof item.rawCost === 'number' && item.rawCost > remaining,
+    }));
 }
 
 export function CatalogPickerModal({
     visible,
     kind,
+    remainingBudget,
     divisionId,
     selectedId,
     onClose,
@@ -194,15 +206,18 @@ export function CatalogPickerModal({
                         page: pageNum,
                         limit: PAGE_SIZE,
                     });
-                    const mapped = res.results.map((spot) => {
-                        const typeKey = spot.activityType
-                            ? TRANSLATION_KEYS.ATTRACTIONS.ACTIVITY_TYPES[
-                                  spot.activityType as keyof typeof TRANSLATION_KEYS.ATTRACTIONS.ACTIVITY_TYPES
-                              ]
-                            : undefined;
-                        const typeLabel = typeKey ? t(typeKey) : formatEnumLabel(spot.activityType);
-                        return listItemFromActivity(spot, typeLabel, freeLabel);
-                    });
+                    const mapped = withOverBudget(
+                        res.results.map((spot) => {
+                            const typeKey = spot.activityType
+                                ? TRANSLATION_KEYS.ATTRACTIONS.ACTIVITY_TYPES[
+                                      spot.activityType as keyof typeof TRANSLATION_KEYS.ATTRACTIONS.ACTIVITY_TYPES
+                                  ]
+                                : undefined;
+                            const typeLabel = typeKey ? t(typeKey) : formatEnumLabel(spot.activityType);
+                            return listItemFromActivity(spot, typeLabel, freeLabel);
+                        }),
+                        remainingBudget,
+                    );
                     setItems((prev) => (replace ? mapped : [...prev, ...mapped]));
                     setTotal(res.total);
                     setPage(res.page);
@@ -214,16 +229,22 @@ export function CatalogPickerModal({
                         page: pageNum,
                         limit: PAGE_SIZE,
                     });
-                    const mapped = rows.map((hotel) =>
-                        listItemFromHotel(hotel as {
-                            id: string;
-                            name: string;
-                            images?: Array<{ url: string }>;
-                            location?: { name?: string };
-                            rating?: number;
-                            hotelType?: string;
-                            roomTypes?: Array<{ pricePerNight?: number }>;
-                        }),
+                    const mapped = withOverBudget(
+                        rows.map((hotel) =>
+                            listItemFromHotel(
+                                hotel as {
+                                    id: string;
+                                    name: string;
+                                    images?: Array<{ url: string }>;
+                                    location?: { name?: string };
+                                    rating?: number;
+                                    hotelType?: string;
+                                    roomTypes?: Array<{ pricePerNight?: number }>;
+                                },
+                                (amount) => t(TRANSLATION_KEYS.TRIP_PLANNER.BUDGET_FROM_NIGHT, { amount }),
+                            ),
+                        ),
+                        remainingBudget,
                     );
                     setItems((prev) => (replace ? mapped : [...prev, ...mapped]));
                     setHotelHasMore(mapped.length >= PAGE_SIZE);
@@ -237,7 +258,7 @@ export function CatalogPickerModal({
                 setRefreshing(false);
             }
         },
-        [divisionId, kind, debouncedSearch, typeFilter, t, freeLabel],
+        [divisionId, kind, debouncedSearch, typeFilter, t, freeLabel, remainingBudget],
     );
 
     useEffect(() => {
@@ -318,7 +339,9 @@ export function CatalogPickerModal({
                     imageUrls,
                     locationName: hotel.location?.name,
                     rating: hotel.rating,
-                    priceLabel: minPrice !== undefined ? `${formatTaka(minPrice)} / night` : undefined,
+                    priceLabel: minPrice !== undefined
+                        ? t(TRANSLATION_KEYS.TRIP_PLANNER.BUDGET_FROM_NIGHT, { amount: formatTaka(minPrice) })
+                        : undefined,
                     facts: [
                         ...(hotel.checkInTime && hotel.checkOutTime
                             ? [{ icon: 'log-in-outline' as const, label: `Check-in ${hotel.checkInTime} · Check-out ${hotel.checkOutTime}` }]
@@ -411,6 +434,29 @@ export function CatalogPickerModal({
                         {t(titleKey)}
                     </Text>
                 </View>
+                {typeof remainingBudget === 'number' && (kind === 'activity' || kind === 'hotel') ? (
+                    <View className="px-4 py-2 border-b border-border dark:border-border-dark">
+                        <Text
+                            className="text-xs font-semibold"
+                            style={{
+                                color:
+                                    remainingBudget < 0
+                                        ? isDark
+                                            ? theme.colors['error-dark']
+                                            : theme.colors.error
+                                        : muted,
+                            }}
+                        >
+                            {remainingBudget < 0
+                                ? t(TRANSLATION_KEYS.TRIP_PLANNER.BUDGET_OVER_BY, {
+                                      amount: formatTaka(Math.abs(remainingBudget)),
+                                  })
+                                : t(TRANSLATION_KEYS.TRIP_PLANNER.BUDGET_LEFT_IN, {
+                                      amount: formatTaka(remainingBudget),
+                                  })}
+                        </Text>
+                    </View>
+                ) : null}
 
                 {screen === 'list' ? (
                     <>

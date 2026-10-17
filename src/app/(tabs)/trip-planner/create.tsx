@@ -23,7 +23,9 @@ export default function TripPlannerCreate() {
         mode="create"
         templateId={readParam(params.templateId)}
         onCancel={() => goBack(router)}
-        onSaved={(plan) => router.replace(`/(tabs)/trip-planner/${plan.id}`)}
+        onSaved={(plan) =>
+          router.replace({ pathname: '/(tabs)/trip-planner/[id]', params: { id: plan.id, saved: '1' } })
+        }
       />
     </SafeAreaView>
   );

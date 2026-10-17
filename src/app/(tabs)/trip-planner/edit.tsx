@@ -3,7 +3,7 @@
  */
 
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Text, View } from 'react-native';
+import { ActivityIndicator, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -18,8 +18,10 @@ import { goBack } from '../../../utilities/navigation';
 export default function TripPlannerEdit() {
   const router = useRouter();
   const { t } = useTranslation();
-  const params = useLocalSearchParams<{ id?: string }>();
+  const params = useLocalSearchParams<{ id?: string; day?: string }>();
   const planId = typeof params.id === 'string' ? params.id : '';
+  const requestedDay = Number(params.day);
+  const openOnDay = Number.isFinite(requestedDay) && requestedDay > 0;
   const [initial, setInitial] = useState<WizardInitial | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -66,14 +68,21 @@ export default function TripPlannerEdit() {
       ) : error ? (
         <View className="flex-1 items-center justify-center px-6">
           <Text className="text-center text-error">{error}</Text>
+          <TouchableOpacity onPress={() => goBack(router)} className="mt-4 py-3 px-6" style={{ minHeight: 44 }}>
+            <Text className="text-primary font-semibold">{t(TRANSLATION_KEYS.COMMON.BACK)}</Text>
+          </TouchableOpacity>
         </View>
       ) : (
         <TripPlanCreateWizard
           mode="edit"
           planId={planId}
+          initialStep={openOnDay ? 1 : 0}
+          initialDay={openOnDay ? requestedDay : 1}
           initial={initial || undefined}
           onCancel={() => goBack(router)}
-          onSaved={() => goBack(router)}
+          onSaved={() =>
+            router.replace({ pathname: '/(tabs)/trip-planner/[id]', params: { id: planId, saved: '1' } })
+          }
         />
       )}
     </SafeAreaView>

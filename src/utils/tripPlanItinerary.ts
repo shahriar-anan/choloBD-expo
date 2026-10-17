@@ -54,6 +54,7 @@ export interface WizardStop {
   hotelId?: string;
   hotelName?: string;
   hotelImageUrl?: string;
+  hotelRoomType?: string;
   activityCost?: number;
   hotelCost?: number;
   notes?: string;
@@ -115,6 +116,37 @@ export function formatDisplayDate(value?: string | null): string {
     month: 'short',
     day: 'numeric',
   });
+}
+
+export function dateForTripDay(startDate: string | undefined | null, dayNumber: number): string {
+  const parsed = tripDayDate(startDate, dayNumber);
+  if (!parsed) return '';
+  return formatDisplayDate(toDateInputValue(parsed));
+}
+
+/** "Tue, Oct 20" or, with the year, "Tue, Oct 20, 2026". */
+export function formatTripDayHeading(
+  startDate: string | undefined | null,
+  dayNumber: number,
+  withYear = false
+): string {
+  const parsed = tripDayDate(startDate, dayNumber);
+  if (!parsed) return '';
+  return parsed.toLocaleDateString(undefined, {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    ...(withYear ? { year: 'numeric' as const } : {}),
+  });
+}
+
+function tripDayDate(startDate: string | undefined | null, dayNumber: number): Date | null {
+  const base = toDateInputValue(startDate);
+  if (!base || dayNumber < 1) return null;
+  const parsed = new Date(`${base}T00:00:00`);
+  if (Number.isNaN(parsed.getTime())) return null;
+  parsed.setDate(parsed.getDate() + (dayNumber - 1));
+  return parsed;
 }
 
 export function toDateInputValue(value?: string | Date | null): string {

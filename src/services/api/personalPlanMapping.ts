@@ -17,8 +17,39 @@ import {
   HotelTypePreference,
   TransportTypePreference,
   TourTypePreference,
+  PlanBudgetSummary,
 } from '../../types/trips';
 import { applyOvernightHotelToLastStop, wizardStopsToDaySegments, WizardItineraryStop, WizardStop, createClientStopId, inferEndDateString, toDateInputValue } from '../../utils/tripPlanItinerary';
+
+function mapBudgetSummary(raw: any): PlanBudgetSummary | undefined {
+  if (!raw || typeof raw !== 'object') return undefined;
+  return {
+    budget: Number(raw.budget ?? 0),
+    plannedTotal: Number(raw.plannedTotal ?? 0),
+    livePlannedTotal: Number(raw.livePlannedTotal ?? 0),
+    remaining: Number(raw.remaining ?? 0),
+    isOverBudget: Boolean(raw.isOverBudget),
+    priceChanged: Boolean(raw.priceChanged),
+    byCategory: {
+      stays: Number(raw.byCategory?.stays ?? 0),
+      activities: Number(raw.byCategory?.activities ?? 0),
+    },
+    byDay: Array.isArray(raw.byDay)
+      ? raw.byDay.map((row: any) => ({
+          dayNumber: Number(row.dayNumber),
+          total: Number(row.total ?? 0),
+          stays: Number(row.stays ?? 0),
+          activities: Number(row.activities ?? 0),
+          stopCount: Number(row.stopCount ?? 0),
+        }))
+      : [],
+    pricedFor: {
+      travellers: Number(raw.pricedFor?.travellers ?? 1),
+      rooms: Number(raw.pricedFor?.rooms ?? 1),
+    },
+    transportPriced: Boolean(raw.transportPriced),
+  };
+}
 
 export function mapDaySegmentToUserSegment(
   seg: PersonalDaySegmentApi,
@@ -42,7 +73,15 @@ export function mapDaySegmentToUserSegment(
     customActivitySpotName: seg.activitySpotName ?? undefined,
     customHotel: (seg.hotelOption as UserSegment['customHotel']) ?? undefined,
     customTransport: (seg.transportOption as UserSegment['customTransport']) ?? undefined,
+    hotelName: seg.hotelName ?? undefined,
+    hotelId: seg.hotelId ?? undefined,
+    tourSpotImageUrl: seg.tourSpotImageUrl ?? undefined,
+    activitySpotImageUrl: seg.activitySpotImageUrl ?? undefined,
+    hotelImageUrl: seg.hotelImageUrl ?? undefined,
     estimatedCost: seg.estimatedCost ?? 0,
+    activityCost: seg.activityCost ?? undefined,
+    hotelCost: seg.hotelCost ?? undefined,
+    hotelRoomType: seg.hotelRoomType ?? undefined,
     createdAt: now,
     updatedAt: now,
   };
@@ -106,6 +145,7 @@ export function mapPersonalPlanToTripPlan(raw: any): TripPlan {
         },
     daySegments,
     userSegments: daySegments.map((seg) => mapDaySegmentToUserSegment(seg, raw.id)),
+    budgetSummary: mapBudgetSummary(raw.budgetSummary),
     _count: {
       userSegments: daySegments.length,
       tripBookings: raw.tripBookings?.length ?? raw._count?.tripBookings ?? 0,
@@ -300,8 +340,9 @@ export function catalogSegmentsToWizardStops(segments: any[]): WizardStop[] {
     notes: segment.notes || '',
     shortDescriptionBn: segment.shortDescriptionBn || '',
     notesBn: segment.notesBn || '',
-    activityCost: Number(segment.activityCost || segment.estimatedCost || 0),
+    activityCost: Number(segment.activityCost || 0),
     hotelCost: Number(segment.hotelCost || 0),
+    hotelRoomType: segment.hotelRoomType || undefined,
   }));
 }
 
@@ -347,8 +388,15 @@ function mapPackageSegment(seg: any, planId: string): UserSegment {
     tourSpotName: seg.tourSpotName || undefined,
     activitySpotName: seg.activitySpotName || undefined,
     hotelName: seg.hotelName || undefined,
+    hotelId: seg.hotelId || undefined,
+    tourSpotImageUrl: seg.tourSpotImageUrl || undefined,
+    activitySpotImageUrl: seg.activitySpotImageUrl || undefined,
+    hotelImageUrl: seg.hotelImageUrl || undefined,
     customHotel: seg.hotelOption ? asHotel(seg.hotelOption) : undefined,
     customTransport: seg.transportOption ? asTransport(seg.transportOption) : undefined,
+    activityCost: seg.activityCost == null ? undefined : Number(seg.activityCost),
+    hotelCost: seg.hotelCost == null ? undefined : Number(seg.hotelCost),
+    hotelRoomType: seg.hotelRoomType || undefined,
     createdAt: seg.createdAt || now,
     updatedAt: seg.updatedAt || now,
   };
@@ -405,6 +453,7 @@ export function mapPersonalPackageToTripPlan(pkg: any): TripPlan {
     isActive: pkg.isActive,
     basedOnPackageName: pkg.basedOnPackage?.packageName,
     basedOnPackageId: pkg.basedOnPackageId || pkg.basedOnPackage?.id,
+    budgetSummary: mapBudgetSummary(pkg.budgetSummary),
   };
 }
 
@@ -425,15 +474,25 @@ export function tripPlanToWizardStops(trip: TripPlan): WizardStop[] {
     shortDescriptionBn: '',
     tourSpotId: segment.customTourSpotId || '',
     tourSpotName: segment.tourSpotName,
+    tourSpotImageUrl: segment.tourSpotImageUrl,
     activitySpotId: segment.customActivitySpotId,
     activitySpotName: segment.activitySpotName || segment.customActivitySpotName,
+    activitySpotImageUrl: segment.activitySpotImageUrl,
     transportOption: segment.customTransport,
     hotelOption: segment.customHotel,
+    hotelId: segment.hotelId,
     hotelName: segment.hotelName,
+    hotelImageUrl: segment.hotelImageUrl,
     notes: banglaOnly ? (banglaNotes || englishNotes) : englishNotes,
     notesBn: '',
-    activityCost: 0,
-    hotelCost: segment.estimatedCost || 0,
+    hotelRoomType: segment.hotelRoomType,
+    activityCost: typeof segment.activityCost === 'number' ? segment.activityCost : 0,
+    hotelCost:
+      typeof segment.hotelCost === 'number'
+        ? segment.hotelCost
+        : typeof segment.activityCost === 'number'
+          ? 0
+          : segment.estimatedCost || 0,
   };
   });
 }

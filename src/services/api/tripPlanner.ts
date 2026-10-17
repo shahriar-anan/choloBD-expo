@@ -17,6 +17,7 @@ import {
   TripApiError,
   PaginationInfo,
   PersonalDaySegmentApi,
+  PlanQuote,
 } from '../../types/trips';
 import {
   mapPersonalPlanToTripPlan,
@@ -32,6 +33,7 @@ import {
   PersonalPlanSaveInput,
   unwrapList,
 } from './personalPlanMapping';
+import { applyOvernightHotelToLastStop, WizardStop } from '../../utils/tripPlanItinerary';
 
 function mapApiError(error: any): TripApiError {
   if (error?.response?.status === 400) {
@@ -248,6 +250,32 @@ export async function getDaySegments(tripId: string, dayNumber: number): Promise
 export async function getTripSummary(tripId: string): Promise<TripSummary> {
   const trip = await getTripDetails(tripId);
   return buildTripSummaryFromPlan(trip);
+}
+
+export async function quotePersonalTourPlan(
+  daySegments: WizardStop[],
+  budget?: number
+): Promise<PlanQuote> {
+  try {
+    const api = getApiInstance();
+    const segments = applyOvernightHotelToLastStop(daySegments).map((segment) => ({
+      dayNumber: segment.dayNumber,
+      segmentOrder: segment.segmentOrder,
+      shortDescription: segment.shortDescription.trim() || `Day ${segment.dayNumber} stop`,
+      tourSpotId: segment.tourSpotId || undefined,
+      activitySpotId: segment.activitySpotId || undefined,
+      transportOption: segment.transportOption || undefined,
+      hotelOption: segment.hotelOption || undefined,
+      hotelId: segment.hotelId || undefined,
+    }));
+    const res = await api.post<TripApiResponse<PlanQuote>>('/api/tour-builder/my/quote', {
+      daySegments: segments,
+      budget: budget && budget > 0 ? budget : undefined,
+    });
+    return res.data.data;
+  } catch (error: any) {
+    throw mapApiError(error);
+  }
 }
 
 export async function savePersonalTourPlan(input: PersonalPlanSaveInput): Promise<TripPlan> {

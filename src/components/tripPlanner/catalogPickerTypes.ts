@@ -12,6 +12,7 @@ export interface CatalogListItem {
     badgeLabel?: string;
     hotelType?: string;
     rawCost?: number;
+    overBudget?: boolean;
 }
 
 export interface CatalogPickResult {

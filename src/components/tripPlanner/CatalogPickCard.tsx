@@ -90,6 +90,14 @@ export function CatalogPickCard({ item, selected, onPressDetails, onPressUse }: 
                             {item.priceLabel}
                         </Text>
                     ) : null}
+                    {item.overBudget ? (
+                        <Text
+                            className="mt-1 text-[10px] font-semibold"
+                            style={{ color: isDark ? theme.colors['error-dark'] : theme.colors.error }}
+                        >
+                            {t(TRANSLATION_KEYS.TRIP_PLANNER.BUDGET_OVER_LEFT)}
+                        </Text>
+                    ) : null}
                 </View>
             </TouchableOpacity>
             <View className="flex-row gap-2 px-3 pb-3">

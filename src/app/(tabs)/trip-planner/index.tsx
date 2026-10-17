@@ -31,6 +31,8 @@ import type { TourPackage, TourType } from '../../../types/tours';
 import type { TripPlan } from '../../../types/trips';
 import { TOUR_TYPE_VALUES } from '../../../utils/tripPlanItinerary';
 import { formatTaka } from '../../../utils/tripPlanItinerary';
+import { budgetState } from '../../../utils/tripBudget';
+import { toneColor } from '../../../components/tripPlanner/budget';
 import { formatBdt } from '../../../utils/money';
 import { goBack } from '../../../utilities/navigation';
 
@@ -519,6 +521,17 @@ function PersonalPlanRow({
   onPress: () => void;
   onDelete: () => void;
 }) {
+  const { t } = useTranslation();
+  const { isDark } = useTheme();
+  const budget = trip.budgetSummary?.budget ?? trip.estimatedBudget ?? 0;
+  const planned =
+    trip.budgetSummary?.plannedTotal ??
+    (trip.userSegments || []).reduce((sum, segment) => sum + (Number(segment.estimatedCost) || 0), 0);
+  const state = budgetState(planned, budget);
+  const meterColor = toneColor(state.tone, isDark);
+  const fill = Math.min(1, Math.max(0, state.ratio)) * 100;
+  const track = isDark ? theme.colors['surface-2-dark'] : theme.colors['surface-2'];
+
   return (
     <View
       style={{
@@ -546,8 +559,37 @@ function PersonalPlanRow({
           <Text style={{ marginTop: 8, fontSize: 12, color: mutedColor }}>
             {trip.primaryLocation?.name}
             {trip.duration ? ` · ${trip.duration} ${daysLabel}` : ''}
-            {` · ${formatTaka(trip.estimatedBudget)}`}
           </Text>
+          {budget > 0 || planned > 0 ? (
+            <View style={{ marginTop: 10 }}>
+              <Text style={{ fontSize: 12, fontWeight: '700', color: meterColor }}>
+                {state.tone === 'over'
+                  ? t(TRANSLATION_KEYS.TRIP_PLANNER.BUDGET_OVER_BY, { amount: formatTaka(state.overBy) })
+                  : t(TRANSLATION_KEYS.TRIP_PLANNER.BUDGET_HUB_OF, {
+                      planned: formatTaka(planned),
+                      budget: formatTaka(budget),
+                    })}
+              </Text>
+              <View
+                style={{ marginTop: 6, height: 4, borderRadius: 999, overflow: 'hidden', backgroundColor: track }}
+                accessibilityRole="progressbar"
+                accessibilityValue={{
+                  min: 0,
+                  max: Math.max(budget, planned, 1),
+                  now: planned,
+                }}
+              >
+                <View
+                  style={{
+                    width: `${state.tone === 'over' ? 100 : fill}%`,
+                    height: '100%',
+                    backgroundColor: meterColor,
+                    borderRadius: 999,
+                  }}
+                />
+              </View>
+            </View>
+          ) : null}
         </View>
       </TouchableOpacity>
       <TouchableOpacity

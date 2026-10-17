@@ -28,6 +28,7 @@ interface SelectedPlaceRowProps {
     onPressRemove?: () => void;
     disabled?: boolean;
     disabledHint?: string;
+    footnote?: string;
 }
 
 export function SelectedPlaceRow({
@@ -41,6 +42,7 @@ export function SelectedPlaceRow({
     onPressRemove,
     disabled,
     disabledHint,
+    footnote,
 }: SelectedPlaceRowProps) {
     const { isDark } = useTheme();
     const { t } = useTranslation();
@@ -146,6 +148,9 @@ export function SelectedPlaceRow({
                     <Ionicons name="chevron-forward" size={20} color={muted} />
                 </TouchableOpacity>
             )}
+            {footnote ? (
+                <Text className="text-xs mt-2" style={{ color: muted }}>{footnote}</Text>
+            ) : null}
         </View>
     );
 }

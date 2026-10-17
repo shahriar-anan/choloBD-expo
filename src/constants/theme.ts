@@ -16,7 +16,9 @@ export const theme = {
     border: '#E6E9EE',
     success: '#16A34A',
     warning: '#F59E0B',
+    'warning-soft': '#FFFBEB',
     error: '#DC2626',
+    'error-soft': '#FEF2F2',
     'success-light': '#22C55E', // light/punchy green for buttons/text/icons
 
 
@@ -35,7 +37,9 @@ export const theme = {
     'success-dark': '#4ADE80', // brighter green
     'success-light-dark': '#86EFAC', // light green for dark theme
     'warning-dark': '#FBBF24', // brighter amber
+    'warning-soft-dark': 'rgba(251,191,36,0.12)',
     'error-dark': '#FF6B6B', // brighter red
+    'error-soft-dark': 'rgba(255,107,107,0.12)',
   },
   spacing: {
     xs: 4,
@@ -87,6 +91,16 @@ export const theme = {
       md: 22,
       lg: 28,
       xl: 34,
+    },
+    /** Trip planner scale. Nothing in that flow should go below caption. */
+    trip: {
+      pageTitle: 28,
+      sectionTitle: 20,
+      cardTitle: 18,
+      body: 16,
+      bodySm: 15,
+      meta: 13,
+      caption: 12,
     },
   },
 } as const;

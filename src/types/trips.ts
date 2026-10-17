@@ -107,6 +107,13 @@ export interface PersonalDaySegmentApi {
   estimatedCost?: number | null;
   tourSpotName?: string | null;
   activitySpotName?: string | null;
+  hotelName?: string | null;
+  tourSpotImageUrl?: string | null;
+  activitySpotImageUrl?: string | null;
+  hotelImageUrl?: string | null;
+  activityCost?: number | null;
+  hotelCost?: number | null;
+  hotelRoomType?: string | null;
   hotelRoomBookingId?: string | null;
   transportBookingId?: string | null;
   activityBookingId?: string | null;
@@ -127,6 +134,47 @@ export interface PersonalDaySegmentInput {
   notesBn?: string;
 }
 
+export interface StopCostBreakdown {
+  dayNumber: number;
+  segmentOrder: number;
+  activityCost: number;
+  hotelCost: number;
+  hotelRoomType?: string | null;
+  hotelName?: string | null;
+  total: number;
+}
+
+export interface BudgetByDay {
+  dayNumber: number;
+  total: number;
+  stays: number;
+  activities: number;
+  stopCount: number;
+}
+
+export interface PlanBudgetSummary {
+  budget: number;
+  plannedTotal: number;
+  livePlannedTotal: number;
+  remaining: number;
+  isOverBudget: boolean;
+  priceChanged: boolean;
+  byCategory: { stays: number; activities: number };
+  byDay: BudgetByDay[];
+  pricedFor: { travellers: number; rooms: number };
+  transportPriced: boolean;
+}
+
+export interface PlanQuote {
+  stops: StopCostBreakdown[];
+  plannedTotal: number;
+  budget: number;
+  remaining: number;
+  isOverBudget: boolean;
+  byCategory: { stays: number; activities: number };
+  byDay: BudgetByDay[];
+}
+
 /**
  * Single day segment of a trip plan
  */
@@ -141,10 +189,17 @@ export interface UserSegment {
   tourSpotName?: string;
   activitySpotName?: string;
   hotelName?: string;
+  hotelId?: string;
+  tourSpotImageUrl?: string;
+  activitySpotImageUrl?: string;
+  hotelImageUrl?: string;
   customNotes?: string;
   startTime?: string;
   endTime?: string;
   estimatedCost: number;
+  activityCost?: number;
+  hotelCost?: number;
+  hotelRoomType?: string;
   hotelRoomBookingId?: string;
   transportBookingId?: string;
   activityBookingId?: string;
@@ -198,6 +253,7 @@ export interface TripPlan {
   isActive?: boolean;
   basedOnPackageName?: string;
   basedOnPackageId?: string;
+  budgetSummary?: PlanBudgetSummary;
   _count?: {
     userSegments: number;
     tripBookings: number;
