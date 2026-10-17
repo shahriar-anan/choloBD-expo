@@ -1,5 +1,7 @@
 import { useState, useCallback } from 'react';
 import { Alert } from 'react-native';
+import { useTranslation } from 'react-i18next';
+import { TRANSLATION_KEYS } from '../constants/translationKeys';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store/store';
 import { createBooking, updateBooking, getUserBookings, getBookingById, getHotelCancellationEligibility, cancelHotelBooking } from '../services/api/bookings';
@@ -8,6 +10,7 @@ import { buildCancelSuccessMessage } from '../utilities/bookingCancelHelpers';
 import { guestContactIsComplete } from '../components/forms/hotelBookingForm';
 
 export function useBookingLogic() {
+  const { t } = useTranslation();
   const auth = useSelector((s: RootState) => s.auth);
   const [submitting, setSubmitting] = useState(false);
 
@@ -194,7 +197,10 @@ export function useBookingLogic() {
             throw new Error(eligibility.reason || 'This booking cannot be cancelled');
           }
           const payload = await cancelHotelBooking(bookingId);
-          const message = buildCancelSuccessMessage('Booking cancelled successfully', payload);
+          let message = buildCancelSuccessMessage('Booking cancelled successfully', payload);
+          if (payload?.emailDispatched) {
+            message += t(TRANSLATION_KEYS.BOOKING.CANCEL_EMAIL_NOTE);
+          }
           Alert.alert('Success', message);
           if (typeof onSuccess === 'function') {
             onSuccess(payload);
@@ -208,7 +214,7 @@ export function useBookingLogic() {
           return null;
         }
       },
-      []
+      [t]
     ),
   };
 }

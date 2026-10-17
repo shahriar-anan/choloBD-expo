@@ -26,7 +26,10 @@ import {
   holdSecondsRemaining,
   sumSelectedSeatPrices,
 } from '../../../utilities/transportFormat';
-import { CreateTransportBookingResult } from '../../../services/api/transportBookings';
+import {
+  CreateTransportBookingResult,
+  transportCreateHoldEmailDispatched,
+} from '../../../services/api/transportBookings';
 import { goBack } from '../../../utilities/navigation';
 
 interface PassengerFormRow {
@@ -185,7 +188,10 @@ export default function TransportPassengersPage() {
     leavingRef.current = true;
     router.replace({
       pathname: '/(tabs)/explore/transport-payment',
-      params: { bookingId: booking.id },
+      params: {
+        bookingId: booking.id,
+        ...(transportCreateHoldEmailDispatched(result) ? { holdEmailSent: '1' } : {}),
+      },
     });
   };
 

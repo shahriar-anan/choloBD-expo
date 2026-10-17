@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { GradientAppBar } from '../../../components/hotelSearch/HotelFlowChrome';
 import { useTheme } from '../../../hooks/useTheme';
 import { useTransportBookingLogic } from '../../../hooks/useTransportBookingLogic';
+import { transportCreateHoldEmailDispatched } from '../../../services/api/transportBookings';
 import theme from '../../../constants/theme';
 import { TRANSLATION_KEYS } from '../../../constants/translationKeys';
 import { getTransportById, getTransportVehicles } from '../../../services/api/transports';
@@ -65,7 +66,7 @@ export default function TransportRentalPage() {
             transportId,
             checkInDate: pickupDate ? toPickupIso(pickupDate) : undefined,
             checkOutDate: returnDate ? toReturnIso(returnDate) : undefined,
-          }),
+          }, { localize: true }),
         ]);
         if (!cancelled) {
           setOperator(transport);
@@ -103,7 +104,10 @@ export default function TransportRentalPage() {
     if (!result || result.kind !== 'single') return;
     router.replace({
       pathname: '/(tabs)/explore/transport-payment',
-      params: { bookingId: result.booking.id },
+      params: {
+        bookingId: result.booking.id,
+        ...(transportCreateHoldEmailDispatched(result) ? { holdEmailSent: '1' } : {}),
+      },
     });
   };
 

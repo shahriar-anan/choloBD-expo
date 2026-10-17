@@ -112,6 +112,16 @@ export function TransportOperatorDashboard({
               />
               {transportType === 'BUS' ? (
                 <DeskCard
+                  icon="qr-code-outline"
+                  title={t(TRANSLATION_KEYS.TRANSPORT_OPERATOR.SCAN_TICKETS)}
+                  subtitle={t(TRANSLATION_KEYS.TRANSPORT_OPERATOR.SCAN_TICKETS_DESC)}
+                  primary={primary}
+                  muted={muted}
+                  onPress={() => router.push('/(tabs)/dashboard/transport-admin/qr-scanner')}
+                />
+              ) : null}
+              {transportType === 'BUS' ? (
+                <DeskCard
                   icon="bus-outline"
                   title={t(TRANSLATION_KEYS.TRANSPORT_OPERATOR.COACH_SERVICES)}
                   subtitle={t(TRANSLATION_KEYS.TRANSPORT_OPERATOR.COACH_SERVICES_DESC)}

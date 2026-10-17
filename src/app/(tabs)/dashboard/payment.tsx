@@ -28,6 +28,7 @@ export default function DashboardPaymentScreen() {
     bookingId: string;
     serviceType: string;
     totalPrice?: string;
+    holdEmailSent?: string;
   }>();
 
   const { startPayment } = usePaymentLogic();
@@ -35,6 +36,8 @@ export default function DashboardPaymentScreen() {
   const [payMethod, setPayMethod] = useState<'card' | 'points'>('card');
   const [pointsBalance, setPointsBalance] = useState<number | null>(null);
   const [pointsError, setPointsError] = useState<string | null>(null);
+  const [walletReceiptEmailed, setWalletReceiptEmailed] = useState(false);
+  const holdEmailSent = params.holdEmailSent === '1';
 
   const primaryColor = isDark ? theme.colors['primary-dark'] : theme.colors.primary;
   const successColor = isDark ? theme.colors['success-dark'] : theme.colors.success;
@@ -69,6 +72,7 @@ export default function DashboardPaymentScreen() {
   const handlePayNow = async () => {
     if (!bookingId) return;
     setPayMethod('card');
+    setWalletReceiptEmailed(false);
     setPointsError(null);
     setScreenState('processing');
     const result = await startPayment({
@@ -86,14 +90,16 @@ export default function DashboardPaymentScreen() {
   const handlePayWithWallet = async () => {
     if (!bookingId || serviceType === 'WALLET_TOP_UP' || !canPayWithWallet) return;
     setPayMethod('points');
+    setWalletReceiptEmailed(false);
     setPointsError(null);
     setScreenState('processing');
     try {
-      await chargeWalletCredits({
+      const charge = await chargeWalletCredits({
         serviceType,
         serviceTypeId: bookingId,
         paymentAmount: pointsCost,
       });
+      setWalletReceiptEmailed(Boolean(charge.emailDispatched));
       setPointsBalance((current) => (current === null ? current : current - pointsCost));
       setScreenState('success');
     } catch (error: any) {
@@ -141,7 +147,9 @@ export default function DashboardPaymentScreen() {
               {t(TRANSLATION_KEYS.PAYMENT.SUCCESS_TITLE)}
             </Text>
             <Text className="mt-2 text-sm text-center text-muted dark:text-muted-dark">
-              {t(TRANSLATION_KEYS.PAYMENT.SUCCESS_DESC)}
+              {payMethod === 'points' && walletReceiptEmailed
+                ? t(TRANSLATION_KEYS.PAYMENT.SUCCESS_DESC_WALLET_RECEIPT)
+                : t(TRANSLATION_KEYS.PAYMENT.SUCCESS_DESC)}
             </Text>
             <TouchableOpacity
               onPress={handleBack}
@@ -229,6 +237,11 @@ export default function DashboardPaymentScreen() {
                     <Text className="text-xs text-muted dark:text-muted-dark">
                       {t(TRANSLATION_KEYS.PAYMENT.BOOKING_RESERVED)}
                     </Text>
+                    {holdEmailSent ? (
+                      <Text className="mt-1 text-xs text-muted dark:text-muted-dark">
+                        {t(TRANSLATION_KEYS.PAYMENT.HOLD_EMAIL)}
+                      </Text>
+                    ) : null}
                   </View>
                 </View>
                 {totalPrice && (

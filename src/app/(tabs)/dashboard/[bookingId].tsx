@@ -34,6 +34,7 @@ function money(amount: unknown): string {
 export default function BookingTrackingPage() {
   const params = useLocalSearchParams();
   const bookingId = params.bookingId as string | undefined;
+  const action = params.action as string | undefined;
   const router = useRouter();
   const role = useSelector((state: RootState) => state.auth.user?.role);
   const insets = useSafeAreaInsets();
@@ -77,6 +78,19 @@ export default function BookingTrackingPage() {
     };
     load();
   }, [bookingId, fetchBookingDetails]);
+
+  useEffect(() => {
+    if (action !== 'pay' || !booking || !bookingId) return;
+    if (booking.paymentStatus !== 'UNPAID' || booking.status === 'CANCELLED') return;
+    router.push({
+      pathname: '/(tabs)/dashboard/payment',
+      params: {
+        bookingId,
+        serviceType: 'HOTEL_BOOKING',
+        totalPrice: String(booking.totalPrice ?? ''),
+      },
+    });
+  }, [action, booking, bookingId, router]);
 
   useEffect(() => {
     if (!bookingId || !booking || !shouldFetchCancellationEligibility(booking.status)) {

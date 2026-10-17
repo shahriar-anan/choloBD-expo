@@ -422,9 +422,7 @@ export function tripPlanToWizardStops(trip: TripPlan): WizardStop[] {
     shortDescription: banglaOnly
       ? (banglaDescription || englishDescription || segment.customNotes || '')
       : englishDescription,
-    shortDescriptionBn: banglaOnly
-      ? (banglaDescription && englishDescription && englishDescription !== banglaDescription ? englishDescription : '')
-      : banglaDescription,
+    shortDescriptionBn: '',
     tourSpotId: segment.customTourSpotId || '',
     tourSpotName: segment.tourSpotName,
     activitySpotId: segment.customActivitySpotId,
@@ -433,9 +431,7 @@ export function tripPlanToWizardStops(trip: TripPlan): WizardStop[] {
     hotelOption: segment.customHotel,
     hotelName: segment.hotelName,
     notes: banglaOnly ? (banglaNotes || englishNotes) : englishNotes,
-    notesBn: banglaOnly
-      ? (banglaNotes && englishNotes && englishNotes !== banglaNotes ? englishNotes : '')
-      : banglaNotes,
+    notesBn: '',
     activityCost: 0,
     hotelCost: segment.estimatedCost || 0,
   };

@@ -1,5 +1,7 @@
 import { useCallback, useState } from 'react';
 import { Alert } from 'react-native';
+import { useTranslation } from 'react-i18next';
+import { TRANSLATION_KEYS } from '../constants/translationKeys';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store/store';
 import { usePaymentLogic } from './usePaymentLogic';
@@ -21,6 +23,7 @@ import { CreateTransportBookingResult } from '../services/api/transportBookings'
 import { buildCancelSuccessMessage } from '../utilities/bookingCancelHelpers';
 
 export function useTransportBookingLogic() {
+  const { t } = useTranslation();
   const auth = useSelector((s: RootState) => s.auth);
   const { startPayment, isLoading: paymentLoading, error: paymentError } = usePaymentLogic();
 
@@ -123,7 +126,11 @@ export function useTransportBookingLogic() {
 
       setCancelSubmitting(true);
       const result = await cancelTransportBooking(bookingId, cancellationReason);
-      Alert.alert('Success', buildCancelSuccessMessage('Booking cancelled successfully', result));
+      let message = buildCancelSuccessMessage('Booking cancelled successfully', result);
+      if (result.emailDispatched) {
+        message += t(TRANSLATION_KEYS.BOOKING.CANCEL_EMAIL_NOTE);
+      }
+      Alert.alert('Success', message);
       onSuccess?.();
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Failed to cancel booking';
@@ -131,7 +138,7 @@ export function useTransportBookingLogic() {
     } finally {
       setCancelSubmitting(false);
     }
-  }, []);
+  }, [t]);
 
   return {
     submitting,

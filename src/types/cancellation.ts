@@ -18,6 +18,7 @@ export interface CancelBookingWithRefundData<TBooking = unknown> {
     booking: TBooking;
     eligibility: CancellationEligibility;
     refund?: BookingCancelRefundSummary | null;
+    emailDispatched?: boolean;
 }
 
 export function isCancelWithRefundPayload(

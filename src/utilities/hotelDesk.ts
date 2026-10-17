@@ -1,3 +1,6 @@
+import { format } from 'date-fns';
+import { bn, enUS, type Locale } from 'date-fns/locale';
+
 export type DeskBucket = 'arriving' | 'inHouse' | 'departing' | 'unpaid' | 'all';
 
 interface DeskBooking {
@@ -9,7 +12,9 @@ interface DeskBooking {
   shift?: string;
 }
 
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+export function appDateLocale(language?: string | null): Locale {
+  return (language || '').toLowerCase().startsWith('bn') ? bn : enUS;
+}
 
 function startOfLocalDay(value: Date): Date {
   const copy = new Date(value);
@@ -22,15 +27,15 @@ function isSameLocalDay(value: string | Date, day: Date): boolean {
   return left.getTime() === startOfLocalDay(day).getTime();
 }
 
-export function formatDeskDate(value: Date | string | undefined | null): string {
+export function formatDeskDate(value: Date | string | undefined | null, locale: Locale = enUS): string {
   if (!value) return '—';
   const date = value instanceof Date ? value : new Date(value);
   if (Number.isNaN(date.getTime())) return '—';
-  return `${date.getDate()} ${MONTHS[date.getMonth()]} ${date.getFullYear()}`;
+  return format(date, 'd MMM yyyy', { locale });
 }
 
-export function formatDeskDay(value: Date): string {
-  return `${value.getDate()} ${MONTHS[value.getMonth()]}`;
+export function formatDeskDay(value: Date, locale: Locale = enUS): string {
+  return format(value, 'd MMM', { locale });
 }
 
 export function matchesDeskBucket(booking: DeskBooking, bucket: DeskBucket, now = new Date()): boolean {

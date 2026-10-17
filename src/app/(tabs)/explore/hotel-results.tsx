@@ -3,6 +3,9 @@ import { ActivityIndicator, Image, Pressable, ScrollView, Text, View } from 'rea
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
+import { TRANSLATION_KEYS } from '../../../constants/translationKeys';
+import { appDateLocale } from '../../../utilities/hotelDesk';
 import { useTheme } from '../../../hooks/useTheme';
 import theme from '../../../constants/theme';
 import { GradientAppBar } from '../../../components/hotelSearch/HotelFlowChrome';
@@ -35,6 +38,8 @@ function Stars({ rating }: { rating: number }) {
 
 export default function HotelResultsPage() {
     const router = useRouter();
+    const { t, i18n } = useTranslation();
+    const locale = appDateLocale(i18n.resolvedLanguage || i18n.language);
     const { isDark } = useTheme();
     const { params } = useHotelSearch();
     const primary = isDark ? theme.colors['primary-dark'] : theme.colors.primary;
@@ -44,7 +49,10 @@ export default function HotelResultsPage() {
     const [filter, setFilter] = useState<HotelListFilter>(emptyHotelFilter);
     const [filtersOpen, setFiltersOpen] = useState(false);
     const visible = useMemo(() => applyHotelListFilter(hotels, filter), [hotels, filter]);
-    const subtitle = `${shortRangeLabel(params.checkIn, params.checkOut)}, ${params.roomCount} Room${params.roomCount === 1 ? '' : 's'}`;
+    const subtitle = t(TRANSLATION_KEYS.HOTEL_SEARCH.STAY_SUMMARY, {
+        range: shortRangeLabel(params.checkIn, params.checkOut, locale),
+        rooms: t(TRANSLATION_KEYS.HOTEL_SEARCH.ROOM_COUNT, { count: params.roomCount }),
+    });
 
     useEffect(() => {
         const destination = params.destination;
@@ -88,19 +96,19 @@ export default function HotelResultsPage() {
     return (
         <SafeAreaView className="flex-1 bg-background dark:bg-background-dark">
             <GradientAppBar
-                title={params.destination?.subtitle || params.destination?.name || 'Hotels'}
+                title={params.destination?.subtitle || params.destination?.name || t(TRANSLATION_KEYS.HOTEL_SEARCH.TITLE)}
                 subtitle={subtitle}
                 onBack={() => goBack(router)}
             />
             <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingBottom: 96 }}>
                 <Pressable onPress={() => router.push('/(tabs)/explore/hotel-search')}>
-                    <Text className="mt-4 mb-3 text-lg font-bold text-text dark:text-text-dark">{visible.length} hotels</Text>
+                    <Text className="mt-4 mb-3 text-lg font-bold text-text dark:text-text-dark">{t(TRANSLATION_KEYS.HOTEL_SEARCH.HOTEL_COUNT, { count: visible.length })}</Text>
                 </Pressable>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-4">
                     {([
-                        ['popular', 'Most popular'],
-                        ['cheapest', 'Cheapest'],
-                        ['rating', 'Star rating'],
+                        ['popular', t(TRANSLATION_KEYS.HOTEL_SEARCH.MOST_POPULAR)],
+                        ['cheapest', t(TRANSLATION_KEYS.HOTEL_SEARCH.CHEAPEST)],
+                        ['rating', t(TRANSLATION_KEYS.HOTEL_SEARCH.STAR_RATING)],
                     ] as const).map(([key, label]) => {
                         const active = filter.sort === key;
                         return (
@@ -116,9 +124,9 @@ export default function HotelResultsPage() {
                     })}
                 </ScrollView>
                 {loading ? <ActivityIndicator color={primary} /> : null}
-                {error ? <Text className="text-sm text-error">Could not load hotels.</Text> : null}
+                {error ? <Text className="text-sm text-error">{t(TRANSLATION_KEYS.HOTEL_SEARCH.LOAD_FAILED)}</Text> : null}
                 {!loading && !error && visible.length === 0 ? (
-                    <Text className="text-sm text-muted dark:text-muted-dark">No hotels match this search.</Text>
+                    <Text className="text-sm text-muted dark:text-muted-dark">{t(TRANSLATION_KEYS.HOTEL_SEARCH.NO_HOTELS)}</Text>
                 ) : null}
                 {visible.map((hotel) => {
                     const price = minNightlyPrice(hotel);
@@ -143,7 +151,7 @@ export default function HotelResultsPage() {
                                 {price !== null ? (
                                     <Text className="mt-2 text-base font-bold text-text dark:text-text-dark">
                                         {formatMoney(price)}
-                                        <Text className="text-xs font-normal text-muted dark:text-muted-dark"> / night, room</Text>
+                                        <Text className="text-xs font-normal text-muted dark:text-muted-dark"> {t(TRANSLATION_KEYS.HOTEL_SEARCH.PER_NIGHT)}</Text>
                                     </Text>
                                 ) : null}
                             </View>
@@ -152,7 +160,7 @@ export default function HotelResultsPage() {
                 })}
             </ScrollView>
             <Pressable
-                accessibilityLabel="Filters"
+                accessibilityLabel={t(TRANSLATION_KEYS.HOTEL_SEARCH.FILTERS)}
                 onPress={() => setFiltersOpen(true)}
                 className="absolute items-center justify-center w-14 h-14 rounded-full right-5 bottom-6"
                 style={{ backgroundColor: primary }}

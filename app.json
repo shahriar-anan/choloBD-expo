@@ -18,6 +18,9 @@
     },
     "ios": {
       "supportsTablet": true,
+      "associatedDomains": [
+        "applinks:cholo-bd.com"
+      ],
       "infoPlist": {
         "NSCameraUsageDescription": "We need camera access to scan QR codes for check-in verification."
       }
@@ -35,7 +38,31 @@
         "android.permission.CAMERA",
         "android.permission.RECORD_AUDIO"
       ],
-      "package": "com.anonymous.choloBDmobile"
+      "package": "com.anonymous.choloBDmobile",
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "cholo-bd.com",
+              "pathPrefix": "/bookings/stay"
+            },
+            {
+              "scheme": "https",
+              "host": "cholo-bd.com",
+              "pathPrefix": "/bookings/ticket"
+            },
+            {
+              "scheme": "https",
+              "host": "cholo-bd.com",
+              "path": "/"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
     },
     "web": {
       "favicon": "./assets/app-icon.png"

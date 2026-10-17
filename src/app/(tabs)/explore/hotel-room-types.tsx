@@ -13,6 +13,7 @@ import { useHotelSearch } from '../../../context/HotelSearchContext';
 import { useExplore } from './_provider';
 import { TRANSLATION_KEYS } from '../../../constants/translationKeys';
 import { bedLine, formatMoney, nightsBetween, shortRangeLabel } from '../../../utilities/hotelSearch';
+import { appDateLocale } from '../../../utilities/hotelDesk';
 import { goBack } from '../../../utilities/navigation';
 
 export default function HotelRoomTypesPage() {
@@ -21,7 +22,8 @@ export default function HotelRoomTypesPage() {
     const { isDark } = useTheme();
     const { params } = useHotelSearch();
     const { openGuestDetails } = useExplore();
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
+    const locale = appDateLocale(i18n.resolvedLanguage || i18n.language);
     const primary = isDark ? theme.colors['primary-dark'] : theme.colors.primary;
     const warning = isDark ? theme.colors['warning-dark'] : theme.colors.warning;
     const surface = isDark ? theme.colors['surface-dark'] : theme.colors.surface;
@@ -31,7 +33,10 @@ export default function HotelRoomTypesPage() {
     const [selected, setSelected] = useState<RoomType | null>(null);
     const [submitting, setSubmitting] = useState(false);
     const nights = nightsBetween(params.checkIn, params.checkOut);
-    const subtitle = `${shortRangeLabel(params.checkIn, params.checkOut)}, ${params.roomCount} Room${params.roomCount === 1 ? '' : 's'}`;
+    const subtitle = t(TRANSLATION_KEYS.HOTEL_SEARCH.STAY_SUMMARY, {
+        range: shortRangeLabel(params.checkIn, params.checkOut, locale),
+        rooms: t(TRANSLATION_KEYS.HOTEL_SEARCH.ROOM_COUNT, { count: params.roomCount }),
+    });
 
     useEffect(() => {
         if (!hotelId) {
@@ -85,15 +90,15 @@ export default function HotelRoomTypesPage() {
     return (
         <SafeAreaView className="flex-1 bg-background dark:bg-background-dark">
             <GradientAppBar
-                title={hotel?.name || 'Rooms'}
+                title={hotel?.name || t(TRANSLATION_KEYS.HOTEL_SEARCH.ROOMS)}
                 subtitle={subtitle}
                 onBack={() => goBack(router)}
                 rightIcon="pencil"
-                rightLabel="Edit dates and rooms"
+                rightLabel={t(TRANSLATION_KEYS.HOTEL_SEARCH.EDIT_DATES)}
                 onRightPress={() => router.push('/(tabs)/explore/hotel-dates')}
             />
             {loading ? <ActivityIndicator className="mt-8" color={primary} /> : null}
-            {error ? <Text className="px-4 mt-6 text-error">Could not load rooms.</Text> : null}
+            {error ? <Text className="px-4 mt-6 text-error">{t(TRANSLATION_KEYS.HOTEL_SEARCH.LOAD_ROOMS_FAILED)}</Text> : null}
             {hotel ? (
                 <ScrollView className="px-4">
                     <View className="p-3 mt-4 rounded-xl" style={{ backgroundColor: `${warning}22` }}>
@@ -102,7 +107,7 @@ export default function HotelRoomTypesPage() {
                         </Text>
                     </View>
                     {(hotel.roomTypes || []).length === 0 ? (
-                        <Text className="mt-6 text-sm text-muted dark:text-muted-dark">No room types are listed for this hotel.</Text>
+                        <Text className="mt-6 text-sm text-muted dark:text-muted-dark">{t(TRANSLATION_KEYS.HOTEL_SEARCH.NO_ROOMS)}</Text>
                     ) : null}
                     {(hotel.roomTypes || []).map((room) => {
                         const photo = room.images?.[0]?.url;
@@ -132,7 +137,7 @@ export default function HotelRoomTypesPage() {
                     <View className="p-5 rounded-t-3xl" style={{ backgroundColor: surface, maxHeight: '85%' }}>
                         <View className="flex-row items-center justify-between mb-3">
                             <Text className="flex-1 text-lg font-bold text-text dark:text-text-dark">{selected?.roomType}</Text>
-                            <Pressable accessibilityLabel="Close" onPress={() => setSelected(null)} className="items-center justify-center w-11 h-11">
+                            <Pressable accessibilityLabel={t(TRANSLATION_KEYS.COMMON.CLOSE)} onPress={() => setSelected(null)} className="items-center justify-center w-11 h-11">
                                 <Ionicons name="close" size={22} color={isDark ? theme.colors['text-dark'] : theme.colors.text} />
                             </Pressable>
                         </View>

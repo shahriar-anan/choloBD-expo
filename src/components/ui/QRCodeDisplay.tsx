@@ -3,6 +3,8 @@ import { View, Text } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import theme from '../../constants/theme';
 import { useTheme } from '../../hooks/useTheme';
+import { useTranslation } from 'react-i18next';
+import { TRANSLATION_KEYS } from '../../constants/translationKeys';
 
 interface QRCodeDisplayProps {
   qrToken: string;
@@ -15,18 +17,21 @@ interface QRCodeDisplayProps {
 export const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({
   qrToken,
   size = 300,
-  label = 'Check-in QR Code',
-  hint = 'Show this code to hotel staff at check-in',
+  label,
+  hint,
   expiresAt,
 }) => {
   const { isDark } = useTheme();
+  const { t } = useTranslation();
+  const title = label || t(TRANSLATION_KEYS.QR.CHECK_IN_TITLE);
+  const caption = hint || t(TRANSLATION_KEYS.QR.SHOW_STAFF);
 
   const primaryColor = isDark ? theme.colors['primary-dark'] : theme.colors.primary;
 
   return (
     <View className="items-center p-6 bg-white dark:bg-surface-dark rounded-2xl border" style={{ borderColor: primaryColor, borderWidth: 1 }}>
-      <Text className="text-lg font-semibold text-text dark:text-text-dark mb-1">{label}</Text>
-      <Text className="text-xs text-muted dark:text-muted-dark mb-6">{hint}</Text>
+      <Text className="text-lg font-semibold text-text dark:text-text-dark mb-1">{title}</Text>
+      <Text className="text-xs text-muted dark:text-muted-dark mb-6">{caption}</Text>
 
       <View
         className="bg-white p-4 rounded-2xl"
@@ -52,7 +57,7 @@ export const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({
       {expiresAt && (
         <View className="mt-6 px-4 py-2 rounded-lg bg-surface-2 dark:bg-surface-2-dark border border-border dark:border-border-dark">
           <Text className="text-xs font-medium text-text dark:text-text-dark">
-            Expires: {new Date(expiresAt).toLocaleTimeString()}
+            {t(TRANSLATION_KEYS.QR.EXPIRES, { time: new Date(expiresAt).toLocaleTimeString() })}
           </Text>
         </View>
       )}

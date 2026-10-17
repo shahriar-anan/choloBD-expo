@@ -9,6 +9,7 @@ import {
     startOfDay,
     startOfMonth,
 } from 'date-fns';
+import type { Locale } from 'date-fns';
 import {
     HotelListFilter,
     HotelPriceBucket,
@@ -55,14 +56,15 @@ export function formatMoney(amount: number): string {
     return `৳${Math.round(amount).toLocaleString('en-US')}`;
 }
 
-export function shortRangeLabel(checkIn: string, checkOut: string): string {
+export function shortRangeLabel(checkIn: string, checkOut: string, locale?: Locale): string {
     const start = parseISO(checkIn);
     const end = parseISO(checkOut);
-    return `${format(start, 'd MMM yy')} - ${format(end, 'd MMM yy')}`;
+    const options = locale ? { locale } : undefined;
+    return `${format(start, 'd MMM yy', options)} - ${format(end, 'd MMM yy', options)}`;
 }
 
-export function longDayLabel(isoDate: string): string {
-    return format(parseISO(isoDate), 'd MMMM, EEE');
+export function longDayLabel(isoDate: string, locale?: Locale): string {
+    return format(parseISO(isoDate), 'd MMMM, EEE', locale ? { locale } : undefined);
 }
 
 export function locationLine(location?: HotelSearchListItem['location']): string {

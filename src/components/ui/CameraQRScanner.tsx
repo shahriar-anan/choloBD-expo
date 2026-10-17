@@ -4,6 +4,8 @@ import { Camera, CameraView } from 'expo-camera';
 import { Ionicons } from '@expo/vector-icons';
 import { useCameraPermission } from '../../hooks/useCameraPermission';
 import { useTheme } from '../../hooks/useTheme';
+import { useTranslation } from 'react-i18next';
+import { TRANSLATION_KEYS } from '../../constants/translationKeys';
 import theme from '../../constants/theme';
 
 interface CameraQRScannerProps {
@@ -18,6 +20,7 @@ export const CameraQRScanner: React.FC<CameraQRScannerProps> = ({
   isLoading = false,
 }) => {
   const { isDark } = useTheme();
+  const { t } = useTranslation();
   const { permission, isLoading: permissionLoading } = useCameraPermission();
   const cameraRef = useRef<CameraView>(null);
   const [scanned, setScanned] = useState(false);
@@ -43,7 +46,7 @@ export const CameraQRScanner: React.FC<CameraQRScannerProps> = ({
   if (permissionLoading) {
     return (
       <View className="items-center justify-center flex-1 bg-gray-100 dark:bg-gray-800 rounded-xl">
-        <Text className="text-sm text-muted dark:text-muted-dark">Loading camera...</Text>
+        <Text className="text-sm text-muted dark:text-muted-dark">{t(TRANSLATION_KEYS.QR.LOADING_CAMERA)}</Text>
       </View>
     );
   }
@@ -54,17 +57,17 @@ export const CameraQRScanner: React.FC<CameraQRScannerProps> = ({
         <View className="w-64 h-64 rounded-xl items-center justify-center border-2 p-4" style={{ backgroundColor: isDark ? theme.colors['surface-2-dark'] : theme.colors['surface-2'], borderColor: isDark ? theme.colors['error-dark'] : theme.colors.error }}>
           <Ionicons name="close-circle" size={64} color={isDark ? theme.colors['error-dark'] : theme.colors.error} />
           <Text className="mt-4 text-sm font-semibold text-center text-text dark:text-text-dark">
-            Camera Access Denied
+            {t(TRANSLATION_KEYS.QR.CAMERA_DENIED)}
           </Text>
           <Text className="mt-2 text-xs text-center text-muted dark:text-muted-dark">
-            Please enable camera permissions in settings to use QR scanning.
+            {t(TRANSLATION_KEYS.QR.CAMERA_DENIED_BODY)}
           </Text>
         </View>
         <TouchableOpacity
           onPress={onSwitchToManual}
           className="px-4 py-2 mt-4 border rounded-lg border-primary"
         >
-          <Text className="font-semibold text-primary">Use Manual Input Instead</Text>
+          <Text className="font-semibold text-primary">{t(TRANSLATION_KEYS.QR.USE_MANUAL)}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -105,7 +108,7 @@ export const CameraQRScanner: React.FC<CameraQRScannerProps> = ({
 
       <View className="w-64 p-3 mt-4 rounded-lg" style={{ backgroundColor: isDark ? theme.colors['surface-2-dark'] : theme.colors['surface-2'] }}>
         <Text className="text-xs text-center text-text dark:text-text-dark">
-          Position QR code within the frame to scan automatically
+          {t(TRANSLATION_KEYS.QR.POSITION_FRAME)}
         </Text>
       </View>
 
@@ -113,7 +116,7 @@ export const CameraQRScanner: React.FC<CameraQRScannerProps> = ({
         onPress={onSwitchToManual}
         className="px-4 py-2 mt-4 border rounded-lg border-muted"
       >
-        <Text className="font-semibold text-muted">Use Manual Input Instead</Text>
+        <Text className="font-semibold text-muted">{t(TRANSLATION_KEYS.QR.USE_MANUAL)}</Text>
       </TouchableOpacity>
     </View>
   );

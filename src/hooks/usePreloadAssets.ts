@@ -1,5 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useFonts } from 'expo-font';
+import {
+  NotoSansBengali_400Regular,
+  NotoSansBengali_500Medium,
+  NotoSansBengali_600SemiBold,
+  NotoSansBengali_700Bold,
+} from '@expo-google-fonts/noto-sans-bengali';
 
 /**
  * Hook to preload fonts before the animated splash takes over.
@@ -9,8 +15,10 @@ export const usePreloadAssets = () => {
   const [isReady, setIsReady] = useState(false);
 
   const [fontsLoaded, fontError] = useFonts({
-    // Add any custom fonts here if needed
-    // 'CustomFont': require('../../assets/fonts/CustomFont.ttf'),
+    NotoSansBengali_400Regular,
+    NotoSansBengali_500Medium,
+    NotoSansBengali_600SemiBold,
+    NotoSansBengali_700Bold,
   });
 
   useEffect(() => {

@@ -33,21 +33,12 @@ export default function TripPlannerEdit() {
       try {
         const trip: TripPlan = await getTripDetails(planId);
         if (cancelled) return;
-        const banglaOnly = trip.contentLanguage === 'bn';
-        const englishDescription = trip.shortDescription || trip.description || '';
-        const banglaDescription = trip.shortDescriptionBn || '';
+        const wroteBangla = trip.contentLanguage === 'bn';
         setInitial({
-          contentLanguage: banglaOnly ? 'bn' : 'en',
-          packageName: banglaOnly ? (trip.packageNameBn || trip.name) : trip.name,
-          packageNameBn: banglaOnly
-            ? (trip.packageNameBn && trip.name !== trip.packageNameBn ? trip.name : '')
-            : (trip.packageNameBn || ''),
-          shortDescription: banglaOnly
-            ? (banglaDescription || englishDescription)
-            : englishDescription,
-          shortDescriptionBn: banglaOnly
-            ? (banglaDescription && englishDescription && englishDescription !== banglaDescription ? englishDescription : '')
-            : banglaDescription,
+          packageName: wroteBangla ? (trip.packageNameBn || trip.name) : trip.name,
+          shortDescription: wroteBangla
+            ? (trip.shortDescriptionBn || trip.shortDescription || trip.description || '')
+            : (trip.shortDescription || trip.description || ''),
           tourType: trip.tourType || '',
           locationId: trip.primaryLocationId,
           startDate: toDateInputValue(trip.startDate),

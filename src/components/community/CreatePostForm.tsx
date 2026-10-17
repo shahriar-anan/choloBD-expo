@@ -13,22 +13,24 @@ import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import * as ImagePicker from 'expo-image-picker';
 
-const communityCreateFormSchema = z.object({
-  userTripPlanId: z.string().uuid().optional(),
-  caption: z.string().min(1, 'Caption is required').max(2000, 'Caption must be 2000 characters or less'),
-  images: z
-    .array(
-      z.object({
-        url: z.string().url('Invalid image URL'),
-        order: z.number().int().nonnegative().optional(),
-        altText: z.string().max(500).optional(),
-      })
-    )
-    .min(1, 'At least one image is required')
-    .max(5, 'Max 5 images allowed'),
-});
+function communityCreateFormSchema(t: (key: string) => string) {
+  return z.object({
+    userTripPlanId: z.string().uuid().optional(),
+    caption: z.string().min(1, t(TRANSLATION_KEYS.COMMUNITY.CAPTION_REQUIRED)).max(2000, t(TRANSLATION_KEYS.COMMUNITY.CAPTION_MAX)),
+    images: z
+      .array(
+        z.object({
+          url: z.string().url(t(TRANSLATION_KEYS.COMMUNITY.INVALID_IMAGE_URL)),
+          order: z.number().int().nonnegative().optional(),
+          altText: z.string().max(500).optional(),
+        })
+      )
+      .min(1, t(TRANSLATION_KEYS.COMMUNITY.IMAGE_REQUIRED))
+      .max(5, t(TRANSLATION_KEYS.COMMUNITY.IMAGE_MAX)),
+  });
+}
 
-type CreatePostFormValues = z.infer<typeof communityCreateFormSchema>;
+type CreatePostFormValues = z.infer<ReturnType<typeof communityCreateFormSchema>>;
 
 interface CreatePostFormProps {
   initialValues?: Partial<CreatePostFormValues>;
@@ -51,7 +53,7 @@ export function CreatePostForm({ initialValues, onSubmit, isSubmitting }: Create
   const [cameraPermission, setCameraPermission] = useState<boolean | null>(null);
 
   const { control, handleSubmit, reset } = useForm<CreatePostFormValues>({
-    resolver: zodResolver(communityCreateFormSchema),
+    resolver: zodResolver(communityCreateFormSchema(t)),
     defaultValues: {
       userTripPlanId: initialValues?.userTripPlanId,
       caption: initialValues?.caption ?? '',
@@ -80,8 +82,8 @@ export function CreatePostForm({ initialValues, onSubmit, isSubmitting }: Create
 
   const handleInvalidSubmit = (errors: any) => {
     const firstError = Object.values(errors)[0] as any;
-    const message = firstError?.message || 'Please check the form for errors';
-    Alert.alert(t('common.error'), message);
+    const message = firstError?.message || t(TRANSLATION_KEYS.COMMUNITY.FORM_ERRORS);
+    Alert.alert(t(TRANSLATION_KEYS.COMMON.ERROR), message);
   };
 
   const handlePickAndUploadImages = async () => {
@@ -107,11 +109,11 @@ export function CreatePostForm({ initialValues, onSubmit, isSubmitting }: Create
 
     if (cameraPermission === false) {
       Alert.alert(
-        'Camera Access Denied',
-        'Please enable camera permissions in settings to take photos.',
+        t(TRANSLATION_KEYS.COMMUNITY.CAMERA_DENIED),
+        t(TRANSLATION_KEYS.COMMUNITY.CAMERA_DENIED_BODY),
         [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Open Settings', onPress: () => void Linking.openSettings() },
+          { text: t(TRANSLATION_KEYS.COMMON.CANCEL), style: 'cancel' },
+          { text: t(TRANSLATION_KEYS.COMMUNITY.OPEN_SETTINGS), onPress: () => void Linking.openSettings() },
         ]
       );
       return;
@@ -154,7 +156,7 @@ export function CreatePostForm({ initialValues, onSubmit, isSubmitting }: Create
         <View style={styles.sectionHeader}>
           <Text style={[styles.label, { color: text }]}>{t(TRANSLATION_KEYS.COMMUNITY.IMAGE_URLS_LABEL)}</Text>
         </View>
-        <Text style={[styles.helperText, { color: muted }]}>Upload photos from your device or take a photo. They will be automatically uploaded to cloud storage.</Text>
+        <Text style={[styles.helperText, { color: muted }]}>{t(TRANSLATION_KEYS.COMMUNITY.UPLOAD_PHOTOS_HINT)}</Text>
         
         <View style={styles.buttonRow}>
           <TouchableOpacity 
@@ -182,7 +184,7 @@ export function CreatePostForm({ initialValues, onSubmit, isSubmitting }: Create
             ) : (
               <>
                 <Ionicons name="camera-outline" size={16} color={fields.length >= 5 ? muted : primary} />
-                <Text style={[styles.pickBtnText, { color: fields.length >= 5 ? muted : primary }]}>Take Photo</Text>
+                <Text style={[styles.pickBtnText, { color: fields.length >= 5 ? muted : primary }]}>{t(TRANSLATION_KEYS.PROFILE.TAKE_PHOTO)}</Text>
               </>
             )}
           </TouchableOpacity>
@@ -202,7 +204,7 @@ export function CreatePostForm({ initialValues, onSubmit, isSubmitting }: Create
           disabled={isSubmitting}
           style={[styles.primaryBtn, { backgroundColor: primary }]}
         >
-          <Text style={styles.primaryBtnText}>{isSubmitting ? t(TRANSLATION_KEYS.COMMUNITY.SAVING) : t('common.save')}</Text>
+          <Text style={styles.primaryBtnText}>{isSubmitting ? t(TRANSLATION_KEYS.COMMUNITY.SAVING) : t(TRANSLATION_KEYS.COMMON.SAVE)}</Text>
         </TouchableOpacity>
       </View>
     </KeyboardAwareScroll>

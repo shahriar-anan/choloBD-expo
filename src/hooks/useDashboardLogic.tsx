@@ -11,6 +11,7 @@ import { getUnreadNotificationCount } from '../services/api/notifications';
 import { getUserProfile } from '../services/api/users';
 import { loadTravelerBookingSources } from '../services/api/travelerBookings';
 import { buildRecentBookingItems, RecentBookingView } from '../utilities/recentBookingItems';
+import { bookingCardKey, loadDismissedBookingKeys } from '../utilities/dismissedBookings';
 
 function isSignedOutError(error: unknown): boolean {
   if (!error || typeof error !== 'object') return false;
@@ -52,8 +53,11 @@ export function useDashboardLogic() {
     setLoading(true);
     try {
       const sources = await loadTravelerBookingSources(userId);
-      setBookings(sources.hotels);
-      setRecentBookingItems(buildRecentBookingItems(sources, 5));
+      const hidden = await loadDismissedBookingKeys(userId);
+      setBookings(sources.hotels.filter((booking) => !booking?.id || !hidden.has(bookingCardKey('hotel', booking.id))));
+      setRecentBookingItems(
+        buildRecentBookingItems(sources, 5).filter((item) => !hidden.has(bookingCardKey(item.kind, item.id))),
+      );
     } catch (e: any) {
       if (!isSignedOutError(e)) {
         console.error('[useDashboardLogic] fetchBookings error', e?.message ?? e);

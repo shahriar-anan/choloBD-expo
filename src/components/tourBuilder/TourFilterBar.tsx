@@ -22,7 +22,13 @@ export function TourFilterBar({ locations = [], onFilterChange, onReset }: TourF
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState<TourFilters>({});
 
-  const tourTypes = ['Adventure', 'Beach', 'Cultural', 'Wildlife', 'Heritage'];
+  const tourTypes = [
+    { value: 'Adventure', labelKey: TRANSLATION_KEYS.TOUR_BUILDER.TOUR_TYPES.ADVENTURE },
+    { value: 'Beach', labelKey: TRANSLATION_KEYS.TOUR_BUILDER.TOUR_TYPES.BEACH },
+    { value: 'Cultural', labelKey: TRANSLATION_KEYS.TOUR_BUILDER.TOUR_TYPES.CULTURAL },
+    { value: 'Wildlife', labelKey: TRANSLATION_KEYS.TOUR_BUILDER.TOUR_TYPES.WILDLIFE },
+    { value: 'Heritage', labelKey: TRANSLATION_KEYS.TOUR_BUILDER.TOUR_TYPES.HERITAGE },
+  ];
 
   const handleFilterUpdate = (newFilters: TourFilters) => {
     console.log('[TourFilterBar] Updating filters:', newFilters);
@@ -48,7 +54,7 @@ export function TourFilterBar({ locations = [], onFilterChange, onReset }: TourF
           setShowFilters(!showFilters);
         }}
       >
-        <Text style={styles.filterButtonText}>🔍 Filters {activeFilterCount > 0 && `(${activeFilterCount})`}</Text>
+        <Text style={styles.filterButtonText}>{t(TRANSLATION_KEYS.TOUR_BUILDER.FILTERS)} {activeFilterCount > 0 && `(${activeFilterCount})`}</Text>
       </TouchableOpacity>
 
       {/* Filter options */}
@@ -57,14 +63,14 @@ export function TourFilterBar({ locations = [], onFilterChange, onReset }: TourF
           {/* Location Filter */}
           {locations.length > 0 && (
             <View style={styles.filterGroup}>
-              <Text style={styles.filterGroupLabel}>Location</Text>
+              <Text style={styles.filterGroupLabel}>{t(TRANSLATION_KEYS.TOUR_BUILDER.FILTER_LOCATION)}</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.optionList}>
                 <TouchableOpacity
                   style={[styles.filterOption, !filters.locationId && styles.filterOptionActive]}
                   onPress={() => handleFilterUpdate({ ...filters, locationId: undefined })}
                 >
                   <Text style={[styles.filterOptionText, !filters.locationId && styles.filterOptionTextActive]}>
-                    All
+                    {t(TRANSLATION_KEYS.TOUR_BUILDER.ALL)}
                   </Text>
                 </TouchableOpacity>
                 {locations.map((loc) => (
@@ -84,22 +90,22 @@ export function TourFilterBar({ locations = [], onFilterChange, onReset }: TourF
 
           {/* Tour Type Filter */}
           <View style={styles.filterGroup}>
-            <Text style={styles.filterGroupLabel}>Tour Type</Text>
+            <Text style={styles.filterGroupLabel}>{t(TRANSLATION_KEYS.TOUR_BUILDER.FILTER_TOUR_TYPE)}</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.optionList}>
               <TouchableOpacity
                 style={[styles.filterOption, !filters.tourType && styles.filterOptionActive]}
                 onPress={() => handleFilterUpdate({ ...filters, tourType: undefined })}
               >
-                <Text style={[styles.filterOptionText, !filters.tourType && styles.filterOptionTextActive]}>All</Text>
+                <Text style={[styles.filterOptionText, !filters.tourType && styles.filterOptionTextActive]}>{t(TRANSLATION_KEYS.TOUR_BUILDER.ALL)}</Text>
               </TouchableOpacity>
               {tourTypes.map((type) => (
                 <TouchableOpacity
-                  key={type}
-                  style={[styles.filterOption, filters.tourType === type && styles.filterOptionActive]}
-                  onPress={() => handleFilterUpdate({ ...filters, tourType: type as import('../../types/tours').TourType })}
+                  key={type.value}
+                  style={[styles.filterOption, filters.tourType === type.value && styles.filterOptionActive]}
+                  onPress={() => handleFilterUpdate({ ...filters, tourType: type.value as import('../../types/tours').TourType })}
                 >
-                  <Text style={[styles.filterOptionText, filters.tourType === type && styles.filterOptionTextActive]}>
-                    {type}
+                  <Text style={[styles.filterOptionText, filters.tourType === type.value && styles.filterOptionTextActive]}>
+                    {t(type.labelKey)}
                   </Text>
                 </TouchableOpacity>
               ))}
@@ -108,11 +114,11 @@ export function TourFilterBar({ locations = [], onFilterChange, onReset }: TourF
 
           {/* Budget Range */}
           <View style={styles.filterGroup}>
-            <Text style={styles.filterGroupLabel}>Budget Range</Text>
+            <Text style={styles.filterGroupLabel}>{t(TRANSLATION_KEYS.TOUR_BUILDER.FILTER_BUDGET)}</Text>
             <View style={styles.budgetInputs}>
               <TextInput
                 style={styles.budgetInput}
-                placeholder="Min"
+                placeholder={t(TRANSLATION_KEYS.TOUR_BUILDER.BUDGET_MIN)}
                 keyboardType="decimal-pad"
                 value={filters.minBudget ? String(filters.minBudget) : ''}
                 onChangeText={(text) =>
@@ -125,7 +131,7 @@ export function TourFilterBar({ locations = [], onFilterChange, onReset }: TourF
               <Text style={styles.budgetSeparator}>-</Text>
               <TextInput
                 style={styles.budgetInput}
-                placeholder="Max"
+                placeholder={t(TRANSLATION_KEYS.TOUR_BUILDER.BUDGET_MAX)}
                 keyboardType="decimal-pad"
                 value={filters.maxBudget ? String(filters.maxBudget) : ''}
                 onChangeText={(text) =>
@@ -151,7 +157,7 @@ export function TourFilterBar({ locations = [], onFilterChange, onReset }: TourF
                     })
                   }
                 />
-                <Text style={styles.statusLabel}>Active Only</Text>
+                <Text style={styles.statusLabel}>{t(TRANSLATION_KEYS.TOUR_BUILDER.ACTIVE_ONLY)}</Text>
               </View>
 
               <View style={styles.statusOption}>
@@ -164,7 +170,7 @@ export function TourFilterBar({ locations = [], onFilterChange, onReset }: TourF
                     })
                   }
                 />
-                <Text style={styles.statusLabel}>Popular Only</Text>
+                <Text style={styles.statusLabel}>{t(TRANSLATION_KEYS.TOUR_BUILDER.POPULAR_ONLY)}</Text>
               </View>
             </View>
           </View>
@@ -172,7 +178,7 @@ export function TourFilterBar({ locations = [], onFilterChange, onReset }: TourF
           {/* Action buttons */}
           {activeFilterCount > 0 && (
             <TouchableOpacity style={styles.resetButton} onPress={handleReset}>
-              <Text style={styles.resetButtonText}>Reset All Filters</Text>
+              <Text style={styles.resetButtonText}>{t(TRANSLATION_KEYS.TOUR_BUILDER.RESET_FILTERS)}</Text>
             </TouchableOpacity>
           )}
         </ScrollView>

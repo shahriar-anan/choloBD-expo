@@ -11,6 +11,8 @@ import { QRCodeScanner } from '../../../../components/ui/QRCodeScanner';
 import { QRBookingDetailsDisplay } from '../../../../components/ui/QRBookingDetailsDisplay';
 import { useQRScanner } from '../../../../hooks/useQRScanner';
 import { useTheme } from '../../../../hooks/useTheme';
+import { useTranslation } from 'react-i18next';
+import { TRANSLATION_KEYS } from '../../../../constants/translationKeys';
 import type { QRBookingDetail } from '../../../../types/qr';
 import { updateHotelStayStatus } from '../../../../services/api/bookings';
 import { canRecordStay } from '../../../../utilities/hotelDesk';
@@ -20,6 +22,7 @@ export default function QRScannerPage() {
   const pathname = usePathname();
   const insets = useSafeAreaInsets();
   const { isDark } = useTheme();
+  const { t } = useTranslation();
   const isTab = pathname === '/qr-scanner';
   const { scanQRCode, loading, error, clearError } = useQRScanner();
   const [scannedBooking, setScannedBooking] = useState<QRBookingDetail | null>(null);
@@ -27,9 +30,9 @@ export default function QRScannerPage() {
 
   const recordStay = (status: 'COMPLETED' | 'NO_SHOW') => {
     if (!scannedBooking?.id) return;
-    const label = status === 'COMPLETED' ? 'Check out' : 'No-show';
-    Alert.alert(label, 'The scan itself does not change the stay. This button does.', [
-      { text: 'Back', style: 'cancel' },
+    const label = status === 'COMPLETED' ? t(TRANSLATION_KEYS.HOTEL_DESK.CHECK_OUT) : t(TRANSLATION_KEYS.HOTEL_DESK.NO_SHOW);
+    Alert.alert(label, t(TRANSLATION_KEYS.HOTEL_DESK.SCAN_DOES_NOT_CHANGE), [
+      { text: t(TRANSLATION_KEYS.COMMON.BACK), style: 'cancel' },
       {
         text: label,
         onPress: () => {
@@ -39,7 +42,7 @@ export default function QRScannerPage() {
               const updated = await updateHotelStayStatus(scannedBooking.id, status);
               setScannedBooking((current) => current ? { ...current, ...updated, status } : current);
             } catch (stayError: any) {
-              Alert.alert(label, stayError?.response?.data?.message || 'Could not update this stay.');
+              Alert.alert(label, stayError?.response?.data?.message || t(TRANSLATION_KEYS.HOTEL_DESK.COULD_NOT_UPDATE_STAY));
             } finally {
               setStayBusy(false);
             }
@@ -55,9 +58,10 @@ export default function QRScannerPage() {
       if (booking) {
         setScannedBooking(booking);
       }
-    } catch (e) {
-      // Error is already set in the hook and logged
-      Alert.alert('Scan Failed', error || 'Failed to validate QR code');
+    } catch (scanError: unknown) {
+      const err = scanError as { response?: { data?: { message?: string } }; message?: string };
+      const message = err?.response?.data?.message || err?.message || t(TRANSLATION_KEYS.QR.SCAN_FAILED_BODY);
+      Alert.alert(t(TRANSLATION_KEYS.QR.SCAN_FAILED), message);
     }
   };
 
@@ -70,7 +74,7 @@ export default function QRScannerPage() {
     <SafeAreaView edges={["top", "bottom"]} className="flex-1 bg-background dark:bg-background-dark" style={isTab ? { paddingBottom: tabBarClearance(insets.bottom) } : undefined}>
       <View className="p-6 border-b border-border dark:border-border-dark">
         <View className="flex-row items-center justify-between">
-          <Text className="text-2xl font-bold text-text dark:text-text-dark">QR Scanner</Text>
+          <Text className="text-2xl font-bold text-text dark:text-text-dark">{t(TRANSLATION_KEYS.QR.SCANNER_TITLE)}</Text>
           {isTab ? null : (
             <Pressable onPress={() => router.replace('/(tabs)/dashboard')} style={{ padding: 6 }}>
               <Ionicons name="close" size={24} color={isDark ? theme.colors['text-dark'] : theme.colors.text} />
@@ -83,21 +87,21 @@ export default function QRScannerPage() {
         <View className="flex-1">
           <QRBookingDetailsDisplay booking={scannedBooking} />
           {canRecordStay(scannedBooking) ? (
-            <View className="flex-row gap-2 px-6">
-              <Pressable onPress={() => recordStay('COMPLETED')} disabled={stayBusy} className="flex-1 px-3 py-3 border rounded-lg border-border dark:border-border-dark">
-                <Text className="font-semibold text-center text-text dark:text-text-dark">Check out</Text>
+            <View className="flex-row gap-2 px-4 pb-2">
+              <Pressable onPress={() => recordStay('COMPLETED')} disabled={stayBusy} className="flex-1 px-3 py-3 border rounded-xl border-border dark:border-border-dark">
+                <Text className="font-semibold text-center text-text dark:text-text-dark">{t(TRANSLATION_KEYS.HOTEL_DESK.CHECK_OUT)}</Text>
               </Pressable>
-              <Pressable onPress={() => recordStay('NO_SHOW')} disabled={stayBusy} className="flex-1 px-3 py-3 border rounded-lg border-border dark:border-border-dark">
-                <Text className="font-semibold text-center text-text dark:text-text-dark">No-show</Text>
+              <Pressable onPress={() => recordStay('NO_SHOW')} disabled={stayBusy} className="flex-1 px-3 py-3 border rounded-xl border-border dark:border-border-dark">
+                <Text className="font-semibold text-center text-text dark:text-text-dark">{t(TRANSLATION_KEYS.HOTEL_DESK.NO_SHOW)}</Text>
               </Pressable>
             </View>
           ) : null}
-          <View className="p-6 border-t border-border dark:border-border-dark">
+          <View className="px-4 pt-2 pb-4 border-t border-border dark:border-border-dark">
             <Pressable
               onPress={resetScan}
               className="bg-primary px-6 py-3 rounded-lg items-center"
             >
-              <Text className="text-white font-semibold">Scan Another QR Code</Text>
+              <Text className="text-white font-semibold">{t(TRANSLATION_KEYS.QR.SCAN_ANOTHER)}</Text>
             </Pressable>
           </View>
         </View>
@@ -105,19 +109,16 @@ export default function QRScannerPage() {
         <>
           <QRCodeScanner onScan={handleQRScan} isLoading={loading} />
 
-          {error && (
-            <View className="p-6 bg-red-50 dark:bg-red-900 border-t border-red-200 dark:border-red-700">
-              <Text className="text-sm font-semibold text-red-900 dark:text-red-50 mb-2">
+          {error ? (
+            <View className="p-4 mx-4 mb-4 border rounded-2xl" style={{ borderColor: isDark ? theme.colors['error-dark'] : theme.colors.error }}>
+              <Text className="text-sm font-semibold" style={{ color: isDark ? theme.colors['error-dark'] : theme.colors.error }}>
                 {error}
               </Text>
-              <Pressable
-                onPress={clearError}
-                className="mt-2 p-2 rounded"
-              >
-                <Text className="text-sm text-red-900 dark:text-red-50 font-semibold">Dismiss</Text>
+              <Pressable onPress={clearError} className="mt-2">
+                <Text className="text-sm font-semibold text-text dark:text-text-dark">{t(TRANSLATION_KEYS.QR.DISMISS)}</Text>
               </Pressable>
             </View>
-          )}
+          ) : null}
         </>
       )}
     </SafeAreaView>

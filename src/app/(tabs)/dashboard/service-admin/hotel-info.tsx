@@ -4,34 +4,40 @@ import { KeyboardAwareScroll } from '../../../../components/ui/KeyboardAwareScro
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import i18next from 'i18next';
+import { useTranslation } from 'react-i18next';
 import { useSelector } from 'react-redux';
 import theme from '../../../../constants/theme';
 import { useServiceAdminLogic } from '../../../../hooks/useServiceAdminLogic';
 import { updateMyHotel } from '../../../../services/api/users';
 import { createHotelRoomType, updateHotelRoomStatus, updateHotelRoomTypePrice, HotelRoomDeskStatus } from '../../../../services/api/hotels';
 import { getHotelReviews } from '../../../../services/api/reviews';
-import { formatDeskDate } from '../../../../utilities/hotelDesk';
+import { appDateLocale, formatDeskDate } from '../../../../utilities/hotelDesk';
 import { OptionalBanglaField } from '../../../../components/ui/ContentLanguageFields';
 import { useTheme } from '../../../../hooks/useTheme';
 import { RootState } from '../../../../store/store';
+import { TRANSLATION_KEYS } from '../../../../constants/translationKeys';
 
 const ROOM_STATUSES: HotelRoomDeskStatus[] = ['AVAILABLE', 'MAINTENANCE', 'OUT_OF_SERVICE'];
-const ROOM_STATUS_LABELS: Record<HotelRoomDeskStatus, string> = {
-  AVAILABLE: 'Ready to sell',
-  MAINTENANCE: 'Needs cleaning',
-  OUT_OF_SERVICE: 'Out of service',
+const ROOM_STATUS_KEYS: Record<HotelRoomDeskStatus, string> = {
+  AVAILABLE: TRANSLATION_KEYS.HOTEL_DESK.READY_TO_SELL,
+  MAINTENANCE: TRANSLATION_KEYS.HOTEL_DESK.NEEDS_CLEANING,
+  OUT_OF_SERVICE: TRANSLATION_KEYS.HOTEL_DESK.OUT_OF_SERVICE,
 };
 const ROOM_TYPE_OPTIONS = ['SINGLE', 'DOUBLE', 'SUITE', 'DELUXE'];
 
 type HotelInfoTab = 'overview' | 'profile' | 'rooms' | 'reviews';
 
-const HOTEL_TABS: { id: HotelInfoTab; label: string }[] = [
-  { id: 'overview', label: 'Overview' },
-  { id: 'profile', label: 'Profile' },
-  { id: 'rooms', label: 'Rooms' },
-  { id: 'reviews', label: 'Reviews' },
+const HOTEL_TABS: { id: HotelInfoTab; labelKey: string }[] = [
+  { id: 'overview', labelKey: TRANSLATION_KEYS.HOTEL_DESK.OVERVIEW },
+  { id: 'profile', labelKey: TRANSLATION_KEYS.HOTEL_DESK.PROFILE_TAB },
+  { id: 'rooms', labelKey: TRANSLATION_KEYS.HOTEL_SEARCH.ROOMS },
+  { id: 'reviews', labelKey: TRANSLATION_KEYS.HOTEL_DESK.REVIEWS },
 ];
+
+function textForAppLanguage(english?: string | null, bangla?: string | null, banglaApp?: boolean): string {
+  if (banglaApp && bangla?.trim()) return bangla;
+  return english?.trim() ? english : '';
+}
 
 function joinList(value: unknown): string {
   return Array.isArray(value) ? value.filter((item) => typeof item === 'string').join(', ') : '';
@@ -45,6 +51,8 @@ export default function HotelInfoPage() {
   const params = useLocalSearchParams();
   const router = useRouter();
   const { isDark } = useTheme();
+  const { t, i18n } = useTranslation();
+  const banglaApp = (i18n.resolvedLanguage || i18n.language || 'en').toLowerCase().startsWith('bn');
   const auth = useSelector((s: RootState) => s.auth);
   const isHotelAdmin = auth.user?.role === 'SERVICE_ADMIN';
   const hotelId = params.hotelId as string | undefined;
@@ -63,7 +71,9 @@ export default function HotelInfoPage() {
   const [amenitiesBnText, setAmenitiesBnText] = useState('');
   const [policiesBnText, setPoliciesBnText] = useState('');
   const [nearbyToursText, setNearbyToursText] = useState('');
+  const [nearbyToursBnText, setNearbyToursBnText] = useState('');
   const [nearbyActivitiesText, setNearbyActivitiesText] = useState('');
+  const [nearbyActivitiesBnText, setNearbyActivitiesBnText] = useState('');
   const [reviews, setReviews] = useState<any[]>([]);
   const [roomPrices, setRoomPrices] = useState<Record<string, string>>({});
   const [newRoomType, setNewRoomType] = useState('SINGLE');
@@ -90,7 +100,9 @@ export default function HotelInfoPage() {
         setAmenitiesBnText(joinList(h?.amenitiesBn));
         setPoliciesBnText(joinList(h?.policiesBn));
         setNearbyToursText(joinList(h?.nearbyTourSpots));
+        setNearbyToursBnText(joinList(h?.nearbyTourSpotsBn));
         setNearbyActivitiesText(joinList(h?.nearbyActivitySpots));
+        setNearbyActivitiesBnText(joinList(h?.nearbyActivitySpotsBn));
         const prices: Record<string, string> = {};
         (h?.roomTypes ?? []).forEach((roomType: any) => {
           if (roomType?.id) prices[roomType.id] = String(roomType.pricePerNight ?? '');
@@ -133,14 +145,18 @@ export default function HotelInfoPage() {
         amenitiesBn: string[];
         policiesBn: string[];
         nearbyTourSpots: string[];
+        nearbyTourSpotsBn: string[];
         nearbyActivitySpots: string[];
+        nearbyActivitySpotsBn: string[];
       } = {
         amenities: splitList(amenitiesText),
         policies: splitList(policiesText),
         amenitiesBn: splitList(amenitiesBnText),
         policiesBn: splitList(policiesBnText),
         nearbyTourSpots: splitList(nearbyToursText),
+        nearbyTourSpotsBn: splitList(nearbyToursBnText),
         nearbyActivitySpots: splitList(nearbyActivitiesText),
+        nearbyActivitySpotsBn: splitList(nearbyActivitiesBnText),
       };
       if (phoneNumber.trim()) payload.phoneNumber = phoneNumber.trim();
       if (email.trim()) payload.email = email.trim();
@@ -149,9 +165,9 @@ export default function HotelInfoPage() {
       if (checkOutTime.trim()) payload.checkOutTime = checkOutTime.trim();
       const updated = await updateMyHotel(hotelId, payload);
       setHotel((current: any) => ({ ...current, ...updated }));
-      Alert.alert('Hotel profile', 'Contact details saved.');
+      Alert.alert(t(TRANSLATION_KEYS.HOTEL_DESK.PROFILE_SAVED_TITLE), t(TRANSLATION_KEYS.HOTEL_DESK.PROFILE_SAVED));
     } catch (e: any) {
-      Alert.alert('Hotel profile', e?.response?.data?.message || 'Could not save hotel details.');
+      Alert.alert(t(TRANSLATION_KEYS.HOTEL_DESK.PROFILE_SAVED_TITLE), e?.response?.data?.message || t(TRANSLATION_KEYS.HOTEL_DESK.COULD_NOT_SAVE_PROFILE));
     } finally {
       setSavingProfile(false);
     }
@@ -163,7 +179,7 @@ export default function HotelInfoPage() {
       const updated = await updateHotelRoomStatus(roomId, roomStatus);
       setRooms((current) => current.map((room) => (room.id === roomId ? { ...room, ...updated } : room)));
     } catch (e: any) {
-      Alert.alert('Room status', e?.response?.data?.message || 'Could not update this room.');
+      Alert.alert(t(TRANSLATION_KEYS.HOTEL_DESK.ROOM_STATUS_TITLE), e?.response?.data?.message || t(TRANSLATION_KEYS.HOTEL_DESK.COULD_NOT_UPDATE_ROOM));
     } finally {
       setSavingRoomId(null);
     }
@@ -172,7 +188,7 @@ export default function HotelInfoPage() {
   const saveRoomPrice = async (roomTypeId: string) => {
     const price = Number(roomPrices[roomTypeId]);
     if (!Number.isFinite(price) || price < 0) {
-      Alert.alert('Room rate', 'Enter a nightly price of zero or more.');
+      Alert.alert(t(TRANSLATION_KEYS.HOTEL_DESK.ROOM_RATE_TITLE), t(TRANSLATION_KEYS.HOTEL_DESK.PRICE_INVALID));
       return;
     }
     setSavingTypeId(roomTypeId);
@@ -185,7 +201,7 @@ export default function HotelInfoPage() {
         )),
       }));
     } catch (e: any) {
-      Alert.alert('Room rate', e?.response?.data?.message || 'Could not update this rate.');
+      Alert.alert(t(TRANSLATION_KEYS.HOTEL_DESK.ROOM_RATE_TITLE), e?.response?.data?.message || t(TRANSLATION_KEYS.HOTEL_DESK.COULD_NOT_UPDATE_RATE));
     } finally {
       setSavingTypeId(null);
     }
@@ -195,7 +211,7 @@ export default function HotelInfoPage() {
     if (!hotelId) return;
     const price = Number(newRoomPrice);
     if (!Number.isFinite(price) || price < 0) {
-      Alert.alert('Room rate', 'Enter a nightly price of zero or more.');
+      Alert.alert(t(TRANSLATION_KEYS.HOTEL_DESK.ROOM_RATE_TITLE), t(TRANSLATION_KEYS.HOTEL_DESK.PRICE_INVALID));
       return;
     }
     setSavingTypeId('new');
@@ -216,7 +232,7 @@ export default function HotelInfoPage() {
       setRooms(await fetchHotelRooms(hotelId));
       setNewRoomPrice('');
     } catch (e: any) {
-      Alert.alert('Room rate', e?.response?.data?.message || 'Could not add this room type.');
+      Alert.alert(t(TRANSLATION_KEYS.HOTEL_DESK.ROOM_RATE_TITLE), e?.response?.data?.message || t(TRANSLATION_KEYS.HOTEL_DESK.COULD_NOT_ADD_ROOM_TYPE));
     } finally {
       setSavingTypeId(null);
     }
@@ -242,15 +258,17 @@ export default function HotelInfoPage() {
           className="flex-row items-center"
         >
           <Ionicons name="chevron-back" size={24} color={primaryColor} />
-          <Text className="ml-2 font-semibold text-primary dark:text-primary-dark">Back</Text>
+          <Text className="ml-2 font-semibold text-primary dark:text-primary-dark">{t(TRANSLATION_KEYS.COMMON.BACK)}</Text>
         </TouchableOpacity>
         {hotel ? (
           <View className="mt-3">
-            <Text className="text-2xl font-bold text-text dark:text-text-dark">{hotel.name}</Text>
+            <Text className="text-2xl font-bold text-text dark:text-text-dark">
+              {textForAppLanguage(hotel.name, hotel.nameBn, banglaApp) || hotel.name}
+            </Text>
             <View className="flex-row items-center mt-1">
               <Ionicons name="location" size={14} color={isDark ? theme.colors['muted-dark'] : theme.colors.muted} />
               <Text className="ml-1 text-sm text-muted dark:text-muted-dark">
-                {hotel.location?.city ?? hotel.location?.name ?? '—'}
+                {textForAppLanguage(hotel.location?.city ?? hotel.location?.name, hotel.location?.nameBn, banglaApp) || '—'}
               </Text>
             </View>
           </View>
@@ -260,7 +278,7 @@ export default function HotelInfoPage() {
       {loading ? (
         <View className="items-center justify-center flex-1">
           <ActivityIndicator size="large" color={primaryColor} />
-          <Text className="mt-3 text-sm text-muted dark:text-muted-dark">Loading hotel details...</Text>
+          <Text className="mt-3 text-sm text-muted dark:text-muted-dark">{t(TRANSLATION_KEYS.DASHBOARD.SERVICE_ADMIN.LOADING_HOTEL_DETAILS)}</Text>
         </View>
       ) : hotel ? (
         <>
@@ -284,7 +302,7 @@ export default function HotelInfoPage() {
                   }}
                 >
                   <Text style={{ color: selected ? '#fff' : primaryColor }} className="text-sm font-semibold">
-                    {item.label}
+                    {t(item.labelKey)}
                   </Text>
                 </Pressable>
               );
@@ -295,22 +313,22 @@ export default function HotelInfoPage() {
             {tab === 'overview' ? (
             <>
             <View className="p-4 mb-6 bg-white border dark:bg-surface-dark rounded-xl border-border dark:border-border-dark">
-              <Text className="mb-3 font-semibold text-text dark:text-text-dark">Listing checklist</Text>
+              <Text className="mb-3 font-semibold text-text dark:text-text-dark">{t(TRANSLATION_KEYS.HOTEL_DESK.LISTING_CHECKLIST)}</Text>
               {[
-                { label: 'Name', complete: Boolean(hotel.name?.trim()) },
-                { label: 'Phone', complete: Boolean(hotel.phoneNumber?.trim()) },
-                { label: 'Email', complete: Boolean(hotel.email?.trim()) },
-                { label: 'Location', complete: Boolean(hotel.location?.name || hotel.location?.city) },
-                { label: 'Check-in and check-out', complete: Boolean(hotel.checkInTime && hotel.checkOutTime) },
-                { label: 'Description', complete: Boolean(hotel.description?.trim()) },
-                { label: 'Photos', complete: Array.isArray(hotel.images) && hotel.images.length > 0 },
-                { label: 'Room types', complete: (hotel.roomTypes ?? []).some((roomType: { pricePerNight?: number }) => (roomType.pricePerNight ?? 0) > 0) },
-                { label: 'Policies', complete: Boolean(policiesText.trim()) },
+                { label: t(TRANSLATION_KEYS.HOTEL_DESK.NAME), complete: Boolean(hotel.name?.trim()) },
+                { label: t(TRANSLATION_KEYS.HOTEL_DESK.PHONE), complete: Boolean(hotel.phoneNumber?.trim()) },
+                { label: t(TRANSLATION_KEYS.PROFILE.EMAIL), complete: Boolean(hotel.email?.trim()) },
+                { label: t(TRANSLATION_KEYS.HOTEL_DESK.LOCATION), complete: Boolean(hotel.location?.name || hotel.location?.city) },
+                { label: t(TRANSLATION_KEYS.HOTEL_DESK.CHECK_IN_OUT), complete: Boolean(hotel.checkInTime && hotel.checkOutTime) },
+                { label: t(TRANSLATION_KEYS.DASHBOARD.SERVICE_ADMIN.DESCRIPTION), complete: Boolean(hotel.description?.trim()) },
+                { label: t(TRANSLATION_KEYS.HOTEL_DESK.PHOTOS), complete: Array.isArray(hotel.images) && hotel.images.length > 0 },
+                { label: t(TRANSLATION_KEYS.DASHBOARD.SERVICE_ADMIN.ROOM_TYPES), complete: (hotel.roomTypes ?? []).some((roomType: { pricePerNight?: number }) => (roomType.pricePerNight ?? 0) > 0) },
+                { label: t(TRANSLATION_KEYS.HOTEL_DESK.POLICIES), complete: Boolean(policiesText.trim()) },
               ].map((row) => (
                 <View key={row.label} className="flex-row items-center justify-between py-1">
                   <Text className="text-sm text-text dark:text-text-dark">{row.label}</Text>
                   <Text className={`text-sm font-semibold ${row.complete ? 'text-primary dark:text-primary-dark' : 'text-red-600 dark:text-red-300'}`}>
-                    {row.complete ? 'Complete' : 'Missing'}
+                    {row.complete ? t(TRANSLATION_KEYS.HOTEL_DESK.COMPLETE) : t(TRANSLATION_KEYS.HOTEL_DESK.MISSING)}
                   </Text>
                 </View>
               ))}
@@ -320,35 +338,35 @@ export default function HotelInfoPage() {
 
             {tab === 'profile' ? (
             <View className="p-4 mb-6 bg-white border dark:bg-surface-dark rounded-xl border-border dark:border-border-dark">
-              <Text className="mb-3 font-semibold text-text dark:text-text-dark">Contact</Text>
-              <Text className="text-sm text-muted dark:text-muted-dark">Phone</Text>
+              <Text className="mb-3 font-semibold text-text dark:text-text-dark">{t(TRANSLATION_KEYS.HOTEL_DESK.CONTACT)}</Text>
+              <Text className="text-sm text-muted dark:text-muted-dark">{t(TRANSLATION_KEYS.HOTEL_DESK.PHONE)}</Text>
               {isHotelAdmin ? (
                 <TextInput value={phoneNumber} onChangeText={setPhoneNumber} className="px-3 py-2 mt-1 mb-3 border rounded-lg border-border dark:border-border-dark text-text dark:text-text-dark" />
               ) : (
                 <Text className="mb-3 text-base text-text dark:text-text-dark">{hotel.phoneNumber || '—'}</Text>
               )}
-              <Text className="text-sm text-muted dark:text-muted-dark">Email</Text>
+              <Text className="text-sm text-muted dark:text-muted-dark">{t(TRANSLATION_KEYS.PROFILE.EMAIL)}</Text>
               {isHotelAdmin ? (
                 <TextInput value={email} onChangeText={setEmail} autoCapitalize="none" className="px-3 py-2 mt-1 mb-3 border rounded-lg border-border dark:border-border-dark text-text dark:text-text-dark" />
               ) : (
                 <Text className="mb-3 text-base text-text dark:text-text-dark">{hotel.email || '—'}</Text>
               )}
-              <Text className="text-sm text-muted dark:text-muted-dark">Website</Text>
+              <Text className="text-sm text-muted dark:text-muted-dark">{t(TRANSLATION_KEYS.HOTEL_DESK.WEBSITE)}</Text>
               {isHotelAdmin ? (
                 <TextInput value={website} onChangeText={setWebsite} autoCapitalize="none" className="px-3 py-2 mt-1 mb-3 border rounded-lg border-border dark:border-border-dark text-text dark:text-text-dark" />
               ) : (
                 <Text className="mb-3 text-base text-text dark:text-text-dark">{hotel.website || '—'}</Text>
               )}
-              <Text className="text-sm text-muted dark:text-muted-dark">Check-in</Text>
+              <Text className="text-sm text-muted dark:text-muted-dark">{t(TRANSLATION_KEYS.HOTEL_SEARCH.CHECK_IN)}</Text>
               {isHotelAdmin ? (
                 <TextInput value={checkInTime} onChangeText={setCheckInTime} placeholder="HH:MM" className="px-3 py-2 mt-1 mb-3 border rounded-lg border-border dark:border-border-dark text-text dark:text-text-dark" />
               ) : (
                 <Text className="mb-3 text-base text-text dark:text-text-dark">{hotel.checkInTime || '—'}</Text>
               )}
-              <Text className="text-sm text-muted dark:text-muted-dark">Amenities</Text>
+              <Text className="text-sm text-muted dark:text-muted-dark">{t(TRANSLATION_KEYS.DASHBOARD.SERVICE_ADMIN.AMENITIES)}</Text>
               {isHotelAdmin ? (
                 <>
-                  <TextInput value={amenitiesText} onChangeText={setAmenitiesText} placeholder="Wifi, Breakfast" className="px-3 py-2 mt-1 border rounded-lg border-border dark:border-border-dark text-text dark:text-text-dark" />
+                  <TextInput value={amenitiesText} onChangeText={setAmenitiesText} placeholder={t(TRANSLATION_KEYS.HOTEL_DESK.AMENITIES_HINT)} className="px-3 py-2 mt-1 border rounded-lg border-border dark:border-border-dark text-text dark:text-text-dark" />
                   <OptionalBanglaField
                     value={amenitiesBnText}
                     onChangeText={setAmenitiesBnText}
@@ -359,10 +377,10 @@ export default function HotelInfoPage() {
               ) : (
                 <Text className="mb-3 text-base text-text dark:text-text-dark">{amenitiesText || '—'}</Text>
               )}
-              <Text className="text-sm text-muted dark:text-muted-dark">Policies</Text>
+              <Text className="text-sm text-muted dark:text-muted-dark">{t(TRANSLATION_KEYS.HOTEL_DESK.POLICIES)}</Text>
               {isHotelAdmin ? (
                 <>
-                  <TextInput value={policiesText} onChangeText={setPoliciesText} placeholder="No smoking, No pets" className="px-3 py-2 mt-1 border rounded-lg border-border dark:border-border-dark text-text dark:text-text-dark" />
+                  <TextInput value={policiesText} onChangeText={setPoliciesText} placeholder={t(TRANSLATION_KEYS.HOTEL_DESK.POLICIES_HINT)} className="px-3 py-2 mt-1 border rounded-lg border-border dark:border-border-dark text-text dark:text-text-dark" />
                   <OptionalBanglaField
                     value={policiesBnText}
                     onChangeText={setPoliciesBnText}
@@ -373,19 +391,39 @@ export default function HotelInfoPage() {
               ) : (
                 <Text className="mb-3 text-base text-text dark:text-text-dark">{policiesText || '—'}</Text>
               )}
-              <Text className="text-sm text-muted dark:text-muted-dark">Nearby tour spots</Text>
+              <Text className="text-sm text-muted dark:text-muted-dark">{t(TRANSLATION_KEYS.HOTEL_DESK.NEARBY_TOURS)}</Text>
               {isHotelAdmin ? (
-                <TextInput value={nearbyToursText} onChangeText={setNearbyToursText} className="px-3 py-2 mt-1 mb-3 border rounded-lg border-border dark:border-border-dark text-text dark:text-text-dark" />
+                <>
+                  <TextInput value={nearbyToursText} onChangeText={setNearbyToursText} className="px-3 py-2 mt-1 border rounded-lg border-border dark:border-border-dark text-text dark:text-text-dark" />
+                  <OptionalBanglaField
+                    value={nearbyToursBnText}
+                    onChangeText={setNearbyToursBnText}
+                    placeholderTextColor={mutedColor}
+                    className="px-3 py-2 border rounded-lg border-border dark:border-border-dark text-text dark:text-text-dark mb-3"
+                  />
+                </>
               ) : (
-                <Text className="mb-3 text-base text-text dark:text-text-dark">{nearbyToursText || '—'}</Text>
+                <Text className="mb-3 text-base text-text dark:text-text-dark">
+                  {(banglaApp && nearbyToursBnText.trim() ? nearbyToursBnText : nearbyToursText) || '—'}
+                </Text>
               )}
-              <Text className="text-sm text-muted dark:text-muted-dark">Nearby activities</Text>
+              <Text className="text-sm text-muted dark:text-muted-dark">{t(TRANSLATION_KEYS.HOTEL_DESK.NEARBY_ACTIVITIES)}</Text>
               {isHotelAdmin ? (
-                <TextInput value={nearbyActivitiesText} onChangeText={setNearbyActivitiesText} className="px-3 py-2 mt-1 mb-3 border rounded-lg border-border dark:border-border-dark text-text dark:text-text-dark" />
+                <>
+                  <TextInput value={nearbyActivitiesText} onChangeText={setNearbyActivitiesText} className="px-3 py-2 mt-1 border rounded-lg border-border dark:border-border-dark text-text dark:text-text-dark" />
+                  <OptionalBanglaField
+                    value={nearbyActivitiesBnText}
+                    onChangeText={setNearbyActivitiesBnText}
+                    placeholderTextColor={mutedColor}
+                    className="px-3 py-2 border rounded-lg border-border dark:border-border-dark text-text dark:text-text-dark mb-3"
+                  />
+                </>
               ) : (
-                <Text className="mb-3 text-base text-text dark:text-text-dark">{nearbyActivitiesText || '—'}</Text>
+                <Text className="mb-3 text-base text-text dark:text-text-dark">
+                  {(banglaApp && nearbyActivitiesBnText.trim() ? nearbyActivitiesBnText : nearbyActivitiesText) || '—'}
+                </Text>
               )}
-              <Text className="text-sm text-muted dark:text-muted-dark">Check-out</Text>
+              <Text className="text-sm text-muted dark:text-muted-dark">{t(TRANSLATION_KEYS.HOTEL_SEARCH.CHECK_OUT)}</Text>
               {isHotelAdmin ? (
                 <TextInput value={checkOutTime} onChangeText={setCheckOutTime} placeholder="HH:MM" className="px-3 py-2 mt-1 border rounded-lg border-border dark:border-border-dark text-text dark:text-text-dark" />
               ) : (
@@ -393,7 +431,7 @@ export default function HotelInfoPage() {
               )}
               {isHotelAdmin ? (
                 <TouchableOpacity onPress={saveProfile} disabled={savingProfile} className="px-4 py-3 mt-4 rounded-lg bg-primary">
-                  <Text className="font-semibold text-center text-white">{savingProfile ? 'Saving...' : 'Save profile'}</Text>
+                  <Text className="font-semibold text-center text-white">{savingProfile ? t(TRANSLATION_KEYS.HOTEL_DESK.SAVING) : t(TRANSLATION_KEYS.HOTEL_DESK.SAVE_PROFILE)}</Text>
                 </TouchableOpacity>
               ) : null}
             </View>
@@ -401,7 +439,7 @@ export default function HotelInfoPage() {
 
             {tab === 'rooms' ? (
             <View className="p-4 mb-6 bg-white border dark:bg-surface-dark rounded-xl border-border dark:border-border-dark">
-              <Text className="mb-3 font-semibold text-text dark:text-text-dark">Room rates</Text>
+              <Text className="mb-3 font-semibold text-text dark:text-text-dark">{t(TRANSLATION_KEYS.HOTEL_DESK.ROOM_RATES)}</Text>
               {(hotel.roomTypes ?? []).map((roomType: any) => (
                 <View key={roomType.id} className="mb-3">
                   <Text className="text-sm text-text dark:text-text-dark">{roomType.roomType}</Text>
@@ -414,7 +452,7 @@ export default function HotelInfoPage() {
                         className="flex-1 px-3 py-2 border rounded-lg border-border dark:border-border-dark text-text dark:text-text-dark"
                       />
                       <TouchableOpacity onPress={() => saveRoomPrice(roomType.id)} disabled={savingTypeId === roomType.id} className="px-3 py-2 rounded-lg bg-primary">
-                        <Text className="text-sm font-semibold text-white">{savingTypeId === roomType.id ? '...' : 'Save'}</Text>
+                        <Text className="text-sm font-semibold text-white">{savingTypeId === roomType.id ? t(TRANSLATION_KEYS.HOTEL_DESK.SAVING) : t(TRANSLATION_KEYS.COMMON.SAVE)}</Text>
                       </TouchableOpacity>
                     </View>
                   ) : (
@@ -424,7 +462,7 @@ export default function HotelInfoPage() {
               ))}
               {isHotelAdmin ? (
                 <View className="pt-2 mt-2 border-t border-border dark:border-border-dark">
-                  <Text className="mb-2 text-sm text-muted dark:text-muted-dark">Add a room type</Text>
+                  <Text className="mb-2 text-sm text-muted dark:text-muted-dark">{t(TRANSLATION_KEYS.HOTEL_DESK.ADD_ROOM_TYPE)}</Text>
                   <View className="flex-row flex-wrap gap-2 mb-2">
                     {ROOM_TYPE_OPTIONS.map((option) => (
                       <TouchableOpacity key={option} onPress={() => setNewRoomType(option)} className={`px-3 py-2 rounded-full border ${newRoomType === option ? 'bg-primary border-primary' : 'border-border dark:border-border-dark'}`}>
@@ -432,9 +470,9 @@ export default function HotelInfoPage() {
                       </TouchableOpacity>
                     ))}
                   </View>
-                  <TextInput value={newRoomPrice} onChangeText={setNewRoomPrice} keyboardType="numeric" placeholder="Price per night" className="px-3 py-2 border rounded-lg border-border dark:border-border-dark text-text dark:text-text-dark" />
+                  <TextInput value={newRoomPrice} onChangeText={setNewRoomPrice} keyboardType="numeric" placeholder={t(TRANSLATION_KEYS.HOTEL_DESK.PRICE_PLACEHOLDER)} className="px-3 py-2 border rounded-lg border-border dark:border-border-dark text-text dark:text-text-dark" />
                   <TouchableOpacity onPress={addRoomType} disabled={savingTypeId === 'new'} className="px-4 py-3 mt-2 rounded-lg bg-primary">
-                    <Text className="font-semibold text-center text-white">{savingTypeId === 'new' ? 'Adding...' : 'Add room type'}</Text>
+                    <Text className="font-semibold text-center text-white">{savingTypeId === 'new' ? t(TRANSLATION_KEYS.HOTEL_DESK.ADDING) : t(TRANSLATION_KEYS.HOTEL_DESK.ADD_ROOM_TYPE_BTN)}</Text>
                   </TouchableOpacity>
                 </View>
               ) : null}
@@ -443,16 +481,16 @@ export default function HotelInfoPage() {
 
             {tab === 'reviews' ? (
             <View className="p-4 mb-6 bg-white border dark:bg-surface-dark rounded-xl border-border dark:border-border-dark">
-              <Text className="mb-3 font-semibold text-text dark:text-text-dark">Reviews</Text>
+              <Text className="mb-3 font-semibold text-text dark:text-text-dark">{t(TRANSLATION_KEYS.HOTEL_DESK.REVIEWS)}</Text>
               {reviews.length === 0 ? (
-                <Text className="text-sm text-muted dark:text-muted-dark">No reviews yet.</Text>
+                <Text className="text-sm text-muted dark:text-muted-dark">{t(TRANSLATION_KEYS.HOTEL_DESK.NO_REVIEWS)}</Text>
               ) : reviews.map((review) => (
                 <View key={review.id} className="mb-3">
                   <Text className="text-sm font-semibold text-text dark:text-text-dark">
-                    {[review.user?.firstName, review.user?.lastName].filter(Boolean).join(' ') || 'Guest'} · {review.rating} / 5
+                    {[review.user?.firstName, review.user?.lastName].filter(Boolean).join(' ') || t(TRANSLATION_KEYS.HOTEL_DESK.GUEST)} · {review.rating} / 5
                   </Text>
                   <Text className="mt-1 text-sm text-muted dark:text-muted-dark">{review.description}</Text>
-                  <Text className="mt-1 text-xs text-muted dark:text-muted-dark">{formatDeskDate(review.createdAt)}</Text>
+                  <Text className="mt-1 text-xs text-muted dark:text-muted-dark">{formatDeskDate(review.createdAt, appDateLocale(i18n.language))}</Text>
                 </View>
               ))}
             </View>
@@ -464,7 +502,7 @@ export default function HotelInfoPage() {
               <View className="flex-1 p-4 bg-white border dark:bg-surface-dark rounded-xl border-border dark:border-border-dark">
                 <View className="flex-row items-center justify-between">
                   <View>
-                    <Text className="mb-1 text-xs text-muted dark:text-muted-dark">Rating</Text>
+                    <Text className="mb-1 text-xs text-muted dark:text-muted-dark">{t(TRANSLATION_KEYS.DASHBOARD.SERVICE_ADMIN.RATING)}</Text>
                     <Text className="text-2xl font-bold text-text dark:text-text-dark">{rating.toFixed(1)}</Text>
                   </View>
                   <Ionicons name="star" size={32} color={warningColor} />
@@ -474,7 +512,7 @@ export default function HotelInfoPage() {
               <View className="flex-1 p-4 bg-white border dark:bg-surface-dark rounded-xl border-border dark:border-border-dark">
                 <View className="flex-row items-center justify-between">
                   <View>
-                    <Text className="mb-1 text-xs text-muted dark:text-muted-dark">Type</Text>
+                    <Text className="mb-1 text-xs text-muted dark:text-muted-dark">{t(TRANSLATION_KEYS.DASHBOARD.SERVICE_ADMIN.TYPE)}</Text>
                     <Text className="text-lg font-bold text-text dark:text-text-dark">{hotel.type ?? 'N/A'}</Text>
                   </View>
                   <Ionicons name="business-outline" size={32} color={primaryColor} />
@@ -483,33 +521,33 @@ export default function HotelInfoPage() {
             </View>
 
             {/* Overview Card */}
-            {hotel.description && (
+            {textForAppLanguage(hotel.description, hotel.descriptionBn, banglaApp) ? (
               <View className="p-4 mb-6 bg-white border dark:bg-surface-dark rounded-xl border-border dark:border-border-dark">
                 <View className="flex-row items-center mb-3">
                   <Ionicons name="information-circle" size={20} color={primaryColor} />
-                  <Text className="ml-2 font-semibold text-text dark:text-text-dark">Description</Text>
+                  <Text className="ml-2 font-semibold text-text dark:text-text-dark">{t(TRANSLATION_KEYS.DASHBOARD.SERVICE_ADMIN.DESCRIPTION)}</Text>
                 </View>
                 <Text className="text-sm leading-6 text-muted dark:text-muted-dark">
-                  {hotel.description}
+                  {textForAppLanguage(hotel.description, hotel.descriptionBn, banglaApp)}
                 </Text>
               </View>
-            )}
+            ) : null}
 
             {/* Room Statistics */}
             <View className="mb-6">
               <View className="flex-row items-center mb-3">
                 <Ionicons name="enter-outline" size={20} color={primaryColor} />
-                <Text className="ml-2 text-lg font-semibold text-text dark:text-text-dark">Room Statistics</Text>
+                <Text className="ml-2 text-lg font-semibold text-text dark:text-text-dark">{t(TRANSLATION_KEYS.DASHBOARD.SERVICE_ADMIN.ROOM_STATISTICS)}</Text>
               </View>
 
               <View className="flex-row gap-3">
                 <View className="flex-1 p-4 border border-green-200 bg-green-50 dark:bg-green-950 rounded-xl dark:border-green-800">
-                  <Text className="mb-1 text-xs text-green-700 dark:text-green-300">Open for sale</Text>
+                  <Text className="mb-1 text-xs text-green-700 dark:text-green-300">{t(TRANSLATION_KEYS.HOTEL_DESK.OPEN_FOR_SALE)}</Text>
                   <Text className="text-2xl font-bold text-green-700 dark:text-green-300">{availableRooms}</Text>
                 </View>
 
                 <View className="flex-1 p-4 border border-blue-200 bg-blue-50 dark:bg-blue-950 rounded-xl dark:border-blue-800">
-                  <Text className="mb-1 text-xs text-blue-700 dark:text-blue-300">Rooms</Text>
+                  <Text className="mb-1 text-xs text-blue-700 dark:text-blue-300">{t(TRANSLATION_KEYS.HOTEL_SEARCH.ROOMS)}</Text>
                   <Text className="text-2xl font-bold text-blue-700 dark:text-blue-300">{totalRooms}</Text>
                 </View>
               </View>
@@ -520,7 +558,7 @@ export default function HotelInfoPage() {
               <View className="p-4 mb-6 bg-white border dark:bg-surface-dark rounded-xl border-border dark:border-border-dark">
                 <View className="flex-row items-center mb-4">
                   <Ionicons name="sparkles" size={20} color={primaryColor} />
-                  <Text className="ml-2 font-semibold text-text dark:text-text-dark">Amenities</Text>
+                  <Text className="ml-2 font-semibold text-text dark:text-text-dark">{t(TRANSLATION_KEYS.DASHBOARD.SERVICE_ADMIN.AMENITIES)}</Text>
                 </View>
                 <View className="flex-row flex-wrap gap-2">
                   {hotel.hotelCategories.map((hc: any) => (
@@ -544,7 +582,7 @@ export default function HotelInfoPage() {
               <View className="flex-row items-center mb-4">
                 <Ionicons name="list" size={20} color={primaryColor} />
                 <Text className="ml-2 text-lg font-semibold text-text dark:text-text-dark">
-                  Rooms ({rooms.length})
+                  {t(TRANSLATION_KEYS.HOTEL_DESK.ROOM_COUNT_LABEL, { count: rooms.length })}
                 </Text>
               </View>
 
@@ -559,10 +597,10 @@ export default function HotelInfoPage() {
                       <View className="flex-row items-start justify-between mb-3">
                         <View className="flex-1">
                           <Text className="text-base font-bold text-text dark:text-text-dark">
-                            {room.roomNumber ? `Room ${room.roomNumber}` : 'Room'}
+                            {room.roomNumber ? t(TRANSLATION_KEYS.QR.ROOM_NUMBER, { number: room.roomNumber }) : t(TRANSLATION_KEYS.QR.ROOM_FALLBACK)}
                           </Text>
                           <Text className="mt-1 text-xs text-muted dark:text-muted-dark">
-                            {room.hotelRoomType?.roomType ?? room.roomType ?? 'Unknown type'}
+                            {room.hotelRoomType?.roomType ?? room.roomType ?? t(TRANSLATION_KEYS.HOTEL_DESK.UNKNOWN_TYPE)}
                           </Text>
                         </View>
                         <View className={`px-3 py-1 rounded-full ${
@@ -575,7 +613,7 @@ export default function HotelInfoPage() {
                               ? 'text-green-700 dark:text-green-300'
                               : 'text-yellow-700 dark:text-yellow-300'
                           }`}>
-                            {ROOM_STATUS_LABELS[room.roomStatus as HotelRoomDeskStatus] ?? room.roomStatus ?? 'N/A'}
+                            {ROOM_STATUS_KEYS[room.roomStatus as HotelRoomDeskStatus] ? t(ROOM_STATUS_KEYS[room.roomStatus as HotelRoomDeskStatus]) : room.roomStatus ?? t(TRANSLATION_KEYS.QR.NOT_AVAILABLE)}
                           </Text>
                         </View>
                       </View>
@@ -586,7 +624,7 @@ export default function HotelInfoPage() {
                           className="self-start mb-3"
                         >
                           <Text className="text-sm font-semibold text-primary dark:text-primary-dark">
-                            {i18next.t('hotelDesk.assignCleaning')}
+                            {t(TRANSLATION_KEYS.HOTEL_DESK.ASSIGN_CLEANING)}
                           </Text>
                         </TouchableOpacity>
                       ) : null}
@@ -602,7 +640,7 @@ export default function HotelInfoPage() {
                               className={`px-3 py-2 rounded-full border ${selected ? 'bg-primary border-primary' : 'border-border dark:border-border-dark'}`}
                             >
                               <Text className={`text-xs font-semibold ${selected ? 'text-white' : 'text-text dark:text-text-dark'}`}>
-                                {ROOM_STATUS_LABELS[status]}
+                                {t(ROOM_STATUS_KEYS[status])}
                               </Text>
                             </TouchableOpacity>
                           );
@@ -615,7 +653,7 @@ export default function HotelInfoPage() {
                           <View className="flex-row items-center justify-between py-2 border-t border-border dark:border-border-dark">
                             <View className="flex-row items-center">
                               <Ionicons name="cash" size={16} color={successColor} />
-                              <Text className="ml-2 text-sm text-muted dark:text-muted-dark">Price per Night</Text>
+                              <Text className="ml-2 text-sm text-muted dark:text-muted-dark">{t(TRANSLATION_KEYS.DASHBOARD.SERVICE_ADMIN.PRICE_PER_NIGHT)}</Text>
                             </View>
                             <Text className="font-semibold text-text dark:text-text-dark">₹{room.pricePerNight}</Text>
                           </View>
@@ -625,7 +663,7 @@ export default function HotelInfoPage() {
                           <View className="flex-row items-center justify-between py-2 border-t border-border dark:border-border-dark">
                             <View className="flex-row items-center">
                               <Ionicons name="checkmark-circle" size={16} color={successColor} />
-                              <Text className="ml-2 text-sm text-muted dark:text-muted-dark">Open for sale</Text>
+                              <Text className="ml-2 text-sm text-muted dark:text-muted-dark">{t(TRANSLATION_KEYS.HOTEL_DESK.OPEN_FOR_SALE)}</Text>
                             </View>
                             <Text className="font-semibold text-text dark:text-text-dark">
                               {room.availableCount}/{room.totalCount}
@@ -637,7 +675,7 @@ export default function HotelInfoPage() {
                           <View className="flex-row items-center justify-between py-2 border-t border-border dark:border-border-dark">
                             <View className="flex-row items-center">
                               <Ionicons name="bed" size={16} color={primaryColor} />
-                              <Text className="ml-2 text-sm text-muted dark:text-muted-dark">Single Beds</Text>
+                              <Text className="ml-2 text-sm text-muted dark:text-muted-dark">{t(TRANSLATION_KEYS.DASHBOARD.SERVICE_ADMIN.SINGLE_BEDS)}</Text>
                             </View>
                             <Text className="font-semibold text-text dark:text-text-dark">
                               {room.hotelRoomType.singleBedCount}
@@ -649,7 +687,7 @@ export default function HotelInfoPage() {
                           <View className="flex-row items-center justify-between py-2 border-t border-border dark:border-border-dark">
                             <View className="flex-row items-center">
                               <Ionicons name="bed" size={16} color={primaryColor} />
-                              <Text className="ml-2 text-sm text-muted dark:text-muted-dark">Double Beds</Text>
+                              <Text className="ml-2 text-sm text-muted dark:text-muted-dark">{t(TRANSLATION_KEYS.DASHBOARD.SERVICE_ADMIN.DOUBLE_BEDS)}</Text>
                             </View>
                             <Text className="font-semibold text-text dark:text-text-dark">
                               {room.hotelRoomType.doubleBedCount}

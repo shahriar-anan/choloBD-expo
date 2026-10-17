@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { ActivityIndicator, FlatList, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
@@ -10,18 +10,29 @@ import theme from '../../../constants/theme';
 import { TRANSLATION_KEYS } from '../../../constants/translationKeys';
 import { RootState } from '../../../store/store';
 import { loadTravelerBookingSources } from '../../../services/api/travelerBookings';
-import { listTravelerReservations, RecentBookingKind, RecentBookingView } from '../../../utilities/recentBookingItems';
+import { listRecentTravelerReservations, listTravelerReservations, RecentBookingKind, RecentBookingView, TravelerBookingSources } from '../../../utilities/recentBookingItems';
 import { RecentBookingCard } from '../../../components/ui/recentBookingCard';
 import { BookingQrSheet } from '../../../components/booking/BookingQrSheet';
 import { useHotelAdminSession } from '../../../hooks/useHotelAdminSession';
 import { HotelGuestBookings } from '../../../components/hotel/HotelGuestBookings';
 import { tabBarClearance } from '../../../hooks/useHideTabBar';
+import { bookingCardKey, dismissBookingCard, loadDismissedBookingKeys } from '../../../utilities/dismissedBookings';
 
-type Chip = 'all' | 'hotels' | 'tickets' | 'activities';
+type Chip = 'recent' | 'all' | 'hotels' | 'tickets' | 'activities';
 type HotelFilter = 'all' | 'unpaid' | 'confirmed' | 'pending' | 'cancelled';
 type ActivityFilter = 'activities' | 'guides';
 
+const EMPTY_SOURCES: TravelerBookingSources = {
+  hotels: [],
+  transports: [],
+  activities: [],
+  guides: [],
+  packages: [],
+  trips: [],
+};
+
 const CHIPS: { id: Chip; labelKey: string }[] = [
+  { id: 'recent', labelKey: TRANSLATION_KEYS.BOOKINGS_TAB.RECENT },
   { id: 'all', labelKey: TRANSLATION_KEYS.BOOKINGS_TAB.ALL },
   { id: 'hotels', labelKey: TRANSLATION_KEYS.BOOKINGS_TAB.HOTELS },
   { id: 'tickets', labelKey: TRANSLATION_KEYS.BOOKINGS_TAB.TICKETS },
@@ -37,7 +48,7 @@ const HOTEL_FILTERS: { id: HotelFilter; labelKey: string }[] = [
 ];
 
 function matchesChip(item: RecentBookingView, chip: Chip, activity: ActivityFilter): boolean {
-  if (chip === 'all') return true;
+  if (chip === 'recent' || chip === 'all') return true;
   if (chip === 'hotels') return item.kind === 'hotel';
   if (chip === 'tickets') return item.kind === 'transport';
   if (activity === 'guides') return item.kind === 'guide';
@@ -61,26 +72,32 @@ function TravelerBookingsScreen() {
   const { isDark } = useTheme();
   const insets = useSafeAreaInsets();
   const userId = useSelector((state: RootState) => state.auth.user?.id);
-  const [chip, setChip] = useState<Chip>('all');
+  const [chip, setChip] = useState<Chip>('recent');
   const [hotelFilter, setHotelFilter] = useState<HotelFilter>('all');
   const [activityFilter, setActivityFilter] = useState<ActivityFilter>('activities');
-  const [rows, setRows] = useState<RecentBookingView[]>([]);
+  const [sources, setSources] = useState<TravelerBookingSources>(EMPTY_SOURCES);
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
   const [qrItem, setQrItem] = useState<RecentBookingView | null>(null);
+  const [dismissed, setDismissed] = useState<Set<string>>(new Set());
   const primary = isDark ? theme.colors['primary-dark'] : theme.colors.primary;
 
   const load = useCallback(async () => {
     if (!userId) {
-      setRows([]);
+      setSources(EMPTY_SOURCES);
+      setDismissed(new Set());
       setFailed(false);
       setLoading(false);
       return;
     }
     setLoading(true);
     try {
-      const sources = await loadTravelerBookingSources(userId);
-      setRows(listTravelerReservations(sources));
+      const [nextSources, hidden] = await Promise.all([
+        loadTravelerBookingSources(userId),
+        loadDismissedBookingKeys(userId),
+      ]);
+      setSources(nextSources);
+      setDismissed(hidden);
       setFailed(false);
     } catch {
       setFailed(true);
@@ -95,10 +112,30 @@ function TravelerBookingsScreen() {
     }, [load]),
   );
 
+  const rows = useMemo(() => listTravelerReservations(sources), [sources]);
+  const recentRows = useMemo(() => listRecentTravelerReservations(sources), [sources]);
+
   const visible = useMemo(
-    () => rows.filter((item) => matchesChip(item, chip, activityFilter) && matchesHotelFilter(item, chip === 'hotels' ? hotelFilter : 'all')),
-    [rows, chip, activityFilter, hotelFilter],
+    () => (chip === 'recent'
+      ? recentRows
+      : rows.filter((item) => matchesChip(item, chip, activityFilter) && matchesHotelFilter(item, chip === 'hotels' ? hotelFilter : 'all')))
+      .filter((item) => !dismissed.has(bookingCardKey(item.kind, item.id))),
+    [rows, recentRows, chip, activityFilter, hotelFilter, dismissed],
   );
+
+  const removeCard = (item: RecentBookingView) => {
+    if (!userId) return;
+    Alert.alert(t(TRANSLATION_KEYS.BOOKINGS_TAB.DELETE_TITLE), t(TRANSLATION_KEYS.BOOKINGS_TAB.DELETE_BODY), [
+      { text: t(TRANSLATION_KEYS.COMMON.CANCEL), style: 'cancel' },
+      {
+        text: t(TRANSLATION_KEYS.COMMON.DELETE),
+        style: 'destructive',
+        onPress: () => {
+          void dismissBookingCard(userId, item.kind, item.id).then(setDismissed);
+        },
+      },
+    ]);
+  };
 
   const listTitle = chip === 'activities'
     ? t(activityFilter === 'guides'
@@ -252,9 +289,14 @@ function TravelerBookingsScreen() {
             <RecentBookingCard
               item={item}
               onPress={openRow}
+              onDelete={removeCard}
               onQrPress={(row) => {
                 if (row.kind === 'hotel') {
                   router.push(`/(tabs)/dashboard/${row.id}/qr-generate`);
+                  return;
+                }
+                if (row.kind === 'transport' && row.busTicket) {
+                  router.push(`/(tabs)/bookings/bus-boarding-qr/${row.id}`);
                   return;
                 }
                 setQrItem(row);

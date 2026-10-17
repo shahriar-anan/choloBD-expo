@@ -78,7 +78,11 @@ function DetailRow({ label, value }: { label: string; value?: string | null }) {
 export default function TransportPaymentPage() {
   const router = useRouter();
   const role = useSelector((state: RootState) => state.auth.user?.role);
-  const { bookingId } = useLocalSearchParams<{ bookingId: string }>();
+  const { bookingId, holdEmailSent: holdEmailSentParam } = useLocalSearchParams<{
+    bookingId: string;
+    holdEmailSent?: string;
+  }>();
+  const holdEmailSent = holdEmailSentParam === '1';
   const { t } = useTranslation();
   const { isDark } = useTheme();
   const { startPayment } = usePaymentLogic();
@@ -101,6 +105,7 @@ export default function TransportPaymentPage() {
   const [busyMethod, setBusyMethod] = useState<PayMethod>('card');
   const [payError, setPayError] = useState<string | null>(null);
   const [allPaid, setAllPaid] = useState(false);
+  const [walletReceiptEmailed, setWalletReceiptEmailed] = useState(false);
 
   const primary = isDark ? theme.colors['primary-dark'] : theme.colors.primary;
   const successColor = isDark ? theme.colors['success-dark'] : theme.colors.success;
@@ -161,6 +166,7 @@ export default function TransportPaymentPage() {
   const payWithSsl = async (booking: TransportBooking) => {
     setBusyId(booking.id);
     setBusyMethod('card');
+    setWalletReceiptEmailed(false);
     setPayError(null);
     const result = await startPayment({
       serviceType: 'TRANSPORT_SERVICE',
@@ -186,11 +192,12 @@ export default function TransportPaymentPage() {
     setBusyMethod('points');
     setPayError(null);
     try {
-      await chargeWalletCredits({
+      const charge = await chargeWalletCredits({
         serviceType: 'TRANSPORT_SERVICE',
         serviceTypeId: booking.id,
         paymentAmount: pointsCost,
       });
+      setWalletReceiptEmailed(Boolean(charge.emailDispatched));
       setPointsBalance((current) => (current === null ? current : current - pointsCost));
       await loadBookings({ silent: true });
     } catch (error: unknown) {
@@ -414,7 +421,9 @@ export default function TransportPaymentPage() {
               {t(TRANSLATION_KEYS.PAYMENT.SUCCESS_TITLE)}
             </Text>
             <Text className="mt-2 text-sm text-center text-muted dark:text-muted-dark">
-              {t(TRANSLATION_KEYS.PAYMENT.SUCCESS_DESC)}
+              {walletReceiptEmailed
+                ? t(TRANSLATION_KEYS.PAYMENT.SUCCESS_DESC_WALLET_RECEIPT)
+                : t(TRANSLATION_KEYS.PAYMENT.SUCCESS_DESC)}
             </Text>
             <Pressable
               onPress={goToDashboard}
@@ -452,6 +461,11 @@ export default function TransportPaymentPage() {
               <Text className="mt-1 text-sm text-muted dark:text-muted-dark">
                 {t(TRANSLATION_KEYS.TRANSPORT.CONFIRM_PAY_SUBTITLE)}
               </Text>
+              {holdEmailSent ? (
+                <Text className="mt-2 text-sm text-muted dark:text-muted-dark">
+                  {t(TRANSLATION_KEYS.TRANSPORT.HOLD_EMAIL)}
+                </Text>
+              ) : null}
               {bookings.length > 1 ? (
                 <Text className="mt-2 text-xs text-muted dark:text-muted-dark">
                   {t(TRANSLATION_KEYS.TRANSPORT.PAY_EACH_TICKET)}

@@ -36,6 +36,13 @@ export type CreateTransportBookingResult =
   | { kind: 'single'; booking: TransportBooking }
   | { kind: 'roundTrip'; result: TransportRoundTripBookingResult };
 
+export function transportCreateHoldEmailDispatched(result: CreateTransportBookingResult): boolean {
+  if (result.kind === 'single') {
+    return Boolean(result.booking.emailDispatched);
+  }
+  return result.result.bookings.some((row) => row.emailDispatched);
+}
+
 function unwrapRoundTripPayload(data: unknown): TransportRoundTripBookingResult | null {
   if (!data || typeof data !== 'object') return null;
   const payload = data as TransportRoundTripBookingResult;
@@ -143,6 +150,36 @@ export async function getTransportCancellationEligibility(
     return res.data.data as CancellationEligibility;
   } catch (error: unknown) {
     throw new Error(apiMessage(error, 'Failed to load cancellation eligibility'));
+  }
+}
+
+export async function generateTransportBoardingQr(
+  bookingId: string
+): Promise<{ qrToken: string; expiresAt: string }> {
+  try {
+    const api = getApiInstance();
+    const res = await api.post(`/api/bookings/transports/${bookingId}/qr-generate`, {});
+    const data = res.data?.data as { qrToken?: string; expiresAt?: string } | undefined;
+    if (!data?.qrToken) {
+      throw new Error(res.data?.message || 'QR code could not be created');
+    }
+    return { qrToken: data.qrToken, expiresAt: data.expiresAt || '' };
+  } catch (error: unknown) {
+    throw new Error(apiMessage(error, 'QR code could not be created'));
+  }
+}
+
+export async function scanTransportBoardingQr(qrToken: string): Promise<TransportBooking> {
+  try {
+    const api = getApiInstance();
+    const res = await api.post('/api/bookings/transports/qr-scan', { qrToken });
+    const booking = res.data?.data?.booking as TransportBooking | undefined;
+    if (!booking?.id) {
+      throw new Error(res.data?.message || 'Failed to validate QR code');
+    }
+    return booking;
+  } catch (error: unknown) {
+    throw new Error(apiMessage(error, 'Failed to validate QR code'));
   }
 }
 

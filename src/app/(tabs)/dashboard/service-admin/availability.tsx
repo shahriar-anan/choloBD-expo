@@ -3,6 +3,10 @@ import { View, Text, ScrollView, Pressable, ActivityIndicator } from 'react-nati
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
+import { format } from 'date-fns';
+import { TRANSLATION_KEYS } from '../../../../constants/translationKeys';
+import { appDateLocale } from '../../../../utilities/hotelDesk';
 import { getMyHotel } from '../../../../services/api/users';
 import { fetchHotelStayAvailability } from '../../../../services/api/hotels';
 import { useTheme } from '../../../../hooks/useTheme';
@@ -10,13 +14,11 @@ import { tabBarClearance } from '../../../../hooks/useHideTabBar';
 import theme from '../../../../constants/theme';
 import { formatDeskDay } from '../../../../utilities/hotelDesk';
 
-const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-
 const STAYS = [
-  { id: 'ALL_DAY', label: 'All day', hint: 'A full-day stay on that date' },
-  { id: 'MORNING', label: 'Morning', hint: '08:00–15:00' },
-  { id: 'AFTERNOON', label: 'Afternoon', hint: '15:00–22:00' },
-  { id: 'NIGHT', label: 'Night', hint: '22:00–08:00' },
+  { id: 'ALL_DAY', labelKey: TRANSLATION_KEYS.HOTEL_DESK.ALL_DAY, hintKey: TRANSLATION_KEYS.HOTEL_DESK.ALL_DAY_HINT },
+  { id: 'MORNING', labelKey: TRANSLATION_KEYS.HOTEL_DESK.MORNING, hint: '08:00–15:00' },
+  { id: 'AFTERNOON', labelKey: TRANSLATION_KEYS.HOTEL_DESK.AFTERNOON, hint: '15:00–22:00' },
+  { id: 'NIGHT', labelKey: TRANSLATION_KEYS.HOTEL_DESK.NIGHT, hint: '22:00–08:00' },
 ] as const;
 
 type StayId = (typeof STAYS)[number]['id'];
@@ -58,13 +60,13 @@ function formatRoomLabel(label: string): string {
     .replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
-function weekRangeLabel(start: Date): string {
+function weekRangeLabel(start: Date, locale: ReturnType<typeof appDateLocale>): string {
   const end = addDays(start, 6);
   const sameMonth = start.getMonth() === end.getMonth() && start.getFullYear() === end.getFullYear();
   if (sameMonth) {
-    return `${start.getDate()}–${formatDeskDay(end)}`;
+    return `${start.getDate()}–${formatDeskDay(end, locale)}`;
   }
-  return `${formatDeskDay(start)} – ${formatDeskDay(end)}`;
+  return `${formatDeskDay(start, locale)} – ${formatDeskDay(end, locale)}`;
 }
 
 type RoomStatus = 'open' | 'low' | 'sold' | 'unknown';
@@ -76,11 +78,11 @@ function roomStatus(available: number | null): RoomStatus {
   return 'open';
 }
 
-function statusLabel(status: RoomStatus, available: number | null): string {
-  if (status === 'sold') return 'Sold out';
+function statusLabel(status: RoomStatus, available: number | null, t: (key: string, options?: Record<string, unknown>) => string): string {
+  if (status === 'sold') return t(TRANSLATION_KEYS.HOTEL_DESK.SOLD_OUT);
   if (status === 'unknown') return '—';
-  if (status === 'low') return `${available} left`;
-  return `${available} free`;
+  if (status === 'low') return t(TRANSLATION_KEYS.HOTEL_DESK.LEFT_COUNT, { count: available ?? 0 });
+  return t(TRANSLATION_KEYS.HOTEL_DESK.FREE_COUNT, { count: available ?? 0 });
 }
 
 function tint(hex: string, alpha: number): string {
@@ -92,6 +94,9 @@ function tint(hex: string, alpha: number): string {
 
 export default function HotelAvailabilityScreen() {
   const router = useRouter();
+  const { t, i18n } = useTranslation();
+  const locale = appDateLocale(i18n.resolvedLanguage || i18n.language);
+  const weekdays = Array.from({ length: 7 }, (_, index) => format(addDays(new Date(2024, 0, 7), index), 'EEE', { locale }));
   const insets = useSafeAreaInsets();
   const { isDark } = useTheme();
   const textColor = isDark ? theme.colors['text-dark'] : theme.colors.text;
@@ -198,16 +203,16 @@ export default function HotelAvailabilityScreen() {
         <Pressable
           onPress={() => router.replace('/(tabs)/dashboard')}
           accessibilityRole="button"
-          accessibilityLabel="Back to dashboard"
+          accessibilityLabel={t(TRANSLATION_KEYS.HOTEL_DESK.BACK_TO_DASHBOARD)}
           hitSlop={8}
           style={{ padding: 6, alignSelf: 'flex-start' }}
         >
           <Ionicons name="chevron-back" size={24} color={textColor} />
         </Pressable>
 
-        <Text className="mt-2 text-2xl font-bold text-text dark:text-text-dark">Week availability</Text>
+        <Text className="mt-2 text-2xl font-bold text-text dark:text-text-dark">{t(TRANSLATION_KEYS.HOTEL_DESK.WEEK_TITLE)}</Text>
         <Text className="mt-1 text-sm text-muted dark:text-muted-dark">
-          Rooms still free to sell. A room held by a pending or confirmed stay is not counted.
+          {t(TRANSLATION_KEYS.HOTEL_DESK.WEEK_BODY)}
         </Text>
 
         <View
@@ -217,7 +222,7 @@ export default function HotelAvailabilityScreen() {
           <Pressable
             onPress={() => setWeekStart((current) => addDays(current, -7))}
             accessibilityRole="button"
-            accessibilityLabel="Previous week"
+            accessibilityLabel={t(TRANSLATION_KEYS.HOTEL_DESK.PREVIOUS_WEEK)}
             hitSlop={8}
             className="items-center justify-center w-10 h-10 rounded-full"
             style={{ backgroundColor: trackColor }}
@@ -225,19 +230,19 @@ export default function HotelAvailabilityScreen() {
             <Ionicons name="chevron-back" size={18} color={textColor} />
           </Pressable>
           <View className="items-center flex-1 px-2">
-            <Text className="text-base font-bold text-text dark:text-text-dark">{weekRangeLabel(weekStart)}</Text>
+            <Text className="text-base font-bold text-text dark:text-text-dark">{weekRangeLabel(weekStart, locale)}</Text>
             {onThisWeek ? (
-              <Text className="mt-0.5 text-xs text-muted dark:text-muted-dark">This week</Text>
+              <Text className="mt-0.5 text-xs text-muted dark:text-muted-dark">{t(TRANSLATION_KEYS.HOTEL_DESK.THIS_WEEK)}</Text>
             ) : (
               <Pressable onPress={() => setWeekStart(startOfToday())} accessibilityRole="button" hitSlop={6}>
-                <Text className="mt-0.5 text-xs font-semibold" style={{ color: primaryColor }}>Jump to this week</Text>
+                <Text className="mt-0.5 text-xs font-semibold" style={{ color: primaryColor }}>{t(TRANSLATION_KEYS.HOTEL_DESK.JUMP_THIS_WEEK)}</Text>
               </Pressable>
             )}
           </View>
           <Pressable
             onPress={() => setWeekStart((current) => addDays(current, 7))}
             accessibilityRole="button"
-            accessibilityLabel="Next week"
+            accessibilityLabel={t(TRANSLATION_KEYS.HOTEL_DESK.NEXT_WEEK)}
             hitSlop={8}
             className="items-center justify-center w-10 h-10 rounded-full"
             style={{ backgroundColor: trackColor }}
@@ -246,7 +251,7 @@ export default function HotelAvailabilityScreen() {
           </Pressable>
         </View>
 
-        <Text className="mt-5 text-xs font-semibold tracking-wide uppercase text-muted dark:text-muted-dark">Stay</Text>
+        <Text className="mt-5 text-xs font-semibold tracking-wide uppercase text-muted dark:text-muted-dark">{t(TRANSLATION_KEYS.HOTEL_DESK.STAY)}</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mt-2" contentContainerStyle={{ gap: 8 }}>
           {STAYS.map((item) => {
             const selected = item.id === stay;
@@ -263,18 +268,18 @@ export default function HotelAvailabilityScreen() {
                   borderColor: selected ? primaryColor : borderColor,
                 }}
               >
-                <Text className="text-sm font-semibold" style={{ color: selected ? '#fff' : textColor }}>{item.label}</Text>
+                <Text className="text-sm font-semibold" style={{ color: selected ? '#fff' : textColor }}>{t(item.labelKey)}</Text>
               </Pressable>
             );
           })}
         </ScrollView>
-        <Text className="mt-2 text-sm text-muted dark:text-muted-dark">{selectedStay.hint}</Text>
+        <Text className="mt-2 text-sm text-muted dark:text-muted-dark">{'hintKey' in selectedStay ? t(selectedStay.hintKey) : selectedStay.hint}</Text>
 
         <View className="flex-row flex-wrap gap-x-4 gap-y-1 mt-3">
           {([
-            ['open', 'Open'],
-            ['low', 'Few left'],
-            ['sold', 'Sold out'],
+            ['open', t(TRANSLATION_KEYS.HOTEL_DESK.OPEN)],
+            ['low', t(TRANSLATION_KEYS.HOTEL_DESK.FEW_LEFT)],
+            ['sold', t(TRANSLATION_KEYS.HOTEL_DESK.SOLD_OUT)],
           ] as const).map(([key, label]) => (
             <View key={key} className="flex-row items-center">
               <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: palette[key], marginRight: 6 }} />
@@ -286,15 +291,15 @@ export default function HotelAvailabilityScreen() {
         {!hotelReady || loading ? (
           <ActivityIndicator className="mt-10" size="large" color={primaryColor} />
         ) : !hotelId ? (
-          <Text className="mt-8 text-sm text-muted dark:text-muted-dark">No hotel is assigned to this account.</Text>
+          <Text className="mt-8 text-sm text-muted dark:text-muted-dark">{t(TRANSLATION_KEYS.HOTEL_DESK.NO_HOTEL_ASSIGNED)}</Text>
         ) : roomTypes.length === 0 ? (
-          <Text className="mt-8 text-sm text-muted dark:text-muted-dark">No room types returned for this week.</Text>
+          <Text className="mt-8 text-sm text-muted dark:text-muted-dark">{t(TRANSLATION_KEYS.HOTEL_DESK.NO_ROOM_TYPES_WEEK)}</Text>
         ) : (
           <View className="mt-5">
             <Text className="mb-3 text-sm text-muted dark:text-muted-dark">
               {fullyBookedDays > 0
-                ? `${fullyBookedDays} ${fullyBookedDays === 1 ? 'day' : 'days'} fully booked`
-                : 'No day is fully booked'}
+                ? t(TRANSLATION_KEYS.HOTEL_DESK.DAYS_FULLY_BOOKED, { count: fullyBookedDays })
+                : t(TRANSLATION_KEYS.HOTEL_DESK.NO_DAY_FULLY_BOOKED)}
             </Text>
             {days.map((day) => {
               const dayKey = toISODate(day);
@@ -317,17 +322,17 @@ export default function HotelAvailabilityScreen() {
                   <View className="flex-row items-center justify-between">
                     <View className="flex-row items-center">
                       <Text className="text-sm font-bold" style={{ color: isToday ? primaryColor : mutedColor }}>
-                        {WEEKDAYS[day.getDay()].toUpperCase()}
+                        {weekdays[day.getDay()]}
                       </Text>
-                      <Text className="ml-2 text-base font-bold text-text dark:text-text-dark">{formatDeskDay(day)}</Text>
+                      <Text className="ml-2 text-base font-bold text-text dark:text-text-dark">{formatDeskDay(day, locale)}</Text>
                       {isToday ? (
                         <View className="px-2 py-0.5 ml-2 rounded-full" style={{ backgroundColor: tint(primaryColor, 0.14) }}>
-                          <Text className="text-xs font-semibold" style={{ color: primaryColor }}>Today</Text>
+                          <Text className="text-xs font-semibold" style={{ color: primaryColor }}>{t(TRANSLATION_KEYS.HOTEL_DESK.TODAY)}</Text>
                         </View>
                       ) : null}
                     </View>
                     <Text className="text-sm font-semibold" style={{ color: daySoldOut ? palette.sold : textColor }}>
-                      {dayCells == null ? 'Could not load' : daySoldOut ? 'Fully booked' : `${freeCount} free`}
+                      {dayCells == null ? t(TRANSLATION_KEYS.HOTEL_DESK.COULD_NOT_LOAD) : daySoldOut ? t(TRANSLATION_KEYS.HOTEL_DESK.FULLY_BOOKED) : t(TRANSLATION_KEYS.HOTEL_DESK.FREE_COUNT, { count: freeCount ?? 0 })}
                     </Text>
                   </View>
 
@@ -347,7 +352,7 @@ export default function HotelAvailabilityScreen() {
                             {roomType.label}
                           </Text>
                           <View className="px-2.5 py-1 rounded-full" style={{ backgroundColor: tint(color, 0.14) }}>
-                            <Text className="text-xs font-bold" style={{ color }}>{statusLabel(status, available)}</Text>
+                            <Text className="text-xs font-bold" style={{ color }}>{statusLabel(status, available, t)}</Text>
                           </View>
                         </View>
                         {showMeter ? (
@@ -357,7 +362,7 @@ export default function HotelAvailabilityScreen() {
                         ) : null}
                         {typeof total === 'number' ? (
                           <Text className="mt-1 text-xs text-muted dark:text-muted-dark">
-                            {available === null ? 'Not loaded' : `${available} of ${total} rooms`}
+                            {available === null ? t(TRANSLATION_KEYS.HOTEL_DESK.NOT_LOADED) : t(TRANSLATION_KEYS.HOTEL_DESK.ROOMS_OF_TOTAL, { available, total })}
                           </Text>
                         ) : null}
                       </View>

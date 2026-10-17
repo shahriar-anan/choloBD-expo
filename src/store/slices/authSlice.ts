@@ -97,7 +97,7 @@ export const loginUser = createAsyncThunk<
 });
 
 export const registerUser = createAsyncThunk<
-  { tokens: AuthTokens; user: AuthUser },
+  { tokens: AuthTokens; user: AuthUser; emailDispatched: boolean },
   { email: string; password: string; userName: string },
   { rejectValue: string }
 >('auth/register', async (payload, { rejectWithValue }) => {
@@ -105,11 +105,20 @@ export const registerUser = createAsyncThunk<
     // Use direct axios + API_BASE_URL to avoid triggering auth interceptors/refresh logic
     // The anonymous mobile registration endpoint is `/api/auth/register-jwt` (server expects this)
     const res = await axios.post(`${API_BASE_URL}/api/auth/register-jwt`, payload, { timeout: 10000 });
-    const data = res.data as ApiResponse<{ accessToken: string; refreshToken: string; user: AuthUser }>;
+    const data = res.data as ApiResponse<{
+      accessToken: string;
+      refreshToken: string;
+      user: AuthUser;
+      emailDispatched?: boolean;
+    }>;
     await saveTokens({ accessToken: data.data.accessToken, refreshToken: data.data.refreshToken });
     await saveUserIdAndRole(data.data.user.id, data.data.user.role);
     await saveUser(data.data.user);
-    return { tokens: { accessToken: data.data.accessToken, refreshToken: data.data.refreshToken }, user: data.data.user };
+    return {
+      tokens: { accessToken: data.data.accessToken, refreshToken: data.data.refreshToken },
+      user: data.data.user,
+      emailDispatched: Boolean(data.data.emailDispatched),
+    };
   } catch (error: unknown) {
     const message = authFailureMessage(error, TRANSLATION_KEYS.AUTH.REGISTER.FAILED);
     if (__DEV__) {

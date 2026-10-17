@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Controller, useForm } from 'react-hook-form';
@@ -34,15 +34,27 @@ export default function Register() {
     defaultValues: { userName: '', email: '', password: '', confirm: '' },
   });
 
-  const onSubmit = (values: RegisterForm) => {
+  const onSubmit = async (values: RegisterForm) => {
     if (auth.isLoading) {
       return;
     }
-    void dispatch(registerUser({
-      email: values.email.trim().toLowerCase(),
-      password: values.password,
-      userName: values.userName.trim(),
-    }));
+    try {
+      const result = await dispatch(
+        registerUser({
+          email: values.email.trim().toLowerCase(),
+          password: values.password,
+          userName: values.userName.trim(),
+        })
+      ).unwrap();
+      if (result.emailDispatched) {
+        Alert.alert(
+          t(TRANSLATION_KEYS.AUTH.REGISTER.CREATE_ACCOUNT),
+          t(TRANSLATION_KEYS.AUTH.REGISTER.WELCOME_EMAIL)
+        );
+      }
+    } catch {
+      // Error state is handled in auth slice.
+    }
   };
 
   const edit = (onChange: (value: string) => void) => (value: string) => {

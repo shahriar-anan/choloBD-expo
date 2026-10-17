@@ -49,7 +49,9 @@ export interface UpdateHotelProfileData {
   amenitiesBn?: string[];
   policiesBn?: string[];
   nearbyTourSpots?: string[];
+  nearbyTourSpotsBn?: string[];
   nearbyActivitySpots?: string[];
+  nearbyActivitySpotsBn?: string[];
 }
 
 export async function updateMyHotel(hotelId: string, data: UpdateHotelProfileData): Promise<any> {

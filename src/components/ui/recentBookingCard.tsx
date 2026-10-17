@@ -11,6 +11,7 @@ import { profilePhotoUri } from '../../utilities/profileImage';
 interface RecentBookingCardProps {
   item: RecentBookingView;
   onPress?: (item: RecentBookingView) => void;
+  onDelete?: (item: RecentBookingView) => void;
   onQrPress?: (item: RecentBookingView) => void;
   compact?: boolean;
 }
@@ -60,7 +61,7 @@ function statusColor(status: string | undefined, isDark: boolean): string {
   }
 }
 
-export function RecentBookingCard({ item, onPress, onQrPress, compact = false }: RecentBookingCardProps) {
+export function RecentBookingCard({ item, onPress, onDelete, onQrPress, compact = false }: RecentBookingCardProps) {
   const { isDark } = useTheme();
   const { t } = useTranslation();
   const primary = isDark ? theme.colors['primary-dark'] : theme.colors.primary;
@@ -68,6 +69,7 @@ export function RecentBookingCard({ item, onPress, onQrPress, compact = false }:
   const pale = isDark ? theme.colors['surface-2-dark'] : theme.colors['surface-2'];
   const bookingStatus = statusColor(item.status, isDark);
   const payment = statusColor(item.paymentStatus, isDark);
+  const danger = isDark ? theme.colors['error-dark'] : theme.colors.error;
   const [photoFailed, setPhotoFailed] = useState(false);
   useEffect(() => {
     setPhotoFailed(false);
@@ -130,9 +132,20 @@ export function RecentBookingCard({ item, onPress, onQrPress, compact = false }:
             {item.price != null ? ` · ৳${item.price}` : ''}
           </Text>
         </View>
+        {onDelete ? (
+          <Pressable
+            onPress={() => onDelete(item)}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel={t(TRANSLATION_KEYS.COMMON.DELETE)}
+            className="p-2"
+          >
+            <Ionicons name="trash-outline" size={18} color={danger} />
+          </Pressable>
+        ) : null}
         {onPress ? <Ionicons name="chevron-forward" size={16} color={muted} /> : null}
       </View>
-      {onQrPress && String(item.status || '').toUpperCase() !== 'CANCELLED' && (item.kind === 'hotel' || item.kind === 'activity' || item.kind === 'transport') ? (
+      {onQrPress && String(item.status || '').toUpperCase() !== 'CANCELLED' && (item.kind === 'hotel' || item.kind === 'activity' || (item.kind === 'transport' && item.busTicket)) ? (
         <Pressable
           onPress={() => onQrPress(item)}
           accessibilityRole="button"

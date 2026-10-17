@@ -6,6 +6,7 @@ declare module 'axios' {
   }
 }
 import { getTokens, saveTokens, clearTokens } from '../../lib/secureStore';
+import { isBanglaContent } from './catalogLang';
 
 let api: AxiosInstance | null = null;
 let apiBaseURL = '';
@@ -98,6 +99,9 @@ export function createApi(baseURL: string) {
         } catch {
           // The stored access token is sent. A 401 still refreshes once.
         }
+      }
+      if (cfg.headers) {
+        cfg.headers['X-App-Language'] = isBanglaContent() ? 'bn' : 'en';
       }
       if (accessToken && cfg.headers) {
         cfg.headers.Authorization = `Bearer ${accessToken}`;

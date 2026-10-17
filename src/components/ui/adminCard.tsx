@@ -23,7 +23,7 @@ export const AdminCard: React.FC<AdminCardProps> = ({ title, subtitle, onPress }
     <TouchableOpacity onPress={handlePress} activeOpacity={0.8}>
       <View className="p-4 rounded-xl bg-white dark:bg-surface-dark border border-border dark:border-border-dark" style={{ elevation: 2 }}>
         <View className="flex-row items-center justify-between">
-          <View>
+          <View className="flex-1 pr-3">
             <Text className="text-lg font-semibold text-text dark:text-text-dark">{title}</Text>
             {subtitle ? (
               <Text

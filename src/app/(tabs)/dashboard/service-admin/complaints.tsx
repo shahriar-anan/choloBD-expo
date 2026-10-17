@@ -4,6 +4,8 @@ import { KeyboardAwareScroll } from '../../../../components/ui/KeyboardAwareScro
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
+import { TRANSLATION_KEYS } from '../../../../constants/translationKeys';
 import theme from '../../../../constants/theme';
 import { useTheme } from '../../../../hooks/useTheme';
 import {
@@ -16,6 +18,7 @@ import {
 
 export default function HotelComplaintsPage() {
   const router = useRouter();
+  const { t } = useTranslation();
   const { isDark } = useTheme();
   const [complaints, setComplaints] = useState<HotelComplaint[]>([]);
   const [loading, setLoading] = useState(true);
@@ -29,11 +32,11 @@ export default function HotelComplaintsPage() {
     try {
       setComplaints(await getComplaintInbox());
     } catch (error: any) {
-      Alert.alert('Complaints', error?.response?.data?.message || 'Could not load complaints.');
+      Alert.alert(t(TRANSLATION_KEYS.DASHBOARD.ADMIN_CARDS.COMPLAINTS), error?.response?.data?.message || t(TRANSLATION_KEYS.HOTEL_DESK.COULD_NOT_LOAD_COMPLAINTS));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     void load();
@@ -45,7 +48,7 @@ export default function HotelComplaintsPage() {
     try {
       setComments(await getComplaintComments(complaint.id));
     } catch (error: any) {
-      Alert.alert('Complaints', error?.response?.data?.message || 'Could not load comments.');
+      Alert.alert(t(TRANSLATION_KEYS.DASHBOARD.ADMIN_CARDS.COMPLAINTS), error?.response?.data?.message || t(TRANSLATION_KEYS.HOTEL_DESK.COULD_NOT_LOAD_COMMENTS));
     }
   };
 
@@ -57,7 +60,7 @@ export default function HotelComplaintsPage() {
       setDraft('');
       setComments(await getComplaintComments(complaintId));
     } catch (error: any) {
-      Alert.alert('Complaints', error?.response?.data?.message || 'Could not add the comment.');
+      Alert.alert(t(TRANSLATION_KEYS.DASHBOARD.ADMIN_CARDS.COMPLAINTS), error?.response?.data?.message || t(TRANSLATION_KEYS.HOTEL_DESK.COULD_NOT_ADD_COMMENT));
     } finally {
       setBusy(false);
     }
@@ -70,7 +73,7 @@ export default function HotelComplaintsPage() {
       await load();
       setOpenId(null);
     } catch (error: any) {
-      Alert.alert('Complaints', error?.response?.data?.message || 'Could not update the complaint.');
+      Alert.alert(t(TRANSLATION_KEYS.DASHBOARD.ADMIN_CARDS.COMPLAINTS), error?.response?.data?.message || t(TRANSLATION_KEYS.HOTEL_DESK.COULD_NOT_UPDATE_COMPLAINT));
     } finally {
       setBusy(false);
     }
@@ -82,13 +85,13 @@ export default function HotelComplaintsPage() {
         <Pressable onPress={() => router.replace('/(tabs)/dashboard')} style={{ padding: 6 }}>
           <Ionicons name="chevron-back" size={24} color={isDark ? theme.colors['text-dark'] : theme.colors.text} />
         </Pressable>
-        <Text className="mt-2 text-2xl font-bold text-text dark:text-text-dark">Complaints</Text>
-        <Text className="mt-1 mb-4 text-sm text-muted dark:text-muted-dark">Guest complaints for your hotel</Text>
+        <Text className="mt-2 text-2xl font-bold text-text dark:text-text-dark">{t(TRANSLATION_KEYS.DASHBOARD.ADMIN_CARDS.COMPLAINTS)}</Text>
+        <Text className="mt-1 mb-4 text-sm text-muted dark:text-muted-dark">{t(TRANSLATION_KEYS.DASHBOARD.ADMIN_CARDS.COMPLAINTS_DESC)}</Text>
 
         {loading ? (
           <ActivityIndicator color={theme.colors.primary} />
         ) : complaints.length === 0 ? (
-          <Text className="text-sm text-muted dark:text-muted-dark">No complaints in the inbox.</Text>
+          <Text className="text-sm text-muted dark:text-muted-dark">{t(TRANSLATION_KEYS.HOTEL_DESK.COMPLAINTS_EMPTY)}</Text>
         ) : (
           complaints.map((complaint) => {
             const open = openId === complaint.id;
@@ -104,7 +107,7 @@ export default function HotelComplaintsPage() {
                   <View className="mt-3">
                     {comments.map((comment) => (
                       <Text key={comment.id} className="mb-2 text-sm text-muted dark:text-muted-dark">
-                        {comment.authorName || comment.author?.userName || 'Staff'}: {comment.content}
+                        {comment.authorName || comment.author?.userName || t(TRANSLATION_KEYS.HOTEL_DESK.STAFF)}: {comment.content}
                       </Text>
                     ))}
                     {status !== 'CLOSED' ? (
@@ -112,20 +115,20 @@ export default function HotelComplaintsPage() {
                         <TextInput
                           value={draft}
                           onChangeText={setDraft}
-                          placeholder="Write a comment"
+                          placeholder={t(TRANSLATION_KEYS.HOTEL_DESK.WRITE_COMMENT)}
                           className="px-3 py-2 mt-2 border rounded-lg border-border dark:border-border-dark text-text dark:text-text-dark"
                         />
                         <Pressable onPress={() => void sendComment(complaint.id)} disabled={busy} className="px-3 py-2 mt-2 rounded-lg bg-primary">
-                          <Text className="font-semibold text-center text-white">Send comment</Text>
+                          <Text className="font-semibold text-center text-white">{t(TRANSLATION_KEYS.HOTEL_DESK.SEND_COMMENT)}</Text>
                         </Pressable>
                         <View className="flex-row gap-2 mt-2">
                           {status === 'OPEN' ? (
                             <Pressable onPress={() => void changeStatus(complaint.id, 'UNSOLVED')} disabled={busy} className="flex-1 px-3 py-2 border rounded-lg border-border dark:border-border-dark">
-                              <Text className="text-sm font-semibold text-center text-text dark:text-text-dark">Unsolved</Text>
+                              <Text className="text-sm font-semibold text-center text-text dark:text-text-dark">{t(TRANSLATION_KEYS.HOTEL_DESK.UNSOLVED)}</Text>
                             </Pressable>
                           ) : null}
                           <Pressable onPress={() => void changeStatus(complaint.id, 'CLOSED')} disabled={busy} className="flex-1 px-3 py-2 border rounded-lg border-border dark:border-border-dark">
-                            <Text className="text-sm font-semibold text-center text-text dark:text-text-dark">Close</Text>
+                            <Text className="text-sm font-semibold text-center text-text dark:text-text-dark">{t(TRANSLATION_KEYS.COMMON.CLOSE)}</Text>
                           </Pressable>
                         </View>
                       </>

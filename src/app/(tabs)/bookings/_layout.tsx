@@ -15,6 +15,7 @@ export default function BookingsLayout() {
       <Stack.Screen name="index" />
       <Stack.Screen name="stay/[bookingId]" />
       <Stack.Screen name="ticket/[bookingId]" />
+      <Stack.Screen name="bus-boarding-qr/[bookingId]" />
       <Stack.Screen name="activity/[bookingId]" />
     </Stack>
   );

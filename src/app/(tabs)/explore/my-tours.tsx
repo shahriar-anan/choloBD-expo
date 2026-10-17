@@ -49,19 +49,19 @@ export default function MyToursPage() {
 
   const handleDeleteTour = (tourId: string) => {
     Alert.alert(
-      'Delete Tour',
-      'Are you sure you want to delete this tour package? This cannot be undone.',
+      t(TRANSLATION_KEYS.TOUR_BUILDER.DELETE_TOUR_TITLE),
+      t(TRANSLATION_KEYS.TOUR_BUILDER.DELETE_TOUR_BODY),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t(TRANSLATION_KEYS.COMMON.CANCEL), style: 'cancel' },
         {
-          text: 'Delete',
+          text: t(TRANSLATION_KEYS.COMMON.DELETE),
           style: 'destructive',
           onPress: async () => {
             try {
               await deleteTour(tourId);
-              Alert.alert('Deleted', 'Tour package deleted successfully.');
+              Alert.alert(t(TRANSLATION_KEYS.TOUR_BUILDER.DELETED_TITLE), t(TRANSLATION_KEYS.TOUR_BUILDER.DELETED_BODY));
             } catch {
-              Alert.alert('Error', 'Failed to delete tour. Please try again.');
+              Alert.alert(t(TRANSLATION_KEYS.COMMON.ERROR), t(TRANSLATION_KEYS.TOUR_BUILDER.DELETE_FAILED));
             }
           },
         },

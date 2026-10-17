@@ -27,8 +27,6 @@ import {
 import { CatalogPickerModal } from './CatalogPickerModal';
 import { CatalogPickKind, CatalogPickResult } from './catalogPickerTypes';
 import { SelectedPlaceRow } from './SelectedPlaceRow';
-import { ContentWriteLanguage, OptionalBanglaField } from '../ui/ContentLanguageFields';
-import { isBanglaContent } from '../../services/api/catalogLang';
 
 export interface NamedOption {
   id: string;
@@ -40,7 +38,6 @@ export interface NamedOption {
 interface StopEditorSheetProps {
   visible: boolean;
   stop: WizardStop;
-  contentLanguage?: ContentWriteLanguage;
   divisionId: string;
   isLastStop: boolean;
   onClose: () => void;
@@ -52,7 +49,6 @@ type PickerState = { kind: CatalogPickKind } | null;
 export function StopEditorSheet({
   visible,
   stop,
-  contentLanguage = 'en',
   divisionId,
   isLastStop,
   onClose,
@@ -99,9 +95,7 @@ export function StopEditorSheet({
         tourSpotName: pick.name,
         tourSpotImageUrl: pick.imageUrl,
         shortDescription:
-          prev.shortDescription.trim().length < 2 && (contentLanguage === 'bn' || !isBanglaContent())
-            ? pick.name.slice(0, 200)
-            : prev.shortDescription,
+          prev.shortDescription.trim().length < 2 ? pick.name.slice(0, 200) : prev.shortDescription,
       }));
       return;
     }
@@ -175,7 +169,6 @@ export function StopEditorSheet({
             >
               <Text className="text-sm font-semibold text-text dark:text-text-dark mb-2">
                 {t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_STOP_DESC)}
-                {contentLanguage === 'bn' ? ` · ${t(TRANSLATION_KEYS.CONTENT_LANGUAGE.BANGLA)}` : ''}
               </Text>
               <TextInput
                 value={draft.shortDescription}
@@ -184,17 +177,8 @@ export function StopEditorSheet({
                 textAlignVertical="top"
                 placeholder={t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_STOP_DESC_PH)}
                 placeholderTextColor={mutedColor}
-                className="border border-border dark:border-border-dark rounded-xl px-3 py-3 text-text dark:text-text-dark min-h-[96px] bg-surface dark:bg-surface-dark"
+                className="border border-border dark:border-border-dark rounded-xl px-3 py-3 text-text dark:text-text-dark mb-4 min-h-[96px] bg-surface dark:bg-surface-dark"
               />
-              {contentLanguage === 'en' ? (
-                <OptionalBanglaField
-                  value={draft.shortDescriptionBn || ''}
-                  onChangeText={(shortDescriptionBn) => setDraft((prev) => ({ ...prev, shortDescriptionBn }))}
-                  multiline
-                  placeholderTextColor={mutedColor}
-                  className="border border-border dark:border-border-dark rounded-xl px-3 py-3 text-text dark:text-text-dark mb-4 min-h-[96px] bg-surface dark:bg-surface-dark"
-                />
-              ) : <View className="mb-4" />}
 
               <View className="rounded-2xl p-3 mb-4 bg-surface dark:bg-surface-dark">
                 <Text className="text-sm font-bold text-text dark:text-text-dark mb-1">
@@ -292,7 +276,6 @@ export function StopEditorSheet({
 
               <Text className="text-sm font-semibold text-text dark:text-text-dark mb-2">
                 {t(TRANSLATION_KEYS.TRIP_PLANNER.WIZARD_NOTES)}
-                {contentLanguage === 'bn' ? ` · ${t(TRANSLATION_KEYS.CONTENT_LANGUAGE.BANGLA)}` : ''}
               </Text>
               <TextInput
                 value={draft.notes || ''}
@@ -303,15 +286,6 @@ export function StopEditorSheet({
                 placeholderTextColor={mutedColor}
                 className="border border-border dark:border-border-dark rounded-xl px-3 py-3 text-text dark:text-text-dark mb-2 min-h-[80px] bg-surface dark:bg-surface-dark"
               />
-              {contentLanguage === 'en' ? (
-                <OptionalBanglaField
-                  value={draft.notesBn || ''}
-                  onChangeText={(notesBn) => setDraft((prev) => ({ ...prev, notesBn }))}
-                  multiline
-                  placeholderTextColor={mutedColor}
-                  className="border border-border dark:border-border-dark rounded-xl px-3 py-3 text-text dark:text-text-dark mb-2 min-h-[80px] bg-surface dark:bg-surface-dark"
-                />
-              ) : null}
             </KeyboardAwareScroll>
             <View className="px-4 py-3 border-t border-border dark:border-border-dark">
               {error ? <Text className="text-error text-sm mb-2 text-center">{error}</Text> : null}

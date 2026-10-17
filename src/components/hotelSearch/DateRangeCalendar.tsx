@@ -1,11 +1,13 @@
 import React, { useMemo, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
-import { addMonths, format, isSameDay, isWithinInterval, startOfDay, startOfMonth } from 'date-fns';
+import { addDays, addMonths, format, isSameDay, isWithinInterval, startOfDay, startOfMonth } from 'date-fns';
+import { useTranslation } from 'react-i18next';
+import { appDateLocale } from '../../utilities/hotelDesk';
 import { useTheme } from '../../hooks/useTheme';
 import theme from '../../constants/theme';
 import { isPastDay, monthGrid } from '../../utilities/hotelSearch';
 
-const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const WEEK_START = new Date(2024, 0, 7);
 
 export function DateRangeCalendar({
     checkIn,
@@ -19,6 +21,9 @@ export function DateRangeCalendar({
     singleDate?: boolean;
 }) {
     const { isDark } = useTheme();
+    const { i18n } = useTranslation();
+    const locale = appDateLocale(i18n.resolvedLanguage || i18n.language);
+    const weekdays = Array.from({ length: 7 }, (_, index) => format(addDays(WEEK_START, index), 'EEE', { locale }));
     const primary = isDark ? theme.colors['primary-dark'] : theme.colors.primary;
     const text = isDark ? theme.colors['text-dark'] : theme.colors.text;
     const muted = isDark ? theme.colors['muted-dark'] : theme.colors.muted;
@@ -52,10 +57,10 @@ export function DateRangeCalendar({
             {months.map((month) => (
                 <View key={month.toISOString()} className="px-4 mb-6">
                     <Text className="mb-3 text-base font-bold text-center text-text dark:text-text-dark">
-                        {format(month, 'MMMM yyyy')}
+                        {format(month, 'MMMM yyyy', { locale })}
                     </Text>
                     <View className="flex-row mb-2">
-                        {WEEKDAYS.map((day) => (
+                        {weekdays.map((day) => (
                             <Text key={day} className="flex-1 text-xs text-center text-muted dark:text-muted-dark">{day}</Text>
                         ))}
                     </View>

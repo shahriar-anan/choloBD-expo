@@ -272,6 +272,7 @@ export interface TransportBooking {
   price: number;
   totalPrice: number;
   confirmationCode: string;
+  emailDispatched?: boolean;
   status: TransportBookingStatus;
   paymentStatus: TransportPaymentStatus;
   paymentMethod?: string | null;

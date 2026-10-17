@@ -203,7 +203,8 @@ export async function getTransportTripSeats(tripId: string): Promise<TransportTr
 }
 
 export async function getTransportVehicles(
-  filters: TransportVehicleFilters
+  filters: TransportVehicleFilters,
+  options?: { localize?: boolean }
 ): Promise<TransportVehicle[]> {
   try {
     const api = getApiInstance();
@@ -211,7 +212,9 @@ export async function getTransportVehicles(
     if (filters.transportClassId) params.transportClassId = filters.transportClassId;
     if (filters.checkInDate) params.checkInDate = filters.checkInDate;
     if (filters.checkOutDate) params.checkOutDate = filters.checkOutDate;
-    const res = await api.get('/api/transport-inventory/vehicles', { params });
+    const res = await api.get('/api/transport-inventory/vehicles', {
+      params: options?.localize ? withCatalogLang(params) : params,
+    });
     return unwrapList<TransportVehicle>(res.data?.data);
   } catch (error: unknown) {
     throw new Error(apiMessage(error, 'Failed to load vehicles'));

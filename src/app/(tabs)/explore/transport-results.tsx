@@ -170,7 +170,7 @@ export default function TransportResultsPage() {
                   transportId: operator.id,
                   checkInDate: pickupIso,
                   checkOutDate: returnIso,
-                });
+                }, { localize: true });
                 return vehicles
                   .filter((vehicle) => vehicle.isAvailable !== false)
                   .map((vehicle) => ({

@@ -19,9 +19,14 @@ export async function getOwnWallet(): Promise<OwnWallet> {
   return res.data.data as OwnWallet;
 }
 
-export async function chargeWalletCredits(input: ChargeWalletCreditsInput): Promise<void> {
+export interface ChargeWalletCreditsResult {
+  emailDispatched?: boolean;
+}
+
+export async function chargeWalletCredits(input: ChargeWalletCreditsInput): Promise<ChargeWalletCreditsResult> {
   const api = getApiInstance();
-  await api.post('/api/wallets/own-wallet/charge-credits', input);
+  const res = await api.post('/api/wallets/own-wallet/charge-credits', input);
+  return (res.data?.data ?? {}) as ChargeWalletCreditsResult;
 }
 
 export function pointsCostForTotal(totalPrice: number): number {

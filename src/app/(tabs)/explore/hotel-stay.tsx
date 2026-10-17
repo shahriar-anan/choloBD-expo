@@ -3,6 +3,9 @@ import { ActivityIndicator, Image, Pressable, ScrollView, Text, View } from 'rea
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
+import { TRANSLATION_KEYS } from '../../../constants/translationKeys';
+import { appDateLocale } from '../../../utilities/hotelDesk';
 import { useTheme } from '../../../hooks/useTheme';
 import theme from '../../../constants/theme';
 import { GradientAppBar } from '../../../components/hotelSearch/HotelFlowChrome';
@@ -14,6 +17,8 @@ import { goBack } from '../../../utilities/navigation';
 
 export default function HotelStayPage() {
     const router = useRouter();
+    const { t, i18n } = useTranslation();
+    const locale = appDateLocale(i18n.resolvedLanguage || i18n.language);
     const { hotelId } = useLocalSearchParams<{ hotelId: string }>();
     const { isDark } = useTheme();
     const { params } = useHotelSearch();
@@ -24,7 +29,10 @@ export default function HotelStayPage() {
     const [error, setError] = useState(false);
     const [expanded, setExpanded] = useState(false);
     const [photoIndex, setPhotoIndex] = useState(0);
-    const subtitle = `${shortRangeLabel(params.checkIn, params.checkOut)}, ${params.roomCount} Room${params.roomCount === 1 ? '' : 's'}`;
+    const subtitle = t(TRANSLATION_KEYS.HOTEL_SEARCH.STAY_SUMMARY, {
+        range: shortRangeLabel(params.checkIn, params.checkOut, locale),
+        rooms: t(TRANSLATION_KEYS.HOTEL_SEARCH.ROOM_COUNT, { count: params.roomCount }),
+    });
 
     useEffect(() => {
         if (!hotelId) {
@@ -68,9 +76,9 @@ export default function HotelStayPage() {
 
     return (
         <SafeAreaView className="flex-1 bg-background dark:bg-background-dark">
-            <GradientAppBar title={hotel?.name || 'Hotel'} subtitle={subtitle} onBack={() => goBack(router)} />
+            <GradientAppBar title={hotel?.name || t(TRANSLATION_KEYS.HOTEL_SEARCH.TITLE)} subtitle={subtitle} onBack={() => goBack(router)} />
             {loading ? <ActivityIndicator className="mt-10" color={primary} /> : null}
-            {error ? <Text className="px-4 mt-6 text-sm text-error">Could not load this hotel.</Text> : null}
+            {error ? <Text className="px-4 mt-6 text-sm text-error">{t(TRANSLATION_KEYS.HOTEL_SEARCH.LOAD_HOTEL_FAILED)}</Text> : null}
             {hotel ? (
                 <>
                     <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 24 }}>
@@ -102,23 +110,23 @@ export default function HotelStayPage() {
                                         {hotel.description}
                                     </Text>
                                     <Pressable onPress={() => setExpanded((current) => !current)}>
-                                        <Text style={{ color: primary }}>{expanded ? 'Show less' : 'Read more'}</Text>
+                                        <Text style={{ color: primary }}>{expanded ? t(TRANSLATION_KEYS.HOTEL_SEARCH.SHOW_LESS) : t(TRANSLATION_KEYS.HOTEL_SEARCH.READ_MORE)}</Text>
                                     </Pressable>
                                 </View>
                             ) : null}
                             {(hotel.checkInTime || hotel.checkOutTime) ? (
                                 <View className="mt-6">
-                                    <Text className="mb-2 text-lg font-bold text-text dark:text-text-dark">Hotel policy</Text>
+                                    <Text className="mb-2 text-lg font-bold text-text dark:text-text-dark">{t(TRANSLATION_KEYS.HOTEL_SEARCH.POLICY)}</Text>
                                     <View className="flex-row gap-3">
                                         {hotel.checkInTime ? (
                                             <View className="flex-1 p-3 rounded-xl bg-white dark:bg-surface-dark">
-                                                <Text className="text-xs text-muted dark:text-muted-dark">Check-in</Text>
+                                                <Text className="text-xs text-muted dark:text-muted-dark">{t(TRANSLATION_KEYS.HOTEL_SEARCH.CHECK_IN)}</Text>
                                                 <Text className="font-bold text-text dark:text-text-dark">{hotel.checkInTime}</Text>
                                             </View>
                                         ) : null}
                                         {hotel.checkOutTime ? (
                                             <View className="flex-1 p-3 rounded-xl bg-white dark:bg-surface-dark">
-                                                <Text className="text-xs text-muted dark:text-muted-dark">Check-out</Text>
+                                                <Text className="text-xs text-muted dark:text-muted-dark">{t(TRANSLATION_KEYS.HOTEL_SEARCH.CHECK_OUT)}</Text>
                                                 <Text className="font-bold text-text dark:text-text-dark">{hotel.checkOutTime}</Text>
                                             </View>
                                         ) : null}
@@ -127,7 +135,7 @@ export default function HotelStayPage() {
                             ) : null}
                             {amenities.length > 0 ? (
                                 <View className="mt-6">
-                                    <Text className="mb-3 text-lg font-bold text-text dark:text-text-dark">Facilities</Text>
+                                    <Text className="mb-3 text-lg font-bold text-text dark:text-text-dark">{t(TRANSLATION_KEYS.HOTEL_SEARCH.FACILITIES)}</Text>
                                     <View className="flex-row flex-wrap" style={{ gap: 8 }}>
                                         {amenities.map((amenity) => (
                                             <View
@@ -143,7 +151,7 @@ export default function HotelStayPage() {
                             ) : null}
                             {hotel.policies && hotel.policies.length > 0 ? (
                                 <View className="mt-6">
-                                    <Text className="mb-2 text-lg font-bold text-text dark:text-text-dark">Please note</Text>
+                                    <Text className="mb-2 text-lg font-bold text-text dark:text-text-dark">{t(TRANSLATION_KEYS.HOTEL_SEARCH.PLEASE_NOTE)}</Text>
                                     {hotel.policies.map((policy) => (
                                         <Text key={policy} className="mb-1 text-sm text-text dark:text-text-dark">• {policy}</Text>
                                     ))}
@@ -153,10 +161,10 @@ export default function HotelStayPage() {
                     </ScrollView>
                     <View className="flex-row items-center px-4 pt-3 pb-3 border-t border-border dark:border-border-dark bg-surface dark:bg-surface-dark">
                         <View className="flex-1 mr-3">
-                            <Text className="text-xs text-muted dark:text-muted-dark">Starts from</Text>
+                            <Text className="text-xs text-muted dark:text-muted-dark">{t(TRANSLATION_KEYS.HOTEL_SEARCH.STARTS_FROM_LABEL)}</Text>
                             <Text className="text-xl font-bold text-text dark:text-text-dark" numberOfLines={1}>
                                 {price !== null ? formatMoney(price) : '—'}
-                                {price !== null ? <Text className="text-sm font-normal text-muted dark:text-muted-dark"> / night</Text> : null}
+                                {price !== null ? <Text className="text-sm font-normal text-muted dark:text-muted-dark"> {t(TRANSLATION_KEYS.HOTEL_SEARCH.PER_NIGHT_SHORT)}</Text> : null}
                             </Text>
                         </View>
                         <Pressable
@@ -165,7 +173,7 @@ export default function HotelStayPage() {
                             className="items-center justify-center px-5 rounded-full"
                             style={{ backgroundColor: primary, minHeight: 48 }}
                         >
-                            <Text className="text-base font-bold text-white">See all rooms</Text>
+                            <Text className="text-base font-bold text-white">{t(TRANSLATION_KEYS.HOTEL_SEARCH.SEE_ROOMS)}</Text>
                         </Pressable>
                     </View>
                 </>

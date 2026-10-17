@@ -13,6 +13,8 @@ export interface RecentBookingView {
   price: number | null;
   sortTime: number;
   imageUrl: string | null;
+  /** Set for transport rows when the ticket is a bus booking (boarding QR eligible). */
+  busTicket?: boolean;
 }
 
 export interface TravelerBookingSources {
@@ -111,6 +113,7 @@ export function mapTransport(booking: any): RecentBookingView | null {
     price: money(booking.totalPrice ?? booking.price),
     sortTime: bookingSortTime(booking),
     imageUrl: transportBookingCoverUrl(booking),
+    busTicket: booking.transportType === 'BUS',
   };
 }
 
@@ -179,6 +182,31 @@ function mapTrip(booking: any): RecentBookingView | null {
   };
 }
 
+function isSeedFixture(raw: any): boolean {
+  const code = raw?.confirmationCode;
+  return typeof code === 'string' && code.toUpperCase().includes('SEED');
+}
+
+function placedAt(raw: any): number {
+  const value = raw?.bookedAt;
+  if (!value) {
+    return 0;
+  }
+  const time = new Date(value).getTime();
+  return Number.isNaN(time) ? 0 : time;
+}
+
+function liveRows(rows: any[]): any[] {
+  return rows.filter((raw) => !isSeedFixture(raw));
+}
+
+function withPlacedAt(raw: any, mapped: RecentBookingView | null): RecentBookingView | null {
+  if (!mapped) {
+    return null;
+  }
+  return { ...mapped, sortTime: placedAt(raw) };
+}
+
 function serviceTime(raw: any): number {
   const value = raw?.checkInDate || raw?.departureDateTime || raw?.startTime || raw?.bookingDate || raw?.bookedAt;
   if (!value) {
@@ -196,13 +224,21 @@ function withServiceTime(raw: any, mapped: RecentBookingView | null): RecentBook
   return when > 0 ? { ...mapped, sortTime: when } : mapped;
 }
 
-/** Hotel, ticket, activity, and guide rows. Trip plans and packages stay off this list. */
+const RESERVATION_KINDS = new Set<RecentBookingKind>(['hotel', 'transport', 'activity', 'guide']);
+
+/** Newest hotel, ticket, activity, and guide bookings. Trip plans, packages, and seed fixtures stay off this list. */
+export function listRecentTravelerReservations(sources: TravelerBookingSources): RecentBookingView[] {
+  return buildRecentBookingItems(sources, Number.MAX_SAFE_INTEGER)
+    .filter((item) => RESERVATION_KINDS.has(item.kind));
+}
+
+/** Hotel, ticket, activity, and guide rows. Trip plans, packages, and seed fixtures stay off this list. */
 export function listTravelerReservations(sources: TravelerBookingSources): RecentBookingView[] {
   const items = [
-    ...sources.hotels.map((raw) => withServiceTime(raw, mapHotel(raw))),
-    ...sources.transports.map((raw) => withServiceTime(raw, mapTransport(raw))),
-    ...sources.activities.map((raw) => withServiceTime(raw, mapActivity(raw))),
-    ...sources.guides.map((raw) => withServiceTime(raw, mapGuide(raw))),
+    ...liveRows(sources.hotels).map((raw) => withServiceTime(raw, mapHotel(raw))),
+    ...liveRows(sources.transports).map((raw) => withServiceTime(raw, mapTransport(raw))),
+    ...liveRows(sources.activities).map((raw) => withServiceTime(raw, mapActivity(raw))),
+    ...liveRows(sources.guides).map((raw) => withServiceTime(raw, mapGuide(raw))),
   ].filter((item): item is RecentBookingView => item !== null);
 
   const now = Date.now();
@@ -213,12 +249,12 @@ export function listTravelerReservations(sources: TravelerBookingSources): Recen
 
 export function buildRecentBookingItems(sources: TravelerBookingSources, limit = 5): RecentBookingView[] {
   const items = [
-    ...sources.hotels.map(mapHotel),
-    ...sources.transports.map(mapTransport),
-    ...sources.activities.map(mapActivity),
-    ...sources.guides.map(mapGuide),
-    ...sources.packages.map(mapPackage),
-    ...sources.trips.map(mapTrip),
+    ...liveRows(sources.hotels).map((raw) => withPlacedAt(raw, mapHotel(raw))),
+    ...liveRows(sources.transports).map((raw) => withPlacedAt(raw, mapTransport(raw))),
+    ...liveRows(sources.activities).map((raw) => withPlacedAt(raw, mapActivity(raw))),
+    ...liveRows(sources.guides).map((raw) => withPlacedAt(raw, mapGuide(raw))),
+    ...liveRows(sources.packages).map((raw) => withPlacedAt(raw, mapPackage(raw))),
+    ...liveRows(sources.trips).map((raw) => withPlacedAt(raw, mapTrip(raw))),
   ].filter((item): item is RecentBookingView => item !== null);
 
   return items.sort((left, right) => right.sortTime - left.sortTime).slice(0, limit);

@@ -41,12 +41,12 @@ export default function PackageBookingDetailsPage() {
 
   const handleCancel = (bookingId: string) => {
     Alert.alert(
-      'Cancel Booking',
-      'Are you sure you want to cancel this booking?',
+      t(TRANSLATION_KEYS.PACKAGE_BOOKING.CANCEL_BOOKING),
+      t(TRANSLATION_KEYS.PACKAGE_BOOKING.CANCEL_CONFIRMATION),
       [
-        { text: 'No', style: 'cancel' },
+        { text: t(TRANSLATION_KEYS.PACKAGE_BOOKING.KEEP_BOOKING), style: 'cancel' },
         {
-          text: 'Yes, Cancel',
+          text: t(TRANSLATION_KEYS.PACKAGE_BOOKING.YES_CANCEL),
           style: 'destructive',
           onPress: () =>
             handleCancelBooking(bookingId, {}, () => {

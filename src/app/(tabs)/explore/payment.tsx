@@ -37,6 +37,8 @@ export default function ExplorePaymentScreen() {
   const [pointsBalance, setPointsBalance] = useState<number | null>(null);
   const [pointsError, setPointsError] = useState<string | null>(null);
   const [txnStatus, setTxnStatus] = useState<TransactionStatus | undefined>();
+  const [walletReceiptEmailed, setWalletReceiptEmailed] = useState(false);
+  const holdEmailSent = Boolean(lastBookingResult?.emailDispatched);
 
   const primaryColor = isDark ? theme.colors['primary-dark'] : theme.colors.primary;
   const successColor = isDark ? theme.colors['success-dark'] : theme.colors.success;
@@ -68,6 +70,7 @@ export default function ExplorePaymentScreen() {
   const handlePayNow = async () => {
     if (!lastBookingResult?.id) return;
     setPayMethod('card');
+    setWalletReceiptEmailed(false);
     setPointsError(null);
     setScreenState('processing');
     const result = await startPayment({
@@ -88,14 +91,16 @@ export default function ExplorePaymentScreen() {
   const handlePayWithPoints = async () => {
     if (!lastBookingResult?.id || !canPayWithPoints) return;
     setPayMethod('points');
+    setWalletReceiptEmailed(false);
     setPointsError(null);
     setScreenState('processing');
     try {
-      await chargeWalletCredits({
+      const charge = await chargeWalletCredits({
         serviceType: 'HOTEL_BOOKING',
         serviceTypeId: lastBookingResult.id,
         paymentAmount: pointsCost,
       });
+      setWalletReceiptEmailed(Boolean(charge.emailDispatched));
       setPointsBalance((current) => (current === null ? current : current - pointsCost));
       setScreenState('success');
     } catch (error: any) {
@@ -150,7 +155,9 @@ export default function ExplorePaymentScreen() {
               {t(TRANSLATION_KEYS.PAYMENT.SUCCESS_TITLE)}
             </Text>
             <Text className="mt-2 text-sm text-center text-muted dark:text-muted-dark">
-              {t(TRANSLATION_KEYS.PAYMENT.SUCCESS_DESC)}
+              {payMethod === 'points' && walletReceiptEmailed
+                ? t(TRANSLATION_KEYS.PAYMENT.SUCCESS_DESC_WALLET_RECEIPT)
+                : t(TRANSLATION_KEYS.PAYMENT.SUCCESS_DESC)}
             </Text>
             <TouchableOpacity
               onPress={handleGoToDashboard}
@@ -233,6 +240,11 @@ export default function ExplorePaymentScreen() {
               <Text className="mt-1 text-sm text-muted dark:text-muted-dark">
                 {t(TRANSLATION_KEYS.PAYMENT.SUBTITLE)}
               </Text>
+              {holdEmailSent ? (
+                <Text className="mt-2 text-sm text-muted dark:text-muted-dark">
+                  {t(TRANSLATION_KEYS.PAYMENT.HOLD_EMAIL)}
+                </Text>
+              ) : null}
             </View>
 
             {/* Booking Summary Card */}

@@ -17,7 +17,7 @@ import { getCancelActionLabel, shouldFetchCancellationEligibility } from '../../
 export default function TransportBookingDetailPage() {
   const router = useRouter();
   const pathname = usePathname();
-  const { bookingId } = useLocalSearchParams<{ bookingId: string }>();
+  const { bookingId, action } = useLocalSearchParams<{ bookingId: string; action?: string }>();
   const { t } = useTranslation();
   const { isDark } = useTheme();
   const { fetchBookingDetail, loadEligibility, handleCancelBooking, cancelSubmitting } =
@@ -53,6 +53,15 @@ export default function TransportBookingDetailPage() {
     reload();
   }, [bookingId]);
 
+  useEffect(() => {
+    if (action !== 'pay' || !booking || !bookingId) return;
+    if (booking.paymentStatus !== 'UNPAID' || booking.status === 'CANCELLED') return;
+    router.push({
+      pathname: '/(tabs)/explore/transport-payment',
+      params: { bookingId: booking.id },
+    });
+  }, [action, booking, bookingId, router]);
+
   const pay = () => {
     if (!booking) return;
     router.push({
@@ -79,7 +88,18 @@ export default function TransportBookingDetailPage() {
 
   const showCancel = Boolean(booking && shouldFetchCancellationEligibility(booking.status));
   const unpaid = Boolean(booking && booking.paymentStatus === 'UNPAID' && booking.status !== 'CANCELLED');
+  const showBusQr =
+    Boolean(
+      booking &&
+        booking.transportType === 'BUS' &&
+        String(booking.status || '').toUpperCase() !== 'CANCELLED'
+    );
   const title = booking?.transport?.name || t(TRANSLATION_KEYS.TRANSPORT_BOOKING.DETAILS);
+
+  const openBusQr = () => {
+    if (!bookingId) return;
+    router.push(`/(tabs)/bookings/bus-boarding-qr/${bookingId}`);
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-background dark:bg-background-dark" edges={['top', 'bottom']}>
@@ -96,6 +116,16 @@ export default function TransportBookingDetailPage() {
         <Text className="flex-1 pr-3 text-base font-bold text-text dark:text-text-dark" numberOfLines={1}>
           {title}
         </Text>
+        {showBusQr ? (
+          <Pressable
+            onPress={openBusQr}
+            accessibilityRole="button"
+            accessibilityLabel={t(TRANSLATION_KEYS.BOOKING.QR_CODE)}
+            className="flex-row items-center px-2 py-1"
+          >
+            <Ionicons name="qr-code" size={22} color={primary} />
+          </Pressable>
+        ) : null}
       </View>
 
       {loading ? (

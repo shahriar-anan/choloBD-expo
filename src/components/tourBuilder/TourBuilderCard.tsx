@@ -20,7 +20,7 @@ interface TourBuilderCardProps {
 
 export function TourBuilderCard({
   onPress,
-  subtitle = 'Design and publish new tour packages',
+  subtitle,
 }: TourBuilderCardProps) {
   const { isDark } = useTheme();
   const { t } = useTranslation();

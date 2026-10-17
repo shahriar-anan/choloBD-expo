@@ -28,7 +28,9 @@ export interface QRBookingDetail {
   totalPrice: number;
   paymentMethod: string;
   paymentStatus?: string;
+  shift?: string;
   guestName?: string | null;
+  guestPhoneNumber?: string | null;
   specialRequests?: string;
   hotel: {
     id: string;
