@@ -6,6 +6,7 @@ import { useTheme } from '../../hooks/useTheme';
 import theme from '../../constants/theme';
 import { TRANSLATION_KEYS } from '../../constants/translationKeys';
 import { usePopularActivities, usePopularHotels } from '../../hooks/useHomeFeed';
+import { useHotelSearch } from '../../context/HotelSearchContext';
 import { TourPackage } from '../../types/tours';
 import { formatBdt } from '../../utils/money';
 import { HomeFeedStatus, HomeSectionHeader } from './HomeSectionHeader';
@@ -66,6 +67,7 @@ export default function HomeDealsSection({
   onRetryPackages,
 }: HomeDealsSectionProps) {
   const router = useRouter();
+  const { applyCatalogStay } = useHotelSearch();
   const { t } = useTranslation();
   const { isDark } = useTheme();
   const stays = usePopularHotels();
@@ -148,7 +150,10 @@ export default function HomeDealsSection({
               title: hotel.name,
               detail: hotel.startingPrice ? formatBdt(hotel.startingPrice) : undefined,
               rating: hotel.rating,
-              onPress: () => router.push({ pathname: '/(tabs)/explore/hotel-stay', params: { hotelId: hotel.id } }),
+              onPress: () => {
+                applyCatalogStay();
+                router.push({ pathname: '/(tabs)/explore/hotel-stay', params: { hotelId: hotel.id } });
+              },
             }))}
           />
         ) : null}

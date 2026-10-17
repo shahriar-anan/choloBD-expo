@@ -12,7 +12,7 @@ import { GradientAppBar } from '../../../components/hotelSearch/HotelFlowChrome'
 import { fetchHotelById } from '../../../services/api/hotelDetail';
 import { HotelDetail } from '../../../types/hotels';
 import { useHotelSearch } from '../../../context/HotelSearchContext';
-import { formatMoney, locationLine, minNightlyPrice, shortRangeLabel } from '../../../utilities/hotelSearch';
+import { formatMoney, isShiftStay, isValidStay, locationLine, minNightlyPrice, minShiftPrice, shortRangeLabel } from '../../../utilities/hotelSearch';
 import { goBack } from '../../../utilities/navigation';
 
 export default function HotelStayPage() {
@@ -21,7 +21,7 @@ export default function HotelStayPage() {
     const locale = appDateLocale(i18n.resolvedLanguage || i18n.language);
     const { hotelId } = useLocalSearchParams<{ hotelId: string }>();
     const { isDark } = useTheme();
-    const { params } = useHotelSearch();
+    const { params, setShift } = useHotelSearch();
     const primary = isDark ? theme.colors['primary-dark'] : theme.colors.primary;
     const warning = isDark ? theme.colors['warning-dark'] : theme.colors.warning;
     const [hotel, setHotel] = useState<HotelDetail | null>(null);
@@ -29,10 +29,13 @@ export default function HotelStayPage() {
     const [error, setError] = useState(false);
     const [expanded, setExpanded] = useState(false);
     const [photoIndex, setPhotoIndex] = useState(0);
-    const subtitle = t(TRANSLATION_KEYS.HOTEL_SEARCH.STAY_SUMMARY, {
-        range: shortRangeLabel(params.checkIn, params.checkOut, locale),
-        rooms: t(TRANSLATION_KEYS.HOTEL_SEARCH.ROOM_COUNT, { count: params.roomCount }),
-    });
+    const datesReady = isValidStay(params.checkIn, params.checkOut, params.shift);
+    const subtitle = datesReady
+        ? t(TRANSLATION_KEYS.HOTEL_SEARCH.STAY_SUMMARY, {
+            range: shortRangeLabel(params.checkIn, params.checkOut, locale),
+            rooms: t(TRANSLATION_KEYS.HOTEL_SEARCH.ROOM_COUNT, { count: params.roomCount }),
+        })
+        : t(TRANSLATION_KEYS.HOTEL_SEARCH.PICK_DATES);
 
     useEffect(() => {
         if (!hotelId) {
@@ -68,7 +71,17 @@ export default function HotelStayPage() {
         };
     }, [hotelId]);
 
-    const price = hotel ? minNightlyPrice(hotel) : null;
+    const price = hotel
+        ? (isShiftStay(params.shift) ? minShiftPrice(hotel, params.shift) : minNightlyPrice(hotel))
+        : null;
+    const shiftBlocked = Boolean(
+        hotel
+        && isShiftStay(params.shift)
+        && (hotel.allowShiftBooking !== true || price === null),
+    );
+    const priceSuffix = isShiftStay(params.shift)
+        ? t(TRANSLATION_KEYS.HOTEL_SEARCH.PER_SHIFT)
+        : t(TRANSLATION_KEYS.HOTEL_SEARCH.PER_NIGHT_SHORT);
     const images = hotel?.images || [];
     const photo = images[photoIndex]?.url;
     const place = locationLine(hotel?.location as { name?: string; city?: string | null; country?: string | null });
@@ -161,19 +174,42 @@ export default function HotelStayPage() {
                     </ScrollView>
                     <View className="flex-row items-center px-4 pt-3 pb-3 border-t border-border dark:border-border-dark bg-surface dark:bg-surface-dark">
                         <View className="flex-1 mr-3">
-                            <Text className="text-xs text-muted dark:text-muted-dark">{t(TRANSLATION_KEYS.HOTEL_SEARCH.STARTS_FROM_LABEL)}</Text>
-                            <Text className="text-xl font-bold text-text dark:text-text-dark" numberOfLines={1}>
-                                {price !== null ? formatMoney(price) : '—'}
-                                {price !== null ? <Text className="text-sm font-normal text-muted dark:text-muted-dark"> {t(TRANSLATION_KEYS.HOTEL_SEARCH.PER_NIGHT_SHORT)}</Text> : null}
-                            </Text>
+                            {shiftBlocked ? (
+                                <Text className="text-sm text-text dark:text-text-dark">{t(TRANSLATION_KEYS.HOTEL_SEARCH.WHOLE_DAY_ONLY)}</Text>
+                            ) : (
+                                <>
+                                    <Text className="text-xs text-muted dark:text-muted-dark">{t(TRANSLATION_KEYS.HOTEL_SEARCH.STARTS_FROM_LABEL)}</Text>
+                                    <Text className="text-xl font-bold text-text dark:text-text-dark" numberOfLines={1}>
+                                        {price !== null ? formatMoney(price) : '—'}
+                                        {price !== null ? <Text className="text-sm font-normal text-muted dark:text-muted-dark"> {priceSuffix}</Text> : null}
+                                    </Text>
+                                </>
+                            )}
                         </View>
                         <Pressable
                             accessibilityRole="button"
-                            onPress={() => router.push({ pathname: '/(tabs)/explore/hotel-room-types', params: { hotelId: hotel.id } })}
+                            onPress={() => {
+                                if (shiftBlocked) {
+                                    setShift('ALL_DAY');
+                                    router.push('/(tabs)/explore/hotel-dates');
+                                    return;
+                                }
+                                if (!datesReady) {
+                                    router.push('/(tabs)/explore/hotel-dates');
+                                    return;
+                                }
+                                router.push({ pathname: '/(tabs)/explore/hotel-room-types', params: { hotelId: hotel.id } });
+                            }}
                             className="items-center justify-center px-5 rounded-full"
                             style={{ backgroundColor: primary, minHeight: 48 }}
                         >
-                            <Text className="text-base font-bold text-white">{t(TRANSLATION_KEYS.HOTEL_SEARCH.SEE_ROOMS)}</Text>
+                            <Text className="text-base font-bold text-white">
+                                {shiftBlocked
+                                    ? t(TRANSLATION_KEYS.HOTEL_SEARCH.SWITCH_TO_WHOLE_DAY)
+                                    : datesReady
+                                        ? t(TRANSLATION_KEYS.HOTEL_SEARCH.SEE_ROOMS)
+                                        : t(TRANSLATION_KEYS.HOTEL_SEARCH.SELECT_DATES)}
+                            </Text>
                         </Pressable>
                     </View>
                 </>

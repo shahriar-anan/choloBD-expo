@@ -23,9 +23,10 @@ interface RoomTypeSelectorUIProps {
   roomTypes: RoomType[];
   selectedRoomsMap: Record<string, number>;
   onChange: (roomTypeId: string, delta: number) => void;
+  priceSuffix?: string;
 }
 
-export function RoomTypeSelectorUI({ roomTypes, selectedRoomsMap, onChange }: RoomTypeSelectorUIProps) {
+export function RoomTypeSelectorUI({ roomTypes, selectedRoomsMap, onChange, priceSuffix }: RoomTypeSelectorUIProps) {
   const { isDark } = useTheme();
   const { t } = useTranslation();
   const mutedColor = isDark ? theme.colors['muted-dark'] : theme.colors.muted;
@@ -50,7 +51,7 @@ export function RoomTypeSelectorUI({ roomTypes, selectedRoomsMap, onChange }: Ro
             <View className="flex-1">
               <Text className="font-semibold text-text dark:text-text-dark">{label}</Text>
               <Text className="mt-1 text-sm text-muted dark:text-muted-dark">
-                {formatMoney(price)} {t(TRANSLATION_KEYS.BOOKING.PER_NIGHT)}
+                {formatMoney(price)} {priceSuffix || t(TRANSLATION_KEYS.BOOKING.PER_NIGHT)}
               </Text>
               {available !== undefined ? (
                 <Text className="mt-1 text-xs text-muted dark:text-muted-dark">{available} {t(TRANSLATION_KEYS.BOOKING.AVAILABLE)}</Text>

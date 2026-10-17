@@ -19,6 +19,20 @@ import { TRANSLATION_KEYS } from '../../../constants/translationKeys';
 import { CancellationEligibility } from '../../../types/cancellation';
 import { shouldFetchCancellationEligibility, getCancelActionLabel } from '../../../utilities/bookingCancelHelpers';
 import { HotelStayDesk } from '../../../components/hotel/HotelStayDesk';
+import { paymentMethodLabel } from '../../../components/ui/DeskScanVerdict';
+import { isShiftStay } from '../../../utilities/hotelSearch';
+import { RoomShift } from '../../../types/hotelSearch';
+
+function StayFact({ label, value }: { label: string; value?: string | null }) {
+  const text = typeof value === 'string' ? value.trim() : '';
+  if (!text) return null;
+  return (
+    <View className="pt-3">
+      <Text className="text-xs text-muted dark:text-muted-dark">{label}</Text>
+      <Text className="mt-1 text-base font-semibold text-text dark:text-text-dark">{text}</Text>
+    </View>
+  );
+}
 
 function formatStayDate(value?: string): string {
   if (!value) return '—';
@@ -30,6 +44,13 @@ function formatStayDate(value?: string): string {
 function money(amount: unknown): string {
   if (amount === null || amount === undefined || amount === '') return '—';
   return `₹${amount}`;
+}
+
+function shiftLabel(shift: string | undefined, t: (key: string) => string): string {
+  if (shift === 'MORNING') return t(TRANSLATION_KEYS.HOTEL_SEARCH.MORNING);
+  if (shift === 'AFTERNOON') return t(TRANSLATION_KEYS.HOTEL_SEARCH.AFTERNOON);
+  if (shift === 'NIGHT') return t(TRANSLATION_KEYS.HOTEL_SEARCH.NIGHT);
+  return t(TRANSLATION_KEYS.HOTEL_SEARCH.WHOLE_DAY);
 }
 
 export default function BookingTrackingPage() {
@@ -129,15 +150,18 @@ export default function BookingTrackingPage() {
   };
 
   const handleSaveEdit = async () => {
-    if (!bookingId) return;
+    if (!bookingId || !booking) return;
+    const shiftStay = isShiftStay((booking.shift || 'ALL_DAY') as RoomShift);
     const result = await editBooking(
       bookingId,
-      {
-        checkInDate: editCheckInDate,
-        checkOutDate: editCheckOutDate,
-        paymentMethod: editPaymentMethod,
-        specialRequests: editSpecialRequests,
-      },
+      shiftStay
+        ? { specialRequests: editSpecialRequests }
+        : {
+            checkInDate: editCheckInDate,
+            checkOutDate: editCheckOutDate,
+            paymentMethod: editPaymentMethod,
+            specialRequests: editSpecialRequests,
+          },
       () => {
         // Reload booking after successful edit
         setIsEditing(false);
@@ -310,12 +334,13 @@ export default function BookingTrackingPage() {
               guestPhoneNumber={booking.user?.phone || ''}
               setGuestPhoneNumber={() => {}}
               paymentMethod={editPaymentMethod}
-              setPaymentMethod={setEditPaymentMethod}
+              setPaymentMethod={isShiftStay((booking.shift || 'ALL_DAY') as RoomShift) ? undefined : setEditPaymentMethod}
               specialRequests={editSpecialRequests}
               setSpecialRequests={setEditSpecialRequests}
               onSubmit={handleSaveEdit}
               submitting={submitting}
               isEditing={true}
+              hideSchedule={isShiftStay((booking.shift || 'ALL_DAY') as RoomShift)}
               onCancel={cancelEdit}
             />
           </KeyboardAwareScroll>
@@ -413,6 +438,16 @@ export default function BookingTrackingPage() {
               <Text className="mt-1 text-base font-bold text-text dark:text-text-dark">{formatStayDate(booking.checkOutDate)}</Text>
             </View>
           </View>
+          <View className="pt-3 mt-3 border-t border-border dark:border-border-dark">
+            <Text className="text-xs text-muted dark:text-muted-dark">{t(TRANSLATION_KEYS.HOTEL_SEARCH.SHIFT)}</Text>
+            <Text className="mt-1 text-base font-bold text-text dark:text-text-dark">{shiftLabel(booking.shift, t)}</Text>
+          </View>
+          <StayFact label={t(TRANSLATION_KEYS.HOTEL_SEARCH.GUESTS)} value={typeof booking.guestCount === 'number' ? String(booking.guestCount) : ''} />
+          <StayFact label={t(TRANSLATION_KEYS.BOOKING.GUEST_NAME)} value={booking.guestName} />
+          <StayFact label={t(TRANSLATION_KEYS.BOOKING.EMAIL)} value={booking.guestEmail} />
+          <StayFact label={t(TRANSLATION_KEYS.BOOKING.PHONE_NUMBER)} value={booking.guestPhoneNumber} />
+          <StayFact label={t(TRANSLATION_KEYS.BOOKING.PAYMENT_METHOD)} value={paymentMethodLabel(booking.paymentMethod, t)} />
+          <StayFact label={t(TRANSLATION_KEYS.BOOKING.SPECIAL_REQUESTS)} value={booking.specialRequests} />
           <View className="flex-row items-center justify-between pt-3 mt-3 border-t border-border dark:border-border-dark">
             <Text className="text-sm text-muted dark:text-muted-dark">{t(TRANSLATION_KEYS.BOOKING.TOTAL_PRICE)}</Text>
             <Text className="text-lg font-bold text-text dark:text-text-dark">{money(booking.totalPrice)}</Text>
@@ -425,9 +460,13 @@ export default function BookingTrackingPage() {
               {t(TRANSLATION_KEYS.HOTEL_SEARCH.ROOMS)} ({booking.roomDetails.length})
             </Text>
             {booking.roomDetails.map((room: any, index: number) => {
+              const roomType = room.hotelRoom?.hotelRoomType?.roomType || room.hotelRoom?.hotelRoomType?.name || room.hotelRoomType?.roomType;
               const label = room.hotelRoom?.roomNumber
                 ? `${t(TRANSLATION_KEYS.BOOKING.ROOM_NUMBER)} ${room.hotelRoom.roomNumber}`
-                : (room.hotelRoom?.hotelRoomType?.name || t(TRANSLATION_KEYS.BOOKING.ROOM_NUMBER));
+                : (roomType || t(TRANSLATION_KEYS.BOOKING.ROOM_NUMBER));
+              const rateLabel = isShiftStay((booking.shift || 'ALL_DAY') as RoomShift)
+                ? t(TRANSLATION_KEYS.HOTEL_SEARCH.PER_SHIFT)
+                : t(TRANSLATION_KEYS.BOOKING.PRICE_PER_NIGHT);
               return (
                 <View
                   key={room.hotelRoomId || room.id || index}
@@ -436,8 +475,11 @@ export default function BookingTrackingPage() {
                 >
                   <View className="flex-1 pr-3">
                     <Text className="font-semibold text-text dark:text-text-dark">{label}</Text>
+                    {room.hotelRoom?.roomNumber && roomType ? (
+                      <Text className="mt-1 text-sm text-muted dark:text-muted-dark">{roomType}</Text>
+                    ) : null}
                     <Text className="mt-1 text-sm text-muted dark:text-muted-dark">
-                      {money(room.pricePerNight)}{t(TRANSLATION_KEYS.BOOKING.PRICE_PER_NIGHT)}
+                      {money(room.pricePerNight)}{rateLabel}
                     </Text>
                   </View>
                   <Text className="font-bold text-text dark:text-text-dark">{money(room.subtotal)}</Text>

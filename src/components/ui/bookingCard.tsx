@@ -265,6 +265,15 @@ export function BookingCard({ booking, onPress, showGenerateQr = false, showRoom
               </Text>
             </View>
           </View>
+          <Text className="mb-3 text-sm font-semibold text-text dark:text-text-dark">
+            {booking.shift === 'MORNING'
+              ? t(TRANSLATION_KEYS.HOTEL_SEARCH.MORNING)
+              : booking.shift === 'AFTERNOON'
+                ? t(TRANSLATION_KEYS.HOTEL_SEARCH.AFTERNOON)
+                : booking.shift === 'NIGHT'
+                  ? t(TRANSLATION_KEYS.HOTEL_SEARCH.NIGHT)
+                  : t(TRANSLATION_KEYS.HOTEL_SEARCH.WHOLE_DAY)}
+          </Text>
 
           {/* Total price and booking date */}
           <View className="flex-row items-center justify-between">
@@ -308,7 +317,9 @@ export function BookingCard({ booking, onPress, showGenerateQr = false, showRoom
                     {t(TRANSLATION_KEYS.BOOKING.ROOM_NUMBER)} {room.hotelRoom?.roomNumber || '?'}
                   </Text>
                   <Text className="text-base font-bold text-success dark:text-success-dark">
-                    ৳{room.pricePerNight}{t(TRANSLATION_KEYS.BOOKING.PRICE_PER_NIGHT)}
+                    ৳{room.pricePerNight}{booking.shift && booking.shift !== 'ALL_DAY'
+                      ? t(TRANSLATION_KEYS.HOTEL_SEARCH.PER_SHIFT)
+                      : t(TRANSLATION_KEYS.BOOKING.PRICE_PER_NIGHT)}
                   </Text>
                 </View>
               </View>

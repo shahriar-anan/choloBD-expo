@@ -4,6 +4,8 @@ import { useFetchHotels } from '../../../hooks/useFetchHotels';
 import { useFetchHotelDetail } from '../../../hooks/useFetchHotelDetail';
 import { useBookingLogic } from '../../../hooks/useBookingLogic';
 import { useRouter } from 'expo-router';
+import { AvailableRoomType, RoomShift } from '../../../types/hotelSearch';
+import { bookingTotal, canSelectRoomForShift } from '../../../utilities/hotelSearch';
 
 interface ExploreContextValue {
   locations: any[];
@@ -13,6 +15,9 @@ interface ExploreContextValue {
   hotelDetail: any | null;
   detailLoading: boolean;
   selectedRoomsMap: Record<string, number>;
+  availableRooms: AvailableRoomType[];
+  shift: RoomShift;
+  guestCount: number;
   checkInDate: string;
   checkOutDate: string;
   guestName: string;
@@ -37,8 +42,10 @@ interface ExploreContextValue {
   clearExploreState: () => void;
   openGuestDetails: (input: {
     hotelId: string;
-    roomTypeId: string;
-    quantity: number;
+    selectedRoomsMap: Record<string, number>;
+    availableRooms: AvailableRoomType[];
+    shift: RoomShift;
+    guestCount: number;
     checkIn: string;
     checkOut: string;
   }) => Promise<void>;
@@ -54,6 +61,9 @@ export function ExploreProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
   const [selectedRoomsMap, setSelectedRoomsMap] = useState<Record<string, number>>({});
+  const [availableRooms, setAvailableRooms] = useState<AvailableRoomType[]>([]);
+  const [shift, setShift] = useState<RoomShift>('ALL_DAY');
+  const [guestCount, setGuestCount] = useState(2);
   const [checkInDate, setCheckInDate] = useState('');
   const [checkOutDate, setCheckOutDate] = useState('');
   const [guestName, setGuestName] = useState('');
@@ -76,20 +86,19 @@ export function ExploreProvider({ children }: { children: React.ReactNode }) {
   const changeRoomQty = (roomTypeId: string, delta: number) => {
     setSelectedRoomsMap((prev) => {
       const current = prev[roomTypeId] || 0;
-      let newQty = Math.max(0, current + delta);
-
-      // enforce availableCount if present on hotelDetail
-      try {
-        const rt = (hotelDetail?.roomTypes || []).find((r: any) => r.id === roomTypeId);
-        const avail = rt?.availableCount ?? (rt as any)?.totalCount ?? undefined;
-        if (avail !== undefined) {
-          newQty = Math.min(newQty, avail);
-        }
-      } catch (e) {
-        // ignore
+      const room = availableRooms.find((item) => item.roomTypeId === roomTypeId);
+      const hotelAllowsShift = hotelDetail?.allowShiftBooking === true;
+      if (delta > 0 && (!room || !canSelectRoomForShift(room, shift, hotelAllowsShift))) {
+        return prev;
       }
-
-      return { ...prev, [roomTypeId]: newQty };
+      const cap = room?.availableRooms ?? 0;
+      const next = Math.max(0, Math.min(cap, current + delta));
+      if (next <= 0) {
+        const rest = { ...prev };
+        delete rest[roomTypeId];
+        return rest;
+      }
+      return { ...prev, [roomTypeId]: next };
     });
   };
 
@@ -100,12 +109,15 @@ export function ExploreProvider({ children }: { children: React.ReactNode }) {
         hotelId: hotelDetail.id,
         checkInDate,
         checkOutDate,
+        shift,
+        totalPrice: bookingTotal(selectedRoomsMap, availableRooms, shift, checkInDate, checkOutDate),
         selectedRoomsMap,
         guestName,
         guestEmail,
         guestPhoneNumber,
-        paymentMethod,
-        specialRequests,
+        paymentMethod: 'sslcommerz',
+        specialRequests: specialRequests.trim() ? specialRequests.trim() : undefined,
+        guestCount,
       },
       (data) => {
         setLastBookingResult(data);
@@ -121,6 +133,9 @@ export function ExploreProvider({ children }: { children: React.ReactNode }) {
       clearHotel();
     } catch (e) {}
     setSelectedRoomsMap({});
+    setAvailableRooms([]);
+    setShift('ALL_DAY');
+    setGuestCount(2);
     setCheckInDate('');
     setCheckOutDate('');
     setGuestName('');
@@ -134,15 +149,23 @@ export function ExploreProvider({ children }: { children: React.ReactNode }) {
 
   const openGuestDetails = async (input: {
     hotelId: string;
-    roomTypeId: string;
-    quantity: number;
+    selectedRoomsMap: Record<string, number>;
+    availableRooms: AvailableRoomType[];
+    shift: RoomShift;
+    guestCount: number;
     checkIn: string;
     checkOut: string;
   }) => {
     setCheckInDate(input.checkIn);
     setCheckOutDate(input.checkOut);
-    setSelectedRoomsMap({ [input.roomTypeId]: input.quantity });
-    await fetchHotelDetail(input.hotelId);
+    setShift(input.shift);
+    setGuestCount(input.guestCount);
+    setAvailableRooms(input.availableRooms);
+    setSelectedRoomsMap(input.selectedRoomsMap);
+    const detail = await fetchHotelDetail(input.hotelId);
+    if (!detail) {
+      return;
+    }
     router.push('/(tabs)/explore/booking');
   };
 
@@ -152,6 +175,9 @@ export function ExploreProvider({ children }: { children: React.ReactNode }) {
       clearHotel();
     } catch (e) {}
     setSelectedRoomsMap({});
+    setAvailableRooms([]);
+    setShift('ALL_DAY');
+    setGuestCount(2);
     setCheckInDate('');
     setCheckOutDate('');
     setGuestName('');
@@ -172,6 +198,9 @@ export function ExploreProvider({ children }: { children: React.ReactNode }) {
         hotelDetail,
         detailLoading,
         selectedRoomsMap,
+        availableRooms,
+        shift,
+        guestCount,
         checkInDate,
         checkOutDate,
         guestName,

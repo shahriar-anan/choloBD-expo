@@ -1,5 +1,6 @@
 import { getApiInstance } from './axiosClient';
 import { Hotel } from '../../types/hotels';
+import { AvailableRoomType, RoomShift } from '../../types/hotelSearch';
 import { unwrapList } from './personalPlanMapping';
 import { withCatalogLang } from './catalogLang';
 
@@ -13,6 +14,9 @@ export interface HotelFilters {
   isActive?: boolean;
   checkInDate?: string;
   checkOutDate?: string;
+  shift?: RoomShift;
+  allowShiftBooking?: boolean;
+  guestCount?: number;
   page?: number;
   limit?: number;
 }
@@ -29,6 +33,9 @@ export async function fetchHotels(filters: HotelFilters = {}): Promise<Hotel[]> 
   if (filters.isActive !== undefined) params.isActive = filters.isActive;
   if (filters.checkInDate) params.checkInDate = filters.checkInDate;
   if (filters.checkOutDate) params.checkOutDate = filters.checkOutDate;
+  if (filters.shift && filters.shift !== 'ALL_DAY') params.shift = filters.shift;
+  if (filters.allowShiftBooking !== undefined) params.allowShiftBooking = filters.allowShiftBooking;
+  if (filters.guestCount) params.guestCount = filters.guestCount;
   if (filters.page) params.page = filters.page;
   if (filters.limit) params.limit = filters.limit;
   const res = await api.get('/api/hotels', { params: withCatalogLang(params) });
@@ -70,9 +77,24 @@ export async function fetchPopularHotels(limit = 8): Promise<PopularHotel[]> {
 
 export type HotelRoomDeskStatus = 'AVAILABLE' | 'MAINTENANCE' | 'OUT_OF_SERVICE';
 
-export async function updateHotelRoomTypePrice(roomTypeId: string, pricePerNight: number): Promise<any> {
+export interface UpdateHotelRoomTypePriceData {
+  pricePerNight: number;
+  allowShiftBooking?: boolean;
+  morningShiftPrice?: number | null;
+  afternoonShiftPrice?: number | null;
+  nightShiftPrice?: number | null;
+  maxGuests?: number;
+}
+
+export async function updateHotelRoomTypePrice(roomTypeId: string, payload: UpdateHotelRoomTypePriceData): Promise<any> {
   const api = getApiInstance();
-  const res = await api.put(`/api/hotel-rooms/roomTypes/${roomTypeId}`, { pricePerNight });
+  const res = await api.put(`/api/hotel-rooms/roomTypes/${roomTypeId}`, payload);
+  return res.data?.data ?? null;
+}
+
+export async function updateHotelBookingMode(hotelId: string, allowShiftBooking: boolean): Promise<any> {
+  const api = getApiInstance();
+  const res = await api.put(`/api/hotels/${hotelId}/booking-mode`, { allowShiftBooking });
   return res.data?.data ?? null;
 }
 
@@ -81,9 +103,40 @@ export async function createHotelRoomType(data: {
   roomType: string;
   pricePerNight: number;
   totalCount: number;
+  maxGuests: number;
+  allowShiftBooking?: boolean;
+  morningShiftPrice?: number | null;
+  afternoonShiftPrice?: number | null;
+  nightShiftPrice?: number | null;
 }): Promise<any> {
   const api = getApiInstance();
   const res = await api.post('/api/hotel-rooms/roomTypes', data);
+  return res.data?.data ?? null;
+}
+
+export interface HotelRoomAvailability {
+  isAvailable: boolean;
+  totalRoomsNeeded: number;
+  totalAvailableRooms: number;
+  bookingType: 'DATE_RANGE' | 'SHIFT';
+  shift?: RoomShift;
+  availableRoomsByType: AvailableRoomType[];
+  message: string;
+}
+
+export async function fetchHotelRoomAvailability(
+  hotelId: string,
+  input: { numberOfRooms: number; checkInDate: string; checkOutDate: string; shift: RoomShift },
+): Promise<HotelRoomAvailability | null> {
+  const api = getApiInstance();
+  const res = await api.get(`/api/hotels/${hotelId}/availability`, {
+    params: withCatalogLang({
+      numberOfRooms: input.numberOfRooms,
+      checkInDate: input.checkInDate,
+      checkOutDate: input.checkOutDate,
+      shift: input.shift,
+    }),
+  });
   return res.data?.data ?? null;
 }
 
@@ -91,7 +144,17 @@ export async function fetchHotelStayAvailability(
   hotelId: string,
   checkInDate: string,
   shift: 'ALL_DAY' | 'MORNING' | 'AFTERNOON' | 'NIGHT',
-): Promise<{ availableRoomsByType?: { roomTypeId: string; roomType?: string; availableRooms: number; totalRooms?: number }[] } | null> {
+): Promise<{ availableRoomsByType?: Array<{
+  roomTypeId: string;
+  roomType?: string;
+  availableRooms: number;
+  totalRooms?: number;
+  allowShiftBooking?: boolean;
+  morningShiftPrice?: number;
+  afternoonShiftPrice?: number;
+  nightShiftPrice?: number;
+  maxGuests?: number;
+}> } | null> {
   const api = getApiInstance();
   const [year, month, day] = checkInDate.split('-').map(Number);
   const end = new Date(year, (month || 1) - 1, (day || 1) + 1);

@@ -9,29 +9,39 @@ import { useTheme } from '../../../hooks/useTheme';
 import theme from '../../../constants/theme';
 import { TRANSLATION_KEYS } from '../../../constants/translationKeys';
 import { useHotelSearch } from '../../../context/HotelSearchContext';
-import { cheapestByNightlyPrice, minNightlyPrice, nightsBetween, shortRangeLabel } from '../../../utilities/hotelSearch';
+import { cheapestByNightlyPrice, isShiftStay, isValidStay, minNightlyPrice, nightsBetween, shortRangeLabel } from '../../../utilities/hotelSearch';
+import { HotelSearchListItem, RoomShift } from '../../../types/hotelSearch';
 import { PillButton } from '../../../components/hotelSearch/HotelFlowChrome';
 import { RecommendedHotelCard } from '../../../components/hotelSearch/RecommendedHotelCard';
 import { fetchDivisionIdByName } from '../../../services/api/locations';
 import { fetchHotels } from '../../../services/api/hotels';
-import { HotelSearchListItem } from '../../../types/hotelSearch';
 import { goBack } from '../../../utilities/navigation';
 
 function pad(value: number): string {
     return String(value).padStart(2, '0');
 }
 
+function shiftLabelKey(shift: RoomShift): string {
+    if (shift === 'MORNING') return TRANSLATION_KEYS.HOTEL_SEARCH.MORNING;
+    if (shift === 'AFTERNOON') return TRANSLATION_KEYS.HOTEL_SEARCH.AFTERNOON;
+    if (shift === 'NIGHT') return TRANSLATION_KEYS.HOTEL_SEARCH.NIGHT;
+    return TRANSLATION_KEYS.HOTEL_SEARCH.WHOLE_DAY;
+}
+
 export default function HotelSearchPage() {
     const router = useRouter();
     const { fromHome } = useLocalSearchParams<{ fromHome?: string }>();
     const { isDark } = useTheme();
-    const { params } = useHotelSearch();
+    const { params, applyCatalogStay } = useHotelSearch();
     const { t, i18n } = useTranslation();
     const primary = isDark ? theme.colors['primary-dark'] : theme.colors.primary;
     const [recommended, setRecommended] = useState<HotelSearchListItem[]>([]);
     const [recommendedLoading, setRecommendedLoading] = useState(true);
     const nights = nightsBetween(params.checkIn, params.checkOut);
-    const roomLabel = params.roomCount === 1 ? '1 Room' : `${params.roomCount} Rooms`;
+    const roomLabel = t(TRANSLATION_KEYS.HOTEL_SEARCH.ROOM_COUNT, { count: params.roomCount });
+    const guestLabel = t(TRANSLATION_KEYS.HOTEL_SEARCH.GUEST_COUNT, { count: params.guestCount });
+    const shiftLabel = t(shiftLabelKey(params.shift));
+    const datesReady = isValidStay(params.checkIn, params.checkOut, params.shift);
 
     const onBack = () => {
         if (fromHome === 'true') {
@@ -83,6 +93,10 @@ export default function HotelSearchPage() {
             Alert.alert(t(TRANSLATION_KEYS.HOTEL_SEARCH.DESTINATION), t(TRANSLATION_KEYS.HOTEL_SEARCH.CHOOSE_DESTINATION));
             return;
         }
+        if (!datesReady) {
+            Alert.alert(t(TRANSLATION_KEYS.HOTEL_SEARCH.SELECT_DATES), t(TRANSLATION_KEYS.HOTEL_SEARCH.PICK_DATES));
+            return;
+        }
         router.push('/(tabs)/explore/hotel-results');
     };
 
@@ -109,12 +123,42 @@ export default function HotelSearchPage() {
                             </View>
                         </Pressable>
 
+                        <Pressable onPress={() => router.push('/(tabs)/explore/hotel-shift')} className="p-3 mb-3 rounded-2xl bg-background dark:bg-background-dark">
+                            <View className="flex-row items-center">
+                                <Ionicons name="time" size={20} color={primary} />
+                                <View className="flex-1 ml-3">
+                                    <Text className="font-bold text-text dark:text-text-dark">{t(TRANSLATION_KEYS.HOTEL_SEARCH.SHIFT)}</Text>
+                                    <Text className="text-xs text-muted dark:text-muted-dark">{shiftLabel}</Text>
+                                </View>
+                            </View>
+                        </Pressable>
+
                         <Pressable onPress={() => router.push('/(tabs)/explore/hotel-dates')} className="p-3 mb-3 rounded-2xl bg-background dark:bg-background-dark">
                             <View className="flex-row items-center">
-                                <Text className="text-lg font-bold text-text dark:text-text-dark">{pad(Math.max(nights, 0))}</Text>
+                                <Text className="text-lg font-bold text-text dark:text-text-dark">{pad(isShiftStay(params.shift) ? 1 : Math.max(nights, 0))}</Text>
+                                <View className="flex-1 ml-3">
+                                    <Text className="font-bold text-text dark:text-text-dark">
+                                        {datesReady
+                                            ? `${t(TRANSLATION_KEYS.HOTEL_SEARCH.NIGHTS)} (${shortRangeLabel(params.checkIn, params.checkOut)})`
+                                            : t(TRANSLATION_KEYS.HOTEL_SEARCH.SELECT_DATES)}
+                                    </Text>
+                                    <Text className="text-xs text-muted dark:text-muted-dark">
+                                        {isShiftStay(params.shift)
+                                            ? t(TRANSLATION_KEYS.HOTEL_SEARCH.SAME_DAY)
+                                            : datesReady
+                                                ? t(TRANSLATION_KEYS.HOTEL_SEARCH.DATES_HINT)
+                                                : t(TRANSLATION_KEYS.HOTEL_SEARCH.PICK_CHECKOUT)}
+                                    </Text>
+                                </View>
+                            </View>
+                        </Pressable>
+
+                        <Pressable onPress={() => router.push('/(tabs)/explore/hotel-guests')} className="p-3 mb-3 rounded-2xl bg-background dark:bg-background-dark">
+                            <View className="flex-row items-center">
+                                <Text className="text-lg font-bold text-text dark:text-text-dark">{pad(params.guestCount)}</Text>
                                 <View className="ml-3">
-                                    <Text className="font-bold text-text dark:text-text-dark">{t(TRANSLATION_KEYS.HOTEL_SEARCH.NIGHTS)} ({shortRangeLabel(params.checkIn, params.checkOut)})</Text>
-                                    <Text className="text-xs text-muted dark:text-muted-dark">{t(TRANSLATION_KEYS.HOTEL_SEARCH.DATES_HINT)}</Text>
+                                    <Text className="font-bold text-text dark:text-text-dark">{t(TRANSLATION_KEYS.HOTEL_SEARCH.GUESTS)}</Text>
+                                    <Text className="text-xs text-muted dark:text-muted-dark">{guestLabel}</Text>
                                 </View>
                             </View>
                         </Pressable>
@@ -155,7 +199,10 @@ export default function HotelSearchPage() {
                                                 price={price}
                                                 rating={hotel.rating}
                                                 priceSuffix={t(TRANSLATION_KEYS.HOTEL_SEARCH.PER_NIGHT)}
-                                                onPress={() => router.push({ pathname: '/(tabs)/explore/hotel-stay', params: { hotelId: hotel.id } })}
+                                                onPress={() => {
+                                                    applyCatalogStay();
+                                                    router.push({ pathname: '/(tabs)/explore/hotel-stay', params: { hotelId: hotel.id } });
+                                                }}
                                             />
                                         </View>
                                     );

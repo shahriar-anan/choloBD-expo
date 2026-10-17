@@ -78,16 +78,19 @@ export function Stepper({
     value,
     onChange,
     min = 1,
+    max,
 }: {
     value: number;
     onChange: (next: number) => void;
     min?: number;
+    max?: number;
 }) {
     const { isDark } = useTheme();
     const { t } = useTranslation();
     const primary = isDark ? theme.colors['primary-dark'] : theme.colors.primary;
     const muted = isDark ? theme.colors['muted-dark'] : theme.colors.muted;
     const minusDisabled = value <= min;
+    const plusDisabled = max !== undefined && value >= max;
     return (
         <View className="flex-row items-center">
             <Pressable
@@ -102,11 +105,12 @@ export function Stepper({
             <Text className="w-10 text-base font-bold text-center text-text dark:text-text-dark">{value}</Text>
             <Pressable
                 accessibilityLabel={t(TRANSLATION_KEYS.HOTEL_SEARCH.INCREASE)}
+                disabled={plusDisabled}
                 onPress={() => onChange(value + 1)}
                 className="items-center justify-center w-11 h-11 border rounded-full"
-                style={{ borderColor: primary }}
+                style={{ borderColor: plusDisabled ? muted : primary }}
             >
-                <Ionicons name="add" size={18} color={primary} />
+                <Ionicons name="add" size={18} color={plusDisabled ? muted : primary} />
             </Pressable>
         </View>
     );

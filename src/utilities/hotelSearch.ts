@@ -1,5 +1,4 @@
 import {
-    addDays,
     differenceInCalendarDays,
     eachDayOfInterval,
     endOfMonth,
@@ -10,37 +9,181 @@ import {
     startOfMonth,
 } from 'date-fns';
 import type { Locale } from 'date-fns';
+import { TRANSLATION_KEYS } from '../constants/translationKeys';
 import {
+    AvailableRoomType,
     HotelListFilter,
-    HotelPriceBucket,
     HotelSearchListItem,
+    RoomShift,
 } from '../types/hotelSearch';
 
-export const MAX_NIGHTS = 30;
+export const MAX_ROOMS = 4;
+export const MAX_GUESTS = 6;
+export const MAX_GUESTS_PER_ROOM = 10;
 
-export function defaultStay(today = new Date()): { checkIn: string; checkOut: string } {
-    const start = startOfDay(today);
-    return {
-        checkIn: format(start, 'yyyy-MM-dd'),
-        checkOut: format(addDays(start, 2), 'yyyy-MM-dd'),
-    };
+const DHAKA = 'Asia/Dhaka';
+
+export function dhakaYmd(value = new Date()): string {
+    return new Intl.DateTimeFormat('en-CA', { timeZone: DHAKA }).format(value);
+}
+
+export function dhakaMinutes(value = new Date()): number {
+    const parts = new Intl.DateTimeFormat('en-GB', {
+        timeZone: DHAKA,
+        hour: '2-digit',
+        minute: '2-digit',
+        hourCycle: 'h23',
+    }).formatToParts(value);
+    const hour = Number(parts.find((part) => part.type === 'hour')?.value ?? '0');
+    const minute = Number(parts.find((part) => part.type === 'minute')?.value ?? '0');
+    return (hour % 24) * 60 + minute;
+}
+
+export function addCalendarDays(ymd: string, days: number): string {
+    const [year, month, day] = ymd.split('-').map(Number);
+    const utc = new Date(Date.UTC(year, month - 1, day));
+    utc.setUTCDate(utc.getUTCDate() + days);
+    return [
+        utc.getUTCFullYear(),
+        String(utc.getUTCMonth() + 1).padStart(2, '0'),
+        String(utc.getUTCDate()).padStart(2, '0'),
+    ].join('-');
+}
+
+const SHIFT_LAST_BOOK_MINUTE: Record<Exclude<RoomShift, 'ALL_DAY'>, number> = {
+    MORNING: 12 * 60,
+    AFTERNOON: 19 * 60,
+    NIGHT: 5 * 60,
+};
+
+export const SHIFT_CLOSE_CLOCK: Record<Exclude<RoomShift, 'ALL_DAY'>, string> = {
+    MORNING: '12:00',
+    AFTERNOON: '19:00',
+    NIGHT: '05:00',
+};
+
+/** Short shift name and the last bookable time, in the traveler's language. */
+export function shiftSpoken(shift: Exclude<RoomShift, 'ALL_DAY'>): { name: string; until: string } {
+    const keys = TRANSLATION_KEYS.HOTEL_SEARCH;
+    if (shift === 'MORNING') return { name: keys.MORNING_SHORT, until: keys.CLOSE_MORNING };
+    if (shift === 'AFTERNOON') return { name: keys.AFTERNOON_SHORT, until: keys.CLOSE_AFTERNOON };
+    return { name: keys.NIGHT_SHORT, until: keys.CLOSE_NIGHT };
+}
+
+/** A shift stays bookable until 3 hours before it ends. */
+export function shiftStillBookable(ymd: string, shift: Exclude<RoomShift, 'ALL_DAY'>, now = new Date()): boolean {
+    if (!ymd) {
+        return false;
+    }
+    const lastYmd = shift === 'NIGHT' ? addCalendarDays(ymd, 1) : ymd;
+    const today = dhakaYmd(now);
+    if (today < lastYmd) {
+        return true;
+    }
+    if (today > lastYmd) {
+        return false;
+    }
+    return dhakaMinutes(now) <= SHIFT_LAST_BOOK_MINUTE[shift];
+}
+
+export function shiftClosedForStay(ymd: string, shift: RoomShift, now = new Date()): boolean {
+    if (!ymd || shift === 'ALL_DAY') {
+        return false;
+    }
+    return !shiftStillBookable(ymd, shift, now);
+}
+
+export function runningNightOpen(now = new Date()): boolean {
+    return dhakaMinutes(now) <= 5 * 60;
+}
+
+export function runningNightCheckIn(now = new Date()): string {
+    return addCalendarDays(dhakaYmd(now), -1);
+}
+
+export function defaultStay(now = new Date()): { checkIn: string; checkOut: string } {
+    const start = dhakaYmd(now);
+    return { checkIn: start, checkOut: start };
+}
+
+export function defaultWholeDayStay(now = new Date()): { checkIn: string; checkOut: string } {
+    const start = dhakaYmd(now);
+    return { checkIn: start, checkOut: addCalendarDays(start, 1) };
+}
+
+export function isRoomShift(value: string): value is RoomShift {
+    return value === 'ALL_DAY' || value === 'MORNING' || value === 'AFTERNOON' || value === 'NIGHT';
+}
+
+export function isShiftStay(shift: RoomShift): boolean {
+    return shift !== 'ALL_DAY';
 }
 
 export function nightsBetween(checkIn: string, checkOut: string): number {
-    return differenceInCalendarDays(parseISO(checkOut), parseISO(checkIn));
+    if (!checkIn || !checkOut) {
+        return 0;
+    }
+    const nights = differenceInCalendarDays(parseISO(checkOut), parseISO(checkIn));
+    return Number.isFinite(nights) ? nights : 0;
 }
 
-export function isValidStay(checkIn: string, checkOut: string, today = new Date()): boolean {
+export function isValidStay(checkIn: string, checkOut: string, shift: RoomShift = 'ALL_DAY', today = new Date()): boolean {
+    if (!checkIn || !checkOut) {
+        return false;
+    }
     const start = startOfDay(parseISO(checkIn));
     const end = startOfDay(parseISO(checkOut));
-    if (isBefore(start, startOfDay(today))) {
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+        return false;
+    }
+    const todayYmd = dhakaYmd(today);
+    const runningNight = shift === 'NIGHT'
+        && checkIn === addCalendarDays(todayYmd, -1)
+        && shiftStillBookable(checkIn, 'NIGHT', today);
+    if (checkIn < todayYmd && !runningNight) {
         return false;
     }
     const nights = differenceInCalendarDays(end, start);
-    if (nights === 0) {
-        return true;
+    if (isShiftStay(shift)) {
+        return nights === 0;
     }
-    return nights >= 1 && nights <= MAX_NIGHTS;
+    return nights >= 1;
+}
+
+export function stayUnits(checkIn: string, checkOut: string, shift: RoomShift): number {
+    if (isShiftStay(shift)) {
+        return 1;
+    }
+    const nights = nightsBetween(checkIn, checkOut);
+    return nights > 0 ? nights : 0;
+}
+
+export function priceForShift(room: Pick<AvailableRoomType, 'basePrice' | 'morningShiftPrice' | 'afternoonShiftPrice' | 'nightShiftPrice'>, shift: RoomShift): number {
+    const raw = shift === 'MORNING'
+        ? room.morningShiftPrice
+        : shift === 'AFTERNOON'
+            ? room.afternoonShiftPrice
+            : shift === 'NIGHT'
+                ? room.nightShiftPrice
+                : room.basePrice;
+    return typeof raw === 'number' && raw > 0 ? raw : 0;
+}
+
+export function bookingTotal(
+    selected: Record<string, number>,
+    rooms: AvailableRoomType[],
+    shift: RoomShift,
+    checkIn: string,
+    checkOut: string,
+): number {
+    const units = stayUnits(checkIn, checkOut, shift);
+    return rooms.reduce((sum, room) => {
+        const quantity = selected[room.roomTypeId] || 0;
+        if (quantity <= 0) {
+            return sum;
+        }
+        return sum + priceForShift(room, shift) * units * quantity;
+    }, 0);
 }
 
 export function isPastDay(day: Date, today = new Date()): boolean {
@@ -89,11 +232,65 @@ export function cheapestByNightlyPrice(hotels: HotelSearchListItem[], count: num
 export function minNightlyPrice(hotel: HotelSearchListItem): number | null {
     const prices = (hotel.roomTypes || [])
         .map((room) => room.pricePerNight)
-        .filter((price): price is number => typeof price === 'number');
+        .filter((price): price is number => typeof price === 'number' && price > 0);
     if (prices.length === 0) {
         return null;
     }
     return Math.min(...prices);
+}
+
+export function minShiftPrice(hotel: HotelSearchListItem, shift: RoomShift): number | null {
+    if (!isShiftStay(shift)) {
+        return minNightlyPrice(hotel);
+    }
+    const prices = (hotel.roomTypes || [])
+        .filter((room) => room.allowShiftBooking)
+        .map((room) => priceForShift({
+            basePrice: room.pricePerNight ?? 0,
+            morningShiftPrice: room.morningShiftPrice ?? 0,
+            afternoonShiftPrice: room.afternoonShiftPrice ?? 0,
+            nightShiftPrice: room.nightShiftPrice ?? 0,
+        }, shift))
+        .filter((price) => price > 0);
+    if (prices.length === 0) {
+        return null;
+    }
+    return Math.min(...prices);
+}
+
+export function selectedGuestCapacity(
+    selected: Record<string, number>,
+    rooms: Array<{ roomTypeId: string; maxGuests?: number | null }>,
+): number {
+    let capacity = 0;
+    Object.entries(selected).forEach(([roomTypeId, quantity]) => {
+        if (quantity <= 0) {
+            return;
+        }
+        const room = rooms.find((item) => item.roomTypeId === roomTypeId);
+        const perRoom = typeof room?.maxGuests === 'number' && room.maxGuests >= 1 ? room.maxGuests : 1;
+        capacity += perRoom * quantity;
+    });
+    return capacity;
+}
+
+export function roomsTooSmallForGuests(
+    selected: Record<string, number>,
+    rooms: Array<{ roomTypeId: string; maxGuests?: number | null }>,
+    guestCount: number,
+): boolean {
+    return selectedGuestCapacity(selected, rooms) < guestCount;
+}
+
+export function canSelectRoomForShift(
+    room: AvailableRoomType,
+    shift: RoomShift,
+    hotelAllowsShift = true,
+): boolean {
+    if (isShiftStay(shift) && (!hotelAllowsShift || !room.allowShiftBooking)) {
+        return false;
+    }
+    return priceForShift(room, shift) > 0;
 }
 
 export function bedLine(singleBedCount?: number, doubleBedCount?: number): string | null {
@@ -107,82 +304,13 @@ export function bedLine(singleBedCount?: number, doubleBedCount?: number): strin
     return parts.length > 0 ? parts.join(', ') : null;
 }
 
-export function priceBuckets(prices: number[]): HotelPriceBucket[] {
-    if (prices.length === 0) {
-        return [];
+export function sortHotels(hotels: HotelSearchListItem[], sort: HotelListFilter['sort']): HotelSearchListItem[] {
+    const sorted = [...hotels];
+    if (sort === 'name') {
+        sorted.sort((left, right) => left.name.localeCompare(right.name));
+        return sorted;
     }
-    const min = Math.min(...prices);
-    const max = Math.max(...prices);
-    if (min === max) {
-        return [{ min, max }];
-    }
-    const step = (max - min) / 5;
-    return Array.from({ length: 5 }, (_, index) => {
-        const start = Math.round(min + step * index);
-        const end = index === 4 ? Math.round(max) : Math.round(min + step * (index + 1));
-        return { min: start, max: end };
-    });
-}
-
-export function priceInBucket(price: number, bucket: HotelPriceBucket, index: number, count: number): boolean {
-    if (index === count - 1) {
-        return price >= bucket.min && price <= bucket.max;
-    }
-    return price >= bucket.min && price < bucket.max;
-}
-
-export function applyHotelListFilter(
-    hotels: HotelSearchListItem[],
-    filter: HotelListFilter
-): HotelSearchListItem[] {
-    const buckets = priceBuckets(
-        hotels
-            .map((hotel) => minNightlyPrice(hotel))
-            .filter((price): price is number => price !== null)
-    );
-    const name = filter.propertyName.trim().toLowerCase();
-
-    const filtered = hotels.filter((hotel) => {
-        if (name && !hotel.name.toLowerCase().includes(name)) {
-            return false;
-        }
-        if (filter.stars.length > 0 && !filter.stars.includes(hotel.rating || 0)) {
-            return false;
-        }
-        if (filter.amenityNames.length > 0) {
-            const amenities = hotel.amenities || [];
-            if (!filter.amenityNames.every((amenity) => amenities.includes(amenity))) {
-                return false;
-            }
-        }
-        if (filter.priceBucketIndexes.length > 0) {
-            const price = minNightlyPrice(hotel);
-            if (price === null) {
-                return false;
-            }
-            const matches = filter.priceBucketIndexes.some((index) => {
-                const bucket = buckets[index];
-                return bucket ? priceInBucket(price, bucket, index, buckets.length) : false;
-            });
-            if (!matches) {
-                return false;
-            }
-        }
-        return true;
-    });
-
-    const sorted = [...filtered];
-    if (filter.sort === 'cheapest') {
-        sorted.sort((a, b) => (minNightlyPrice(a) ?? Number.MAX_SAFE_INTEGER) - (minNightlyPrice(b) ?? Number.MAX_SAFE_INTEGER));
-    } else {
-        sorted.sort((a, b) => {
-            const ratingDiff = (b.rating || 0) - (a.rating || 0);
-            if (ratingDiff !== 0) {
-                return ratingDiff;
-            }
-            return (b._count?.reviews || 0) - (a._count?.reviews || 0);
-        });
-    }
+    sorted.sort((left, right) => (right.rating || 0) - (left.rating || 0));
     return sorted;
 }
 
@@ -198,10 +326,7 @@ export function monthGrid(month: Date): Array<Date | null> {
 
 export function emptyHotelFilter(): HotelListFilter {
     return {
-        sort: 'popular',
-        propertyName: '',
-        stars: [],
-        amenityNames: [],
-        priceBucketIndexes: [],
+        sort: 'rating',
+        minRating: '0',
     };
 }

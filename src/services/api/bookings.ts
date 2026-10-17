@@ -1,5 +1,6 @@
 import { getApiInstance } from './axiosClient';
 import { withCatalogLang } from './catalogLang';
+import { RoomShift } from '../../types/hotelSearch';
 import {
     CancellationEligibility,
     CancelBookingWithRefundData,
@@ -10,12 +11,15 @@ export interface CreateBookingData {
   userId: string;
   checkInDate: string;
   checkOutDate: string;
+  shift: RoomShift;
+  totalPrice: number;
   selectedRoomsMap: Record<string, number>;
   guestName: string;
   guestEmail: string;
   guestPhoneNumber: string;
-  paymentMethod?: string; // Only used in edit mode; not sent for new bookings
+  paymentMethod?: string;
   specialRequests?: string;
+  guestCount: number;
 }
 
 export interface UpdateBookingData {

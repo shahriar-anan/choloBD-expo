@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { Alert } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { TRANSLATION_KEYS } from '../constants/translationKeys';
@@ -8,11 +8,13 @@ import { createBooking, updateBooking, getUserBookings, getBookingById, getHotel
 import { CancellationEligibility } from '../types/cancellation';
 import { buildCancelSuccessMessage } from '../utilities/bookingCancelHelpers';
 import { guestContactIsComplete } from '../components/forms/hotelBookingForm';
+import { RoomShift } from '../types/hotelSearch';
 
 export function useBookingLogic() {
   const { t } = useTranslation();
   const auth = useSelector((s: RootState) => s.auth);
   const [submitting, setSubmitting] = useState(false);
+  const submitLock = useRef(false);
 
   const [loadingBookings, setLoadingBookings] = useState(false);
 
@@ -20,13 +22,16 @@ export function useBookingLogic() {
     hotelId: string;
     checkInDate: string;
     checkOutDate: string;
+    shift: RoomShift;
+    totalPrice: number;
     selectedRoomsMap: Record<string, number>;
     guestName: string;
     guestEmail: string;
     guestPhoneNumber: string;
-    paymentMethod?: string;
-    specialRequests?: string;
-  }) => {
+      paymentMethod?: string;
+      specialRequests?: string;
+      guestCount: number;
+    }) => {
     if (!bookingData.hotelId) {
       Alert.alert('Error', 'Hotel ID is required');
       return null;
@@ -44,7 +49,15 @@ export function useBookingLogic() {
       Alert.alert('Error', 'Enter the guest name, a valid email, and a mobile number');
       return null;
     }
+    if (!bookingData.totalPrice || bookingData.totalPrice <= 0) {
+      Alert.alert('Error', 'Select a room with a price for this stay');
+      return null;
+    }
+    if (submitLock.current) {
+      return null;
+    }
 
+    submitLock.current = true;
     setSubmitting(true);
     try {
       const userId = auth.user?.id;
@@ -53,17 +66,20 @@ export function useBookingLogic() {
         return null;
       }
       // Exclude empty paymentMethod for new bookings (payment happens via gateway later)
-      const submitData = { ...bookingData, userId };
-      if (!submitData.paymentMethod) {
-        delete submitData.paymentMethod;
-      }
+      const submitData = {
+        ...bookingData,
+        userId,
+        paymentMethod: bookingData.paymentMethod || 'sslcommerz',
+      };
       const result = await createBooking(submitData);
       return result;
     } catch (e: any) {
       if (__DEV__) console.error('[useBookingLogic] submitBooking error', e?.response?.data || e.message);
-      Alert.alert('Error', 'Failed to create booking');
+      const serverMessage = e?.response?.data?.message;
+      Alert.alert('Error', typeof serverMessage === 'string' && serverMessage ? serverMessage : 'Failed to create booking');
       return null;
     } finally {
+      submitLock.current = false;
       setSubmitting(false);
     }
   };
@@ -73,12 +89,15 @@ export function useBookingLogic() {
       hotelId: string;
       checkInDate: string;
       checkOutDate: string;
+      shift: RoomShift;
+      totalPrice: number;
       selectedRoomsMap: Record<string, number>;
       guestName: string;
       guestEmail: string;
       guestPhoneNumber: string;
       paymentMethod?: string;
       specialRequests?: string;
+      guestCount: number;
     },
     onSuccess?: (data: any) => void
   ) => {
@@ -112,6 +131,10 @@ export function useBookingLogic() {
       }
     }
 
+    if (submitLock.current) {
+      return null;
+    }
+    submitLock.current = true;
     setSubmitting(true);
     try {
       // Transform selectedRoomsMap to roomDetails array if provided
@@ -146,6 +169,7 @@ export function useBookingLogic() {
       Alert.alert('Error', errorMsg);
       return null;
     } finally {
+      submitLock.current = false;
       setSubmitting(false);
     }
   };

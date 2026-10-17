@@ -53,6 +53,18 @@ function toISODate(date: Date): string {
   ].join('-');
 }
 
+function shiftSlotForSale(
+  row: { allowShiftBooking?: boolean; morningShiftPrice?: number; afternoonShiftPrice?: number; nightShiftPrice?: number },
+  stay: 'MORNING' | 'AFTERNOON' | 'NIGHT',
+): boolean {
+  const price = stay === 'MORNING'
+    ? row.morningShiftPrice
+    : stay === 'AFTERNOON'
+      ? row.afternoonShiftPrice
+      : row.nightShiftPrice;
+  return row.allowShiftBooking === true && typeof price === 'number' && price > 0;
+}
+
 function formatRoomLabel(label: string): string {
   return label
     .replace(/[_-]+/g, ' ')
@@ -110,6 +122,7 @@ export default function HotelAvailabilityScreen() {
   const [weekStart, setWeekStart] = useState(today);
   const [stay, setStay] = useState<StayId>('ALL_DAY');
   const [hotelId, setHotelId] = useState<string | null>(null);
+  const [hotelAllowsShift, setHotelAllowsShift] = useState(false);
   const [hotelReady, setHotelReady] = useState(false);
   const [loading, setLoading] = useState(true);
   const [roomTypes, setRoomTypes] = useState<{ id: string; label: string }[]>([]);
@@ -136,6 +149,7 @@ export default function HotelAvailabilityScreen() {
         const values: Record<string, RoomCell> = {};
         rows.forEach((row) => {
           if (!row.roomTypeId) return;
+          if (selectedStay !== 'ALL_DAY' && !shiftSlotForSale(row, selectedStay)) return;
           names.set(row.roomTypeId, row.roomType || row.roomTypeId);
           values[row.roomTypeId] = {
             available: typeof row.availableRooms === 'number' ? row.availableRooms : null,
@@ -160,9 +174,14 @@ export default function HotelAvailabilityScreen() {
     void (async () => {
       try {
         const hotels = await getMyHotel();
-        const id = Array.isArray(hotels) ? hotels[0]?.id : null;
+        const hotel = Array.isArray(hotels) ? hotels[0] : null;
+        const id = hotel?.id ?? null;
         if (!mounted) return;
         setHotelId(id || null);
+        setHotelAllowsShift(hotel?.allowShiftBooking === true);
+        if (hotel?.allowShiftBooking !== true) {
+          setStay('ALL_DAY');
+        }
       } catch {
         if (mounted) setHotelId(null);
       } finally {
@@ -184,7 +203,8 @@ export default function HotelAvailabilityScreen() {
   }, [hotelReady, hotelId, weekStart, stay, load]);
 
   const days = Array.from({ length: 7 }, (_, index) => addDays(weekStart, index));
-  const selectedStay = STAYS.find((item) => item.id === stay) ?? STAYS[0];
+  const stayChoices = hotelAllowsShift ? STAYS : STAYS.filter((item) => item.id === 'ALL_DAY');
+  const selectedStay = stayChoices.find((item) => item.id === stay) ?? stayChoices[0];
   const onThisWeek = sameDay(weekStart, today);
 
   const loadedDays = days.filter((day) => cells[toISODate(day)] != null);
@@ -253,7 +273,7 @@ export default function HotelAvailabilityScreen() {
 
         <Text className="mt-5 text-xs font-semibold tracking-wide uppercase text-muted dark:text-muted-dark">{t(TRANSLATION_KEYS.HOTEL_DESK.STAY)}</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mt-2" contentContainerStyle={{ gap: 8 }}>
-          {STAYS.map((item) => {
+          {stayChoices.map((item) => {
             const selected = item.id === stay;
             return (
               <Pressable

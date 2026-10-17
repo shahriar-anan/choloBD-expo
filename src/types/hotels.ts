@@ -24,6 +24,10 @@ export interface RoomType {
   singleBedCount?: number;
   doubleBedCount?: number;
   pricePerNight: number;
+  morningShiftPrice?: number | null;
+  afternoonShiftPrice?: number | null;
+  nightShiftPrice?: number | null;
+  allowShiftBooking?: boolean;
   availableCount: number;
   images?: Array<{ url: string }>;
 }
@@ -45,6 +49,7 @@ export interface HotelDetail {
   email?: string;
   checkInTime?: string;
   checkOutTime?: string;
+  allowShiftBooking?: boolean;
 }
 
 export interface HotelBooking {
@@ -58,6 +63,7 @@ export interface HotelBooking {
   checkedInAt?: string | null;
   totalPrice: number;
   specialRequests?: string;
+  guestCount?: number | null;
   hotel?: {
     id: string;
     name: string;

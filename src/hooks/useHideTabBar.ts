@@ -69,6 +69,8 @@ export function isHotelBookingChild(pathname: string): boolean {
     return pathname.endsWith('/booking')
         || pathname.includes('hotel-destination')
         || pathname.includes('hotel-dates')
+        || pathname.includes('hotel-shift')
+        || pathname.includes('hotel-guests')
         || pathname.includes('hotel-room-count')
         || pathname.includes('hotel-results')
         || pathname.includes('hotel-stay')

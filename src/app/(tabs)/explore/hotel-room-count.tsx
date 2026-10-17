@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { TRANSLATION_KEYS } from '../../../constants/translationKeys';
 import { GradientAppBar, PillButton, Stepper } from '../../../components/hotelSearch/HotelFlowChrome';
 import { useHotelSearch } from '../../../context/HotelSearchContext';
+import { MAX_ROOMS } from '../../../utilities/hotelSearch';
 import { goBack } from '../../../utilities/navigation';
 
 export default function HotelRoomCountPage() {
@@ -23,9 +24,9 @@ export default function HotelRoomCountPage() {
                 <Text className="mt-1 mb-6 text-sm text-muted dark:text-muted-dark">{t(TRANSLATION_KEYS.HOTEL_SEARCH.ROOMS_HELP)}</Text>
                 <View className="flex-row items-center justify-between">
                     <Text className="font-semibold text-text dark:text-text-dark">{t(TRANSLATION_KEYS.HOTEL_SEARCH.ROOMS)}</Text>
-                    <Stepper value={count} min={1} onChange={setCount} />
+                    <Stepper value={count} min={1} max={MAX_ROOMS} onChange={setCount} />
                 </View>
-                <Pressable onPress={() => setCount((current) => current + 1)} className="mt-6">
+                <Pressable disabled={count >= MAX_ROOMS} onPress={() => setCount((current) => Math.min(MAX_ROOMS, current + 1))} className="mt-6">
                     <Text className="font-semibold text-primary dark:text-primary-dark">{t(TRANSLATION_KEYS.HOTEL_SEARCH.ADD_ROOM)}</Text>
                 </Pressable>
             </View>

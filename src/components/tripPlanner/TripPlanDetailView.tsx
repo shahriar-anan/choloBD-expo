@@ -7,6 +7,7 @@ import { View, Text, ScrollView, Image, TouchableOpacity, Modal, Pressable, Refr
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useHotelSearch } from '../../context/HotelSearchContext';
 import { Toast } from '../ui/Toast';
 import { useTranslation } from 'react-i18next';
 import { TRANSLATION_KEYS } from '../../constants/translationKeys';
@@ -60,6 +61,7 @@ export function TripPlanDetailView({
 }: TripPlanDetailViewProps) {
   const { t } = useTranslation();
   const router = useRouter();
+  const { applyCatalogStay } = useHotelSearch();
   const { isDark } = useTheme();
   const [activeDay, setActiveDay] = useState<number | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -136,7 +138,10 @@ export function TripPlanDetailView({
         name: hotelName,
         imageUrl: segment.hotelImageUrl,
         onPress: segment.hotelId
-          ? () => router.push({ pathname: '/(tabs)/explore/hotel-stay', params: { hotelId: segment.hotelId! } })
+          ? () => {
+              applyCatalogStay();
+              router.push({ pathname: '/(tabs)/explore/hotel-stay', params: { hotelId: segment.hotelId! } });
+            }
           : undefined,
       });
     }

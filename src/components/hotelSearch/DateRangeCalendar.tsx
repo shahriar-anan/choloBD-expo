@@ -13,11 +13,13 @@ export function DateRangeCalendar({
     checkIn,
     checkOut,
     onChange,
+    onRangeAttempt,
     singleDate = false,
 }: {
     checkIn: string | null;
     checkOut: string | null;
     onChange: (checkIn: string, checkOut: string | null) => void;
+    onRangeAttempt?: (iso: string) => void;
     singleDate?: boolean;
 }) {
     const { isDark } = useTheme();
@@ -38,6 +40,10 @@ export function DateRangeCalendar({
         }
         const iso = format(day, 'yyyy-MM-dd');
         if (singleDate) {
+            if (start && !isSameDay(day, start)) {
+                onRangeAttempt?.(iso);
+                return;
+            }
             onChange(iso, null);
             return;
         }

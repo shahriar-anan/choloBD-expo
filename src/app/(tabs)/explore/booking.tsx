@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, Text, View, type ScrollView } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, Pressable, Text, View, type ScrollView } from 'react-native';
 import { KeyboardAwareScroll } from '../../../components/ui/KeyboardAwareScroll';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -12,8 +12,7 @@ import { GradientAppBar } from '../../../components/hotelSearch/HotelFlowChrome'
 import { useExplore } from './_provider';
 import { useTranslation } from 'react-i18next';
 import { TRANSLATION_KEYS } from '../../../constants/translationKeys';
-import { displayRoomName, formatMoney, nightsBetween, shortRangeLabel } from '../../../utilities/hotelSearch';
-import { RoomType } from '../../../types/hotels';
+import { bookingTotal, canSelectRoomForShift, displayRoomName, formatMoney, isShiftStay, priceForShift, roomsTooSmallForGuests, selectedGuestCapacity, shortRangeLabel, stayUnits } from '../../../utilities/hotelSearch';
 import { goBack } from '../../../utilities/navigation';
 
 export default function ExploreBooking() {
@@ -24,6 +23,9 @@ export default function ExploreBooking() {
   const {
     hotelDetail,
     selectedRoomsMap,
+    availableRooms,
+    shift,
+    guestCount,
     changeRoomQty,
     checkInDate,
     checkOutDate,
@@ -56,12 +58,21 @@ export default function ExploreBooking() {
 
   if (!hotelDetail) return null;
 
-  const nights = checkInDate && checkOutDate ? Math.max(1, nightsBetween(checkInDate, checkOutDate)) : 0;
-  const roomTypes = (hotelDetail.roomTypes || []) as RoomType[];
-  const chosen = roomTypes
-    .map((room) => ({ room, qty: selectedRoomsMap[room.id] || 0 }))
+  const units = stayUnits(checkInDate, checkOutDate, shift);
+  const chosen = availableRooms
+    .map((room) => ({ room, qty: selectedRoomsMap[room.roomTypeId] || 0 }))
     .filter((row) => row.qty > 0);
-  const total = chosen.reduce((sum, row) => sum + row.qty * (row.room.pricePerNight ?? 0) * nights, 0);
+  const total = bookingTotal(selectedRoomsMap, availableRooms, shift, checkInDate, checkOutDate);
+  const priceSuffix = isShiftStay(shift)
+    ? t(TRANSLATION_KEYS.HOTEL_SEARCH.PER_SHIFT)
+    : t(TRANSLATION_KEYS.BOOKING.PER_NIGHT);
+  const shiftLabel = shift === 'MORNING'
+    ? t(TRANSLATION_KEYS.HOTEL_SEARCH.MORNING)
+    : shift === 'AFTERNOON'
+      ? t(TRANSLATION_KEYS.HOTEL_SEARCH.AFTERNOON)
+      : shift === 'NIGHT'
+        ? t(TRANSLATION_KEYS.HOTEL_SEARCH.NIGHT)
+        : t(TRANSLATION_KEYS.HOTEL_SEARCH.WHOLE_DAY);
   const guestReady = guestContactIsComplete(guestName, guestEmail, guestPhoneNumber);
   const guestState = guestContactFieldState(guestName, guestEmail, guestPhoneNumber);
   const guestFieldErrors = showGuestErrors
@@ -85,6 +96,16 @@ export default function ExploreBooking() {
       setShowGuestErrors(true);
       return;
     }
+    if (roomsTooSmallForGuests(selectedRoomsMap, availableRooms, guestCount)) {
+      Alert.alert(
+        t(TRANSLATION_KEYS.HOTEL_SEARCH.ROOM_CAPACITY_TITLE),
+        t(TRANSLATION_KEYS.HOTEL_SEARCH.ROOM_CAPACITY_BODY, {
+          count: guestCount,
+          capacity: selectedGuestCapacity(selectedRoomsMap, availableRooms),
+        }),
+      );
+      return;
+    }
     submitBooking();
   };
 
@@ -101,19 +122,25 @@ export default function ExploreBooking() {
             <Text className="mt-2 text-base font-bold text-text dark:text-text-dark">
               {checkInDate && checkOutDate ? shortRangeLabel(checkInDate, checkOutDate) : t(TRANSLATION_KEYS.BOOKING.NOT_SET)}
             </Text>
+            <Text className="mt-1 text-sm text-muted dark:text-muted-dark">{shiftLabel}</Text>
             <Text className="mt-1 text-sm text-muted dark:text-muted-dark">
-              {t(TRANSLATION_KEYS.BOOKING.NIGHTS)}: {nights}
+              {t(TRANSLATION_KEYS.HOTEL_SEARCH.GUEST_COUNT, { count: guestCount })}
             </Text>
+            {isShiftStay(shift) ? null : (
+              <Text className="mt-1 text-sm text-muted dark:text-muted-dark">
+                {t(TRANSLATION_KEYS.BOOKING.NIGHTS)}: {units}
+              </Text>
+            )}
             <View className="h-px my-3 bg-border dark:bg-border-dark" />
             {chosen.length === 0 ? (
               <Text className="text-sm text-muted dark:text-muted-dark">{t(TRANSLATION_KEYS.HOTEL_SEARCH.NO_ROOMS)}</Text>
             ) : chosen.map(({ room, qty }) => (
-              <View key={room.id} className="flex-row items-center justify-between py-1">
+              <View key={room.roomTypeId} className="flex-row items-center justify-between py-1">
                 <Text className="flex-1 text-sm font-semibold text-text dark:text-text-dark">
                   {displayRoomName(room.roomType)} × {qty}
                 </Text>
                 <Text className="text-sm text-muted dark:text-muted-dark">
-                  {formatMoney(room.pricePerNight ?? 0)} {t(TRANSLATION_KEYS.BOOKING.PER_NIGHT)}
+                  {formatMoney(priceForShift(room, shift))} {priceSuffix}
                 </Text>
               </View>
             ))}
@@ -146,7 +173,18 @@ export default function ExploreBooking() {
             <Ionicons name={roomsOpen ? 'chevron-up' : 'chevron-down'} size={18} color={muted} />
           </Pressable>
           {roomsOpen ? (
-            <RoomTypeSelectorUI roomTypes={roomTypes} selectedRoomsMap={selectedRoomsMap} onChange={changeRoomQty} />
+            <RoomTypeSelectorUI
+              roomTypes={availableRooms.filter((room) => canSelectRoomForShift(room, shift, hotelDetail.allowShiftBooking === true)).map((room) => ({
+                id: room.roomTypeId,
+                roomType: room.roomType,
+                pricePerNight: priceForShift(room, shift),
+                availableCount: room.availableRooms,
+                images: room.images,
+              }))}
+              selectedRoomsMap={selectedRoomsMap}
+              onChange={changeRoomQty}
+              priceSuffix={priceSuffix}
+            />
           ) : null}
         </View>
       </KeyboardAwareScroll>

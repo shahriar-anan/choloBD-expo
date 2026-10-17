@@ -24,6 +24,7 @@ import {
   tabBarScreenStyle,
 } from '../../hooks/useHideTabBar';
 import { AppTabBar } from '../../components/navigation/AppTabBar';
+import { HotelSearchProvider } from '../../context/HotelSearchContext';
 import { RootState } from '../../store/store';
 import { useHotelAdminSession } from '../../hooks/useHotelAdminSession';
 import { isTravelerRole, roleHome } from '../../utilities/travelerShell';
@@ -150,6 +151,7 @@ export default function TabsLayout() {
   }
 
   return (
+    <HotelSearchProvider>
     <NavigationThemeProvider value={navigationTheme}>
     <Tabs
       safeAreaInsets={{ bottom: 0 }}
@@ -347,5 +349,6 @@ export default function TabsLayout() {
       />
     </Tabs>
     </NavigationThemeProvider>
+    </HotelSearchProvider>
   );
 }

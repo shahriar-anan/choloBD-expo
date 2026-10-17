@@ -17,7 +17,7 @@ export function guestContactFieldState(guestName: string, guestEmail: string, gu
     emailMissing: email.length === 0,
     emailInvalid: email.length > 0 && !EMAIL_PATTERN.test(email),
     phoneMissing: phone.length === 0,
-    phoneInvalid: phone.length > 0 && phone.replace(/\D/g, '').length < 10,
+    phoneInvalid: phone.length > 0 && !/^\d{10,20}$/.test(phone),
   };
 }
 
@@ -173,6 +173,7 @@ export function HotelBookingForm({
             placeholder={t(TRANSLATION_KEYS.BOOKING.SPECIAL_REQUESTS_PLACEHOLDER)}
             placeholderTextColor={muted}
             multiline
+            maxLength={500}
             textAlignVertical="top"
             className="min-h-[88px] text-base text-text dark:text-text-dark"
           />
